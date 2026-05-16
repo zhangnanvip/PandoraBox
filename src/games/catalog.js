@@ -200,12 +200,24 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "puzzle",
+      setupFields: [
+        {
+          id: "assistMode",
+          label: "辅助程度",
+          defaultValue: "standard",
+          options: [
+            { value: "guided", label: "引导模式 实时纠错" },
+            { value: "standard", label: "标准模式 检查提示" },
+            { value: "pure", label: "纯净模式 无提示" }
+          ]
+        }
+      ],
       accent: "lotus",
       icon: "./public/skins/guofeng-ink/icons/sudoku.svg",
       rules: [
         "在 9x9 棋盘中填入 1-9。",
         "每一行、每一列、每一个 3x3 宫内数字都不能重复。",
-        "可使用提示与检查，错误会被高亮。",
+        "引导模式会实时标出错误，标准模式可主动检查或提示，纯净模式隐藏提示与检查。",
         "魔鬼难度会保留更少初始数字。"
       ]
     },

@@ -16,6 +16,11 @@ const CLUES = {
     0, 8, 10, 14, 19, 23, 31, 35, 40, 45, 49, 57, 61, 66, 72, 76, 80
   ]
 };
+const ASSIST_MODES = {
+  guided: { label: "引导模式", realtimeErrors: true, tools: true, passiveFeedback: true },
+  standard: { label: "标准模式", realtimeErrors: false, tools: true, passiveFeedback: true },
+  pure: { label: "纯净模式", realtimeErrors: false, tools: false, passiveFeedback: false }
+};
 
 function shuffle(values) {
   const next = [...values];
@@ -65,10 +70,16 @@ function initialState(difficulty) {
     values: puzzle.split("").map((value) => (value === "0" ? "" : value)),
     selected: puzzle.indexOf("0"),
     mistakes: 0,
+    hints: 0,
+    checkedIndex: -1,
     complete: false,
     history: [],
     message: "选择空格后填入数字"
   };
+}
+
+function assistModeFor(options = {}) {
+  return ASSIST_MODES[options.assistMode] ? options.assistMode : "standard";
 }
 
 function isValidState(state) {
@@ -106,10 +117,14 @@ function isSolved(state) {
 }
 
 export function mountSudoku(root, context) {
-  const storageKey = `sudoku:${context.difficulty}`;
+  const assistMode = assistModeFor(context.options);
+  const assist = ASSIST_MODES[assistMode];
+  const storageKey = `sudoku:${context.difficulty}:${assistMode}`;
   let state = loadState(storageKey, initialState(context.difficulty));
   if (!isValidState(state)) state = initialState(context.difficulty);
   if (!Array.isArray(state.history)) state.history = [];
+  if (!Number.isFinite(state.hints)) state.hints = 0;
+  if (!Number.isFinite(state.checkedIndex)) state.checkedIndex = -1;
   let resultReported = false;
 
   function save() {
@@ -121,6 +136,8 @@ export function mountSudoku(root, context) {
       values: [...state.values],
       selected: state.selected,
       mistakes: state.mistakes,
+      hints: state.hints,
+      checkedIndex: state.checkedIndex,
       complete: state.complete,
       message: state.message
     };
@@ -139,7 +156,7 @@ export function mountSudoku(root, context) {
       outcome: "complete",
       detail: state.message,
       moves: state.history.length,
-      score: Math.max(0, 1000 - state.mistakes * 80 - state.history.length * 3)
+      score: Math.max(0, 1000 - state.mistakes * 80 - state.hints * 60 - state.history.length * 3)
     });
   }
 
@@ -153,22 +170,26 @@ export function mountSudoku(root, context) {
     if (state.complete || state.selected < 0 || isFixed(state, state.selected)) return;
     if (state.values[state.selected] === value) return;
     state.history.push(snapshot());
+    state.checkedIndex = -1;
     state.values[state.selected] = value;
-    if (value && value !== state.solution[state.selected]) {
-      state.mistakes += 1;
-      state.message = "这里暂时不对，再想一想";
-    } else if (isSolved(state)) {
+    if (isSolved(state)) {
       state.complete = true;
       state.message = "完成数独";
       reportResult();
+    } else if (value && assist.realtimeErrors && value !== state.solution[state.selected]) {
+      state.mistakes += 1;
+      state.message = "这里暂时不对，再想一想";
+    } else if (value && assist.passiveFeedback && hasConflict(state.values, state.selected)) {
+      state.message = "同行、同列或同宫有重复";
     } else {
-      state.message = value ? "填入正确" : "已清除";
+      state.message = value ? "已填入" : "已清除";
     }
     save();
     render();
   }
 
   function hint() {
+    if (!assist.tools) return;
     const index = state.selected >= 0 && !isFixed(state, state.selected) && state.values[state.selected] !== state.solution[state.selected]
       ? state.selected
       : state.values.findIndex((value, idx) => !isFixed(state, idx) && value !== state.solution[idx]);
@@ -176,6 +197,8 @@ export function mountSudoku(root, context) {
     state.history.push(snapshot());
     state.selected = index;
     state.values[index] = state.solution[index];
+    state.hints += 1;
+    state.checkedIndex = -1;
     state.message = `提示填入 ${state.solution[index]}`;
     state.complete = isSolved(state);
     reportResult();
@@ -192,13 +215,18 @@ export function mountSudoku(root, context) {
   }
 
   function check() {
+    if (!assist.tools) return;
     const wrong = state.values.findIndex((value, index) => value && value !== state.solution[index]);
     if (wrong >= 0) {
       state.selected = wrong;
+      state.checkedIndex = wrong;
+      state.mistakes += 1;
       state.message = "发现一个冲突位置";
     } else if (state.values.some((value) => !value)) {
+      state.checkedIndex = -1;
       state.message = "当前已填内容正确，还有空格";
     } else {
+      state.checkedIndex = -1;
       state.complete = true;
       state.message = "完成数独";
       reportResult();
@@ -229,10 +257,11 @@ export function mountSudoku(root, context) {
       <section class="game-panel game-status">
         <div>
           <strong>${state.message}</strong>
-          <p class="game-note">${context.labels.difficulty} · 9x9 数独 · 随机题</p>
+          <p class="game-note">${context.labels.difficulty} · ${assist.label} · 9x9 数独</p>
         </div>
         <div class="mini-stats">
-          <span>错误 ${state.mistakes}</span>
+          ${assist.tools ? `<span>错误 ${state.mistakes}</span>` : ""}
+          ${assist.tools ? `<span>提示 ${state.hints}</span>` : ""}
           <span>${state.values.filter(Boolean).length}/81</span>
         </div>
       </section>
@@ -243,7 +272,9 @@ export function mountSudoku(root, context) {
             const selected = state.selected === index;
             const related = state.selected >= 0 && isPeer(state.selected, index);
             const fixed = isFixed(state, index);
-            const conflict = hasConflict(state.values, index) || (value && value !== state.solution[index]);
+            const conflict = (assist.passiveFeedback && hasConflict(state.values, index)) ||
+              (assist.realtimeErrors && value && value !== state.solution[index]) ||
+              state.checkedIndex === index;
             return `
               <button
                 class="sudoku-cell ${fixed ? "is-fixed" : ""} ${selected ? "is-selected" : ""} ${related ? "is-related" : ""} ${conflict ? "is-error" : ""}"
@@ -258,8 +289,8 @@ export function mountSudoku(root, context) {
         ${Array.from({ length: 9 }, (_, index) => `<button class="secondary-button" data-number="${index + 1}">${index + 1}</button>`).join("")}
         <button class="secondary-button" data-number="">清除</button>
         <button class="secondary-button" data-action="undo" ${state.history.length ? "" : "disabled"}>悔棋</button>
-        <button class="secondary-button" data-action="hint">提示</button>
-        <button class="secondary-button" data-action="check">检查</button>
+        ${assist.tools ? "<button class=\"secondary-button\" data-action=\"hint\">提示</button>" : ""}
+        ${assist.tools ? "<button class=\"secondary-button\" data-action=\"check\">检查</button>" : ""}
         <button class="danger-button" data-action="restart">重开</button>
       </section>
     `;
@@ -271,8 +302,8 @@ export function mountSudoku(root, context) {
       button.addEventListener("click", () => setValue(button.dataset.number));
     });
     root.querySelector("[data-action='undo']").addEventListener("click", undo);
-    root.querySelector("[data-action='hint']").addEventListener("click", hint);
-    root.querySelector("[data-action='check']").addEventListener("click", check);
+    root.querySelector("[data-action='hint']")?.addEventListener("click", hint);
+    root.querySelector("[data-action='check']")?.addEventListener("click", check);
     root.querySelector("[data-action='restart']").addEventListener("click", restart);
   }
 
