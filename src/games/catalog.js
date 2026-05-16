@@ -41,9 +41,22 @@ const registrations = [
       complexity: "困难",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      setupFields: [
+        {
+          id: "boardSize",
+          label: "棋盘规格",
+          defaultValue: "9",
+          options: [
+            { value: "9", label: "9路 入门快局" },
+            { value: "13", label: "13路 均衡练习" },
+            { value: "19", label: "19路 完整棋局" }
+          ]
+        }
+      ],
       accent: "jade",
       icon: "./public/skins/guofeng-ink/icons/go.svg",
       rules: [
+        "开局前可选择 9 路、13 路或 19 路棋盘；9 路适合移动端快局，19 路更接近完整对局。",
         "黑方先手，在棋盘交点落子，不能落在无气且无法提子的点。",
         "包围对方棋串最后一口气即可提子。",
         "双方连续停一手后按首版估分结算；魔鬼难度会更重视断点、逃气、提子和局部反击。"

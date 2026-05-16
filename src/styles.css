@@ -1200,26 +1200,6 @@ input[type="range"] {
   font-weight: 700;
 }
 
-.size-tabs {
-  display: flex;
-  gap: 8px;
-}
-
-.size-tabs button {
-  min-height: 36px;
-  padding: 0 11px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-2);
-  color: var(--ink);
-  font-weight: 800;
-}
-
-.size-tabs button.is-active {
-  background: var(--jade);
-  color: #fffaf0;
-}
-
 .xiangqi-board {
   position: relative;
   display: grid;
@@ -1794,8 +1774,7 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
 
-  .game-status .mini-stats,
-  .game-status .size-tabs {
+  .game-status .mini-stats {
     justify-content: start;
   }
 

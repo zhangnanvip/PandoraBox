@@ -5,7 +5,7 @@ const EMPTY = 0;
 const BLACK = 1;
 const WHITE = 2;
 
-function initialState(size = 19) {
+function initialState(size = 9) {
   return {
     size,
     board: Array(size * size).fill(EMPTY),
@@ -21,6 +21,11 @@ function initialState(size = 19) {
 
 function isValidState(state) {
   return [9, 13, 19].includes(state?.size) && state.board?.length === state.size * state.size;
+}
+
+function selectedBoardSize(options = {}) {
+  const size = Number(options.boardSize);
+  return [9, 13, 19].includes(size) ? size : 9;
 }
 
 function opponent(player) {
@@ -264,9 +269,10 @@ function renderCell(cell, index, state) {
 }
 
 export function mountGo(root, context) {
-  const storageKey = `go:${context.mode}`;
-  let state = loadState(storageKey, initialState(19));
-  if (!isValidState(state)) state = initialState(19);
+  const configuredSize = selectedBoardSize(context.options);
+  const storageKey = `go:${context.mode}:${context.difficulty}:${configuredSize}`;
+  let state = loadState(storageKey, initialState(configuredSize));
+  if (!isValidState(state) || state.size !== configuredSize) state = initialState(configuredSize);
 
   let disposed = false;
   let aiTimer = 0;
@@ -363,8 +369,8 @@ export function mountGo(root, context) {
     render();
   }
 
-  function restart(size = state.size) {
-    state = initialState(size);
+  function restart() {
+    state = initialState(configuredSize);
     resultReported = false;
     removeState(storageKey);
     save();
@@ -388,10 +394,7 @@ export function mountGo(root, context) {
       <section class="game-panel game-status">
         <div>
           <strong>${state.message}</strong>
-          <p class="game-note">${context.labels.mode} · ${context.labels.difficulty}${aiThinking ? " · AI 思考中" : ""}</p>
-        </div>
-        <div class="size-tabs" aria-label="棋盘大小">
-          ${[9, 13, 19].map((size) => `<button data-size="${size}" class="${size === state.size ? "is-active" : ""}">${size}路</button>`).join("")}
+          <p class="game-note">${context.labels.mode} · ${context.labels.difficulty} · ${state.size} 路棋盘${aiThinking ? " · AI 思考中" : ""}</p>
         </div>
       </section>
 
@@ -422,9 +425,6 @@ export function mountGo(root, context) {
         if (context.mode === "ai" && state.turn === WHITE) return;
         play(Number(button.dataset.cell));
       });
-    });
-    root.querySelectorAll("[data-size]").forEach((button) => {
-      button.addEventListener("click", () => restart(Number(button.dataset.size)));
     });
     root.querySelector("[data-action='pass']").addEventListener("click", () => {
       if (context.mode === "ai" && state.turn === WHITE) return;
