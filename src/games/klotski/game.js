@@ -76,12 +76,16 @@ const LEVELS = {
   }
 };
 
-function levelFor(difficulty) {
-  return LEVELS[difficulty] || LEVELS.medium;
+function levelFor(levelId) {
+  return LEVELS[levelId] || LEVELS.medium;
 }
 
-function initialState(difficulty) {
-  const level = levelFor(difficulty);
+function selectedLevelId(options = {}, difficulty = "medium") {
+  return LEVELS[options.levelId] ? options.levelId : LEVELS[difficulty] ? difficulty : "medium";
+}
+
+function initialState(levelId) {
+  const level = levelFor(levelId);
   return {
     level: level.id,
     pieces: level.pieces.map((piece) => ({ ...piece })),
@@ -109,8 +113,8 @@ function hasValidPieces(state) {
   return state.pieces.some((piece) => piece.id === "cao");
 }
 
-function isValidState(state, difficulty) {
-  const level = levelFor(difficulty);
+function isValidState(state, levelId) {
+  const level = levelFor(levelId);
   return state?.level === level.id && hasValidPieces(state) && Array.isArray(state.history);
 }
 
@@ -173,9 +177,10 @@ function directionFromDelta(dx, dy) {
 }
 
 export function mountKlotski(root, context) {
-  const storageKey = `klotski:${context.difficulty}`;
-  let state = loadState(storageKey, initialState(context.difficulty));
-  if (!isValidState(state, context.difficulty)) state = initialState(context.difficulty);
+  const levelId = selectedLevelId(context.options, context.difficulty);
+  const storageKey = `klotski:${context.difficulty}:${levelId}`;
+  let state = loadState(storageKey, initialState(levelId));
+  if (!isValidState(state, levelId)) state = initialState(levelId);
   let pointerStart = null;
   let ignoreClick = false;
   let resultReported = false;
@@ -247,6 +252,7 @@ export function mountKlotski(root, context) {
     const moveInfo = movesFor(state, piece).find((item) => item.id === directionId);
     if (!moveInfo) {
       state.message = "这个方向被挡住了";
+      context.playSound?.("invalid");
       render();
       return;
     }
@@ -260,6 +266,7 @@ export function mountKlotski(root, context) {
       reportResult();
     } else {
       state.message = `${piece.name} 向${moveInfo.label}移动`;
+      context.playSound?.("move");
     }
     save();
     render();
@@ -274,7 +281,7 @@ export function mountKlotski(root, context) {
   }
 
   function restart() {
-    state = initialState(context.difficulty);
+    state = initialState(levelId);
     resultReported = false;
     removeState(storageKey);
     render();
@@ -288,7 +295,7 @@ export function mountKlotski(root, context) {
       <section class="game-panel game-status">
         <div>
           <strong>${state.message}</strong>
-          <p class="game-note">${context.labels.difficulty} · ${level.title}</p>
+          <p class="game-note">${context.labels.difficulty} · ${level.title} · ${level.target} 步目标</p>
         </div>
         <div class="mini-stats">
           <span>步数 ${state.steps}</span>

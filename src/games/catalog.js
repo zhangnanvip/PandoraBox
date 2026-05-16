@@ -234,13 +234,26 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "puzzle",
+      setupFields: [
+        {
+          id: "levelId",
+          label: "关卡",
+          defaultValue: "easy",
+          options: [
+            { value: "easy", label: "开门见山 目标 1 步" },
+            { value: "medium", label: "短兵相接 目标 24 步" },
+            { value: "hard", label: "层层设防 目标 52 步" },
+            { value: "devil", label: "横刀立马 目标 81 步" }
+          ]
+        }
+      ],
       accent: "cinnabar",
       icon: "./public/skins/guofeng-ink/icons/klotski.svg",
       rules: [
         "点击棋子选中，再使用方向按钮移动。",
         "棋子不能重叠，也不能移出棋盘。",
         "把曹操移动到下方出口即完成关卡。",
-        "难度对应不同关卡布局，魔鬼难度使用更接近经典横刀立马的堵塞布局。"
+        "开局前可选择关卡；横刀立马更接近经典堵塞布局。"
       ]
     },
     () => import("./klotski/game.js").then((module) => module.mountKlotski)
