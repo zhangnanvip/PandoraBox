@@ -4,6 +4,13 @@
 
 每个游戏独立交付：大厅只读取游戏清单，用户点击游戏后才加载对应入口。首版入口来自本地 ES module，后续可以扩展到远程 manifest + 动态下载。
 
+视觉系统分成两层：
+
+- `interfaceThemes` 只负责大厅、设置页、弹窗、按钮等平台外壳。
+- `visualStyles` 由每个游戏在 manifest 中声明，负责棋盘、角色、弹幕、砖块等玩法内元素。
+
+这样动作街机可以保持经典像素/街机风，棋类可以继续使用国风棋盘，新增游戏也不需要被全局皮肤包强行改造。
+
 ## 当前落地
 
 ```text
@@ -30,6 +37,10 @@ src/games/<game>/game.js       独立游戏实现，导出 mount(root, context)
   progressType: "match",
   complexity: "中等",
   accent: "ink",
+  visualStyles: [
+    { value: "guofeng-board", label: "国风棋盘" }
+  ],
+  defaultVisualStyle: "guofeng-board",
   icon: "./public/skins/guofeng-ink/icons/reversi.svg",
   assets: [],
   rules: []
@@ -55,19 +66,23 @@ export function mount(root, context) {
 {
   mode: "ai",
   difficulty: "medium",
+  theme: "guofeng",
+  visualStyle: "guofeng-board",
   options: {
-    boardSize: "4"
+    boardSize: "4",
+    visualStyle: "guofeng-board"
   },
   labels: {
     mode: "单人对弈",
-    difficulty: "中等"
+    difficulty: "中等",
+    visualStyle: "国风棋盘"
   },
   playSound: (name) => {},
   reportResult: (result) => {}
 }
 ```
 
-`options` 来自开局弹窗里的游戏自定义字段；`playSound` 统一走平台音效和音量设置；`reportResult` 用来把胜负、完成、分数等结果写入大厅进度统计。
+`options` 来自开局弹窗里的游戏自定义字段；`theme` 只表示当前界面主题；`visualStyle` 表示当前游戏内视觉样式。`playSound` 统一走平台音效和音量设置；`reportResult` 用来把胜负、完成、分数等结果写入大厅进度统计。
 
 ## 后续远程插件扩展
 
@@ -100,6 +115,6 @@ export function mount(root, context) {
 ## 新游戏接入步骤
 
 1. 新建 `src/games/<id>/game.js`，导出挂载函数。
-2. 在 `src/games/catalog.js` 里用 `defineLocalGame(manifest, loader)` 注册。
+2. 在 `src/games/catalog.js` 里用 `defineLocalGame(manifest, loader)` 注册，并声明适合自己的 `visualStyles`。
 3. 把图标、纹理等静态资源加入 `manifest.assets` 和 `sw.js` 缓存列表。
 4. 确认移动端尺寸、离线缓存、返回大厅时 cleanup 正常。

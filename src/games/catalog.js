@@ -10,6 +10,21 @@ export const categories = [
   { id: "quick", title: "快速对弈", shortTitle: "快局" }
 ];
 
+const VISUAL_STYLES = {
+  guofengBoard: { value: "guofeng-board", label: "国风棋盘" },
+  classicPuzzle: { value: "classic-puzzle", label: "经典解谜" },
+  classicNumber: { value: "classic-number", label: "经典数字" },
+  classicArcade: { value: "classic-arcade", label: "经典街机" }
+};
+
+function gameVisualStyle(key) {
+  const style = VISUAL_STYLES[key] || VISUAL_STYLES.guofengBoard;
+  return {
+    visualStyles: [style],
+    defaultVisualStyle: style.value
+  };
+}
+
 const registrations = [
   defineLocalGame(
     {
@@ -22,6 +37,7 @@ const registrations = [
       complexity: "简单",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gameVisualStyle("guofengBoard"),
       accent: "ink",
       icon: "./public/skins/guofeng-ink/icons/gomoku.svg",
       rules: [
@@ -43,6 +59,7 @@ const registrations = [
       complexity: "困难",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gameVisualStyle("guofengBoard"),
       setupFields: [
         {
           id: "boardSize",
@@ -76,6 +93,7 @@ const registrations = [
       complexity: "困难",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gameVisualStyle("guofengBoard"),
       accent: "cinnabar",
       icon: "./public/skins/guofeng-ink/icons/xiangqi.svg",
       rules: [
@@ -97,6 +115,7 @@ const registrations = [
       complexity: "中等",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gameVisualStyle("guofengBoard"),
       accent: "ink",
       icon: "./public/skins/guofeng-ink/icons/reversi.svg",
       rules: [
@@ -118,6 +137,7 @@ const registrations = [
       secondaryCategories: ["quick"],
       complexity: "简单",
       progressType: "match",
+      ...gameVisualStyle("guofengBoard"),
       accent: "jade",
       icon: "./public/skins/guofeng-ink/icons/tictactoe.svg",
       rules: [
@@ -139,6 +159,7 @@ const registrations = [
       complexity: "中等",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gameVisualStyle("guofengBoard"),
       accent: "lotus",
       icon: "./public/skins/guofeng-ink/icons/checkers.svg",
       rules: [
@@ -160,6 +181,7 @@ const registrations = [
       complexity: "中等",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gameVisualStyle("guofengBoard"),
       accent: "cinnabar",
       icon: "./public/skins/guofeng-ink/icons/draughts.svg",
       rules: [
@@ -181,6 +203,7 @@ const registrations = [
       secondaryCategories: ["quick"],
       complexity: "简单",
       progressType: "match",
+      ...gameVisualStyle("guofengBoard"),
       accent: "sky",
       icon: "./public/skins/guofeng-ink/icons/flying.svg",
       rules: [
@@ -202,6 +225,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "puzzle",
+      ...gameVisualStyle("classicPuzzle"),
       setupFields: [
         {
           id: "assistMode",
@@ -236,6 +260,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "puzzle",
+      ...gameVisualStyle("classicPuzzle"),
       setupFields: [
         {
           id: "levelId",
@@ -271,6 +296,7 @@ const registrations = [
       complexity: "简单",
       modeSupport: ["solo"],
       progressType: "score",
+      ...gameVisualStyle("classicNumber"),
       setupFields: [
         {
           id: "boardSize",
@@ -307,6 +333,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "score",
+      ...gameVisualStyle("classicArcade"),
       accent: "cinnabar",
       icon: "./public/skins/guofeng-ink/icons/tank-battle.svg",
       rules: [
@@ -330,6 +357,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "score",
+      ...gameVisualStyle("classicArcade"),
       accent: "sky",
       icon: "./public/skins/guofeng-ink/icons/space-shooter.svg",
       rules: [
@@ -353,6 +381,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "score",
+      ...gameVisualStyle("classicArcade"),
       accent: "jade",
       icon: "./public/skins/guofeng-ink/icons/snake.svg",
       rules: [
@@ -376,6 +405,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "score",
+      ...gameVisualStyle("classicArcade"),
       accent: "lotus",
       icon: "./public/skins/guofeng-ink/icons/breakout.svg",
       rules: [

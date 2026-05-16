@@ -1,6 +1,6 @@
 import { categories, games, findCategory, findGame, getGameSections, loadGamePlugin } from "./games/catalog.js";
 import { configureSound, playResultSound, playSound as playFeedbackSound } from "./platform/sound.js";
-import { skins, skinOrder } from "./theme/skins.js";
+import { interfaceThemes, themeOrder } from "./theme/skins.js";
 import { loadState, saveState } from "./utils/storage.js";
 
 const app = document.querySelector("#app");
@@ -8,19 +8,20 @@ const app = document.querySelector("#app");
 const preferences = loadState("preferences", {
   difficulty: "medium",
   mode: "ai",
-  skin: "guofeng",
+  theme: "guofeng",
   sound: true,
   volume: 70,
   gameOptions: {}
 });
 const savedProgress = loadState("progress", {});
+const preferredTheme = preferences.theme || preferences.skin || "guofeng";
 
 const state = {
   currentGame: "",
   difficulty: preferences.difficulty || "medium",
   mode: preferences.mode || "ai",
   gameOptions: preferences.gameOptions && typeof preferences.gameOptions === "object" ? preferences.gameOptions : {},
-  skin: skins[preferences.skin] ? preferences.skin : "guofeng",
+  theme: interfaceThemes[preferredTheme] ? preferredTheme : "guofeng",
   sound: preferences.sound !== false,
   volume: Number.isFinite(preferences.volume) ? preferences.volume : 70,
   modal: "",
@@ -56,7 +57,8 @@ function persistPreferences() {
   saveState("preferences", {
     difficulty: state.difficulty,
     mode: state.mode,
-    skin: state.skin,
+    theme: state.theme,
+    skin: state.theme,
     sound: state.sound,
     volume: state.volume,
     gameOptions: state.gameOptions
@@ -95,6 +97,8 @@ function collectSetupValuesFromModal(game) {
     const id = field.dataset.modalOption;
     if (id) values[id] = field.value;
   });
+  const visualStyle = app.querySelector("[data-modal-visual-style]")?.value;
+  if (visualStyle) values.visualStyle = visualStyle;
   return {
     ...selectedGameOptions(game),
     ...values
@@ -157,6 +161,18 @@ function selectedSetupValue(game, field) {
   return supportedValue(stored || field.defaultValue, supported, supported[0]);
 }
 
+function selectedVisualStyleFor(game) {
+  const styles = game.visualStyles || [];
+  if (!styles.length) return "";
+  const supported = styles.map((item) => item.value);
+  return supportedValue(state.gameOptions[game.id]?.visualStyle || game.defaultVisualStyle, supported, supported[0]);
+}
+
+function visualStyleLabelFor(game) {
+  const value = selectedVisualStyleFor(game);
+  return (game.visualStyles || []).find((style) => style.value === value)?.label || "";
+}
+
 function updateGameOption(game, patch) {
   state.gameOptions = {
     ...state.gameOptions,
@@ -175,6 +191,17 @@ function renderSetupFields(game) {
     value: selectedSetupValue(game, field),
     options: field.options
   })).join("");
+}
+
+function renderVisualStyleField(game) {
+  const styles = game.visualStyles || [];
+  if (!styles.length) return "";
+  return renderSelectField({
+    label: "游戏样式",
+    attr: "data-modal-visual-style",
+    value: selectedVisualStyleFor(game),
+    options: styles
+  });
 }
 
 function progressFor(gameId) {
@@ -208,9 +235,11 @@ function recordGameStart(game, mode, difficulty) {
 
 function selectedGameOptions(game) {
   const setupOptions = Object.fromEntries((game.setupFields || []).map((field) => [field.id, selectedSetupValue(game, field)]));
+  const visualStyle = selectedVisualStyleFor(game);
   return {
     ...(state.gameOptions[game.id] || {}),
     ...setupOptions,
+    ...(visualStyle ? { visualStyle } : {}),
     mode: selectedModeFor(game),
     difficulty: selectedDifficultyFor(game)
   };
@@ -338,14 +367,14 @@ function renderDifficultyField(game) {
   });
 }
 
-function renderSkinTabs() {
-  return skinOrder.map((id) => {
-    const skin = skins[id];
-    const active = state.skin === id;
-    const disabled = skin.status !== "ready";
+function renderThemeTabs() {
+  return themeOrder.map((id) => {
+    const theme = interfaceThemes[id];
+    const active = state.theme === id;
+    const disabled = theme.status !== "ready";
     return `
-      <button class="skin-tab ${active ? "is-active" : ""}" data-skin="${id}" ${disabled ? "disabled" : ""}>
-        <span>${skin.name}</span>
+      <button class="skin-tab ${active ? "is-active" : ""}" data-theme="${id}" ${disabled ? "disabled" : ""}>
+        <span>${theme.name}</span>
         ${disabled ? "<small>预留</small>" : "<small>当前</small>"}
       </button>
     `;
@@ -526,12 +555,12 @@ function renderLobby() {
 
       <section class="lobby-hero">
         <div>
-          <p class="intro">一方宣纸，十一种棋局。</p>
+          <p class="intro">一方宣纸，棋局、解谜与街机同盒。</p>
         </div>
         <div class="lobby-status">
           <span>${icon("offline")}可离线</span>
           <span>${games.length} 局游戏</span>
-          <span>${skins[state.skin].name}</span>
+          <span>${interfaceThemes[state.theme]?.name || "国风界面"}</span>
         </div>
       </section>
 
@@ -601,7 +630,13 @@ function renderGame() {
         difficulty,
         mode,
         options,
-        labels: { difficulty: difficultyLabel[difficulty], mode: modeLabel[mode] },
+        theme: state.theme,
+        visualStyle: selectedVisualStyleFor(game),
+        labels: {
+          difficulty: difficultyLabel[difficulty],
+          mode: modeLabel[mode],
+          visualStyle: visualStyleLabelFor(game)
+        },
         playSound: (name) => playFeedbackSound(name),
         reportResult: (result) => handleGameResult(game, result)
       });
@@ -655,6 +690,7 @@ function modalContent() {
           ${renderModeField(game)}
           ${renderDifficultyField(game)}
           ${renderSetupFields(game)}
+          ${renderVisualStyleField(game)}
           <button class="primary-button wide-button" data-start-game>${icon("play")} 开始</button>
         </div>
       `
@@ -668,6 +704,7 @@ function modalContent() {
         <div class="rules-context">
           <span>${modeLabel[selectedModeFor(game)] || "单人挑战"}</span>
           <span>${difficultyLabel[selectedDifficultyFor(game)] || "中等"}</span>
+          ${visualStyleLabelFor(game) ? `<span>${visualStyleLabelFor(game)}</span>` : ""}
         </div>
         <ul class="modal-list">
           ${(game.rules || []).map((rule, index) => `<li><b>${index + 1}</b><span>${rule}</span></li>`).join("")}
@@ -719,9 +756,9 @@ function modalContent() {
     body: `
       <div class="settings-screen">
         <div>
-          <span class="modal-label">皮肤包</span>
+          <span class="modal-label">界面主题</span>
           <div class="skin-tabs compact">
-            ${renderSkinTabs()}
+            ${renderThemeTabs()}
           </div>
         </div>
         <label class="toggle-row">
@@ -776,6 +813,7 @@ function renderModal() {
   app.querySelectorAll("[data-modal-option]").forEach((field) => {
     field.addEventListener("change", (event) => updateGameOption(game, { [event.target.dataset.modalOption]: event.target.value }));
   });
+  app.querySelector("[data-modal-visual-style]")?.addEventListener("change", (event) => updateGameOption(game, { visualStyle: event.target.value }));
   app.querySelector("[data-modal-sound]")?.addEventListener("change", (event) => {
     const sound = event.target.checked;
     setState({ sound });
@@ -809,9 +847,9 @@ function renderModal() {
   app.querySelector("[data-result-lobby]")?.addEventListener("click", () => {
     setState({ currentGame: "", modal: "", pendingGame: "", resultSummary: null });
   });
-  app.querySelectorAll(".modal-panel [data-skin]").forEach((button) => {
+  app.querySelectorAll(".modal-panel [data-theme]").forEach((button) => {
     button.addEventListener("click", () => {
-      if (!button.disabled) setState({ skin: button.dataset.skin });
+      if (!button.disabled) setState({ theme: button.dataset.theme });
     });
   });
 }
@@ -823,7 +861,8 @@ function render() {
     cleanupGame = null;
   }
 
-  document.documentElement.dataset.skin = state.skin;
+  document.documentElement.dataset.theme = state.theme;
+  document.documentElement.dataset.skin = state.theme;
   if (state.currentGame) renderGame();
   else renderLobby();
 }

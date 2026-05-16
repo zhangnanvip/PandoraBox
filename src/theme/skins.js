@@ -1,16 +1,14 @@
-export const skins = {
+export const interfaceThemes = {
   guofeng: {
     id: "guofeng",
-    name: "国风棋盘",
+    name: "国风界面",
     status: "ready",
-    summary: "米纸、竹木、玉色与朱砂点缀，适合棋类长时间游玩。"
-  },
-  playful: {
-    id: "playful",
-    name: "游戏卡通",
-    status: "planned",
-    summary: "预留皮肤包，后续会以更亮的休闲游戏视觉实现。"
+    summary: "米纸、竹木、玉色与朱砂点缀，负责大厅、弹窗和通用控件。"
   }
 };
 
-export const skinOrder = ["guofeng", "playful"];
+export const themeOrder = ["guofeng"];
+
+// Backward compatibility for older imports and saved preferences.
+export const skins = interfaceThemes;
+export const skinOrder = themeOrder;

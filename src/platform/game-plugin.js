@@ -13,6 +13,7 @@ export function normalizeGameManifest(manifest) {
   if (!manifest.id || !manifest.title) {
     throw new TypeError("Game manifest requires id and title.");
   }
+  const visualStyles = asArray(manifest.visualStyles).filter((style) => style?.value && style?.label);
 
   return {
     pluginApiVersion: 1,
@@ -25,10 +26,14 @@ export function normalizeGameManifest(manifest) {
     difficultySupport: DEFAULT_DIFFICULTIES,
     progressType: "match",
     assets: [],
+    visualStyles: [],
+    defaultVisualStyle: "",
     ...manifest,
     secondaryCategories: asArray(manifest.secondaryCategories),
     modeSupport: asArray(manifest.modeSupport, DEFAULT_MODES),
     difficultySupport: asArray(manifest.difficultySupport, DEFAULT_DIFFICULTIES),
+    visualStyles,
+    defaultVisualStyle: manifest.defaultVisualStyle || visualStyles[0]?.value || "",
     assets: asArray(manifest.assets)
   };
 }

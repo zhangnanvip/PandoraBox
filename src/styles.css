@@ -5,6 +5,7 @@
   -webkit-font-smoothing: antialiased;
 }
 
+:root[data-theme="guofeng"],
 :root[data-skin="guofeng"] {
   --page: #f8f2e6;
   --page-strong: #eadfcb;
