@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <rect x="22" y="22" width="116" height="116" rx="18" fill="#fffaf0" stroke="#b63b2b" stroke-width="4"/>
+  <path d="M46 38v84M80 38v84M114 38v84M38 50h84M38 80h84M38 110h84" stroke="#2b241b" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  <path d="M38 80h84" stroke="#b63b2b" stroke-width="8" opacity="0.12"/>
+  <circle cx="62" cy="62" r="19" fill="#fff6df" stroke="#b63b2b" stroke-width="4"/>
+  <circle cx="98" cy="98" r="19" fill="#fff6df" stroke="#2b241b" stroke-width="4"/>
+  <text x="62" y="70" text-anchor="middle" font-family="serif" font-size="24" font-weight="700" fill="#b63b2b">帥</text>
+  <text x="98" y="106" text-anchor="middle" font-family="serif" font-size="24" font-weight="700" fill="#2b241b">將</text>
+</svg>

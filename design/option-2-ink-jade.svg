@@ -1,0 +1,353 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1080" viewBox="0 0 1800 1080">
+  <title>PandoraBox 方案二 · 水墨玉章 分层设计稿</title>
+  <desc>Three editable mobile UI screens: game lobby, centered start modal, settings page.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8f2e6; }
+      .paper { fill: #fffaf0; }
+      .paper-soft { fill: rgba(255,250,240,.76); }
+      .paper-line { stroke: rgba(91,73,49,.18); stroke-width: 1; }
+      .ink { fill: #2b241b; }
+      .muted { fill: #6f604d; }
+      .jade { fill: #1f5f4a; }
+      .jade-line { stroke: #1f5f4a; }
+      .jade-soft { fill: #dceadf; }
+      .red { fill: #b63b2b; }
+      .gold { fill: #d79d38; }
+      .sky { fill: #32799a; }
+      .lotus { fill: #be5c79; }
+      .thin { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .shadow { filter: url(#shadow); }
+      .title { font: 700 30px "PingFang SC", "Songti SC", serif; letter-spacing: 0; }
+      .h1 { font: 700 28px "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+      .h2 { font: 700 22px "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+      .body { font: 400 16px "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+      .small { font: 600 13px "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+      .caption { font: 400 12px "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+      .screen-label { font: 400 22px "Songti SC", serif; fill: #6f604d; }
+    </style>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#2f4b3d" flood-opacity=".16"/>
+    </filter>
+    <pattern id="paperTexture" width="96" height="96" patternUnits="userSpaceOnUse">
+      <rect width="96" height="96" fill="#f8f2e6"/>
+      <path d="M0 22h96M0 70h96M22 0v96M70 0v96" stroke="#6f604d" stroke-opacity=".035"/>
+      <circle cx="18" cy="24" r="1" fill="#6f604d" opacity=".04"/>
+      <circle cx="72" cy="58" r="1.2" fill="#6f604d" opacity=".035"/>
+    </pattern>
+    <linearGradient id="jadeButton" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#3d8068"/>
+      <stop offset="1" stop-color="#1f5f4a"/>
+    </linearGradient>
+    <linearGradient id="cardWash" x1="0" x2="1">
+      <stop offset="0" stop-color="#fffaf0" stop-opacity=".88"/>
+      <stop offset="1" stop-color="#f8f2e6" stop-opacity=".62"/>
+    </linearGradient>
+    <symbol id="icon-settings" viewBox="0 0 24 24">
+      <g class="thin" stroke="#1f5f4a" stroke-width="1.8">
+        <circle cx="12" cy="12" r="3.7"/>
+        <path d="M19.2 15.1c.2.6.5 1.1 1 1.5l.1.1a2 2 0 0 1-2.9 2.9l-.1-.1a2.1 2.1 0 0 0-2.2-.4 2 2 0 0 0-1.2 1.8V21a2 2 0 0 1-4 0v-.1a2 2 0 0 0-1.2-1.8 2.1 2.1 0 0 0-2.2.4l-.1.1a2 2 0 0 1-2.9-2.9l.1-.1a2.1 2.1 0 0 0 .4-2.2A2 2 0 0 0 2.2 13H2a2 2 0 0 1 0-4h.2A2 2 0 0 0 4 7.8a2.1 2.1 0 0 0-.4-2.2l-.1-.1a2 2 0 0 1 2.9-2.9l.1.1A2.1 2.1 0 0 0 8.7 3 2 2 0 0 0 10 1.2V1a2 2 0 0 1 4 0v.2A2 2 0 0 0 15.3 3a2.1 2.1 0 0 0 2.2-.4l.1-.1a2 2 0 0 1 2.9 2.9l-.1.1a2.1 2.1 0 0 0-.4 2.2A2 2 0 0 0 21.8 9h.2a2 2 0 0 1 0 4h-.2a2 2 0 0 0-1.8 1.3Z"/>
+      </g>
+    </symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24">
+      <path d="M8 5v14l11-7L8 5Z" class="thin" stroke="#fffaf0" stroke-width="2"/>
+    </symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24">
+      <path d="M6 6l12 12M18 6 6 18" class="thin" stroke="#2b241b" stroke-width="2"/>
+    </symbol>
+    <symbol id="icon-back" viewBox="0 0 24 24">
+      <path d="m15 18-6-6 6-6" class="thin" stroke="#2b241b" stroke-width="2.4"/>
+    </symbol>
+  </defs>
+
+  <g id="Design Board Background">
+    <rect width="1800" height="1080" fill="url(#paperTexture)"/>
+    <g id="Board Ink Landscape" opacity=".75">
+      <path d="M0 720c160-120 290-156 408-110 120 46 190 138 326 104 130-32 164-154 308-160 150-7 236 114 382 74 116-32 207-103 376-70v522H0Z" fill="#1f5f4a" opacity=".07"/>
+      <path d="M0 850c200-130 360-145 510-42 126 86 235 44 342-34 122-89 236-70 330-8 150 98 284 72 450-58 60-46 116-72 168-76v448H0Z" fill="#2b241b" opacity=".055"/>
+    </g>
+    <text x="900" y="62" text-anchor="middle" class="title ink">方案二 · 水墨玉章</text>
+    <g id="Title Seal">
+      <rect x="1032" y="30" width="26" height="32" rx="5" class="red"/>
+      <text x="1045" y="52" text-anchor="middle" font-size="16" font-family="Songti SC, serif" fill="#fff3dc">弈</text>
+    </g>
+  </g>
+
+  <g id="Component Library" transform="translate(40 940)">
+    <text x="0" y="0" class="small muted">Design Tokens</text>
+    <g id="Color Tokens" transform="translate(0 20)">
+      <rect width="28" height="28" rx="6" fill="#f8f2e6" stroke="#c9b692"/>
+      <rect x="40" width="28" height="28" rx="6" fill="#fffaf0" stroke="#c9b692"/>
+      <rect x="80" width="28" height="28" rx="6" fill="#1f5f4a"/>
+      <rect x="120" width="28" height="28" rx="6" fill="#b63b2b"/>
+      <rect x="160" width="28" height="28" rx="6" fill="#d79d38"/>
+    </g>
+  </g>
+
+  <g id="Screen 1 - Game Lobby" transform="translate(90 92)">
+    <rect id="Lobby Screen Frame" width="390" height="844" rx="22" class="paper shadow paper-line"/>
+    <rect id="Lobby Background Texture" width="390" height="844" rx="22" fill="url(#paperTexture)" opacity=".62"/>
+    <path id="Lobby Ink Wash Bottom" d="M0 640c70-64 132-92 190-84 62 8 96 56 154 49 45-5 73-31 112-54v293H0Z" fill="#1f5f4a" opacity=".08"/>
+    <path id="Lobby Ink Wash Side" d="M265 80c52 38 84 92 96 161 13 76-5 129-54 160" fill="none" stroke="#1f5f4a" stroke-width="8" opacity=".06"/>
+
+    <g id="Lobby Header" transform="translate(24 28)">
+      <g id="Brand Seal">
+        <rect width="42" height="42" rx="9" class="red"/>
+        <rect x="7" y="7" width="28" height="28" rx="2" fill="none" stroke="#fff3dc" stroke-width="2" opacity=".72"/>
+        <text x="21" y="29" text-anchor="middle" font-size="24" font-weight="700" font-family="Songti SC, serif" fill="#fff3dc">弈</text>
+      </g>
+      <text x="56" y="16" class="small jade">游戏大厅</text>
+      <text x="56" y="44" class="h1 ink">PandoraBox 棋局匣</text>
+      <g id="Settings Icon Button" transform="translate(318 0)">
+        <rect width="42" height="42" rx="8" class="paper" stroke="#c9b692"/>
+        <use href="#icon-settings" x="9" y="9" width="24" height="24"/>
+      </g>
+    </g>
+
+    <g id="Offline Status Card" transform="translate(22 92)">
+      <rect width="346" height="70" rx="8" fill="#fffaf0" opacity=".72" stroke="#c9b692"/>
+      <circle cx="24" cy="34" r="7" class="jade"/>
+      <text x="44" y="29" class="small jade">离线模式</text>
+      <text x="44" y="51" class="caption muted">无需网络，畅玩全部棋类</text>
+      <path d="M210 62c24-28 48-40 74-35 22 5 36 17 57 12v31H210Z" fill="#1f5f4a" opacity=".12"/>
+    </g>
+
+    <text x="24" y="196" class="h2 ink">游戏大厅</text>
+    <path d="M126 190h38" class="thin jade-line" stroke-width="1.4" opacity=".5"/>
+
+    <g id="Game Cards">
+      <g id="Game Card - Gomoku" transform="translate(22 218)">
+        <rect width="346" height="90" rx="8" fill="url(#cardWash)" stroke="#c9b692"/>
+        <g id="Gomoku Illustration" transform="translate(18 14)">
+          <rect width="82" height="62" rx="6" fill="#f7f0df" stroke="#c9b692"/>
+          <path d="M14 12h54M14 28h54M14 44h54M24 6v50M44 6v50M64 6v50" class="thin" stroke="#6f604d" opacity=".35"/>
+          <circle cx="39" cy="25" r="8" fill="#2b241b"/>
+          <circle cx="52" cy="25" r="8" fill="#fffaf0" stroke="#2b241b"/>
+          <circle cx="39" cy="39" r="8" fill="#2b241b"/>
+          <path d="M62 5c22 6 32 23 30 50" class="thin" stroke="#1f5f4a" opacity=".35"/>
+        </g>
+        <text x="144" y="36" class="h2 ink">五子棋</text>
+        <text x="144" y="60" class="caption muted">15 路连珠，先连五子获胜</text>
+        <g id="Play Button" transform="translate(305 31)">
+          <circle r="16" class="jade" opacity=".78"/>
+          <use href="#icon-play" x="-9" y="-9" width="18" height="18"/>
+        </g>
+      </g>
+
+      <g id="Game Card - Go" transform="translate(22 326)">
+        <rect width="346" height="90" rx="8" fill="url(#cardWash)" stroke="#c9b692"/>
+        <g id="Go Illustration" transform="translate(18 14)">
+          <rect width="82" height="62" rx="6" fill="#f7f0df" stroke="#c9b692"/>
+          <path d="M14 12h54M14 28h54M14 44h54M24 6v50M44 6v50M64 6v50" class="thin" stroke="#6f604d" opacity=".35"/>
+          <circle cx="34" cy="25" r="8" fill="#2b241b"/>
+          <circle cx="48" cy="34" r="8" fill="#fffaf0" stroke="#2b241b"/>
+          <circle cx="56" cy="22" r="8" fill="#2b241b"/>
+        </g>
+        <text x="144" y="36" class="h2 ink">围棋</text>
+        <text x="144" y="60" class="caption muted">支持 9/13/19 路，提子与停一手</text>
+        <g id="Play Button" transform="translate(305 31)">
+          <circle r="16" class="jade" opacity=".78"/>
+          <use href="#icon-play" x="-9" y="-9" width="18" height="18"/>
+        </g>
+      </g>
+
+      <g id="Game Card - Xiangqi" transform="translate(22 434)">
+        <rect width="346" height="90" rx="8" fill="url(#cardWash)" stroke="#c9b692"/>
+        <g id="Xiangqi Illustration" transform="translate(18 14)">
+          <rect width="82" height="62" rx="6" fill="#f7f0df" stroke="#c9b692"/>
+          <path d="M14 12h54M14 44h54M24 6v50M54 6v50" class="thin" stroke="#6f604d" opacity=".35"/>
+          <circle cx="32" cy="26" r="13" fill="#fff6df" stroke="#b63b2b" stroke-width="2"/>
+          <text x="32" y="32" text-anchor="middle" font-size="14" font-weight="700" fill="#b63b2b">帥</text>
+          <circle cx="55" cy="39" r="13" fill="#fff6df" stroke="#2b241b" stroke-width="2"/>
+          <text x="55" y="45" text-anchor="middle" font-size="14" font-weight="700" fill="#2b241b">將</text>
+        </g>
+        <text x="144" y="36" class="h2 ink">象棋</text>
+        <text x="144" y="60" class="caption muted">红黑对弈，车马炮兵将士象</text>
+        <g id="Play Button" transform="translate(305 31)">
+          <circle r="16" class="jade" opacity=".78"/>
+          <use href="#icon-play" x="-9" y="-9" width="18" height="18"/>
+        </g>
+      </g>
+
+      <g id="Game Card - Chinese Checkers" transform="translate(22 542)">
+        <rect width="346" height="90" rx="8" fill="url(#cardWash)" stroke="#c9b692"/>
+        <g id="Chinese Checkers Illustration" transform="translate(18 14)">
+          <rect width="82" height="62" rx="6" fill="#f7f0df" stroke="#c9b692"/>
+          <circle cx="28" cy="18" r="5" fill="#32799a"/>
+          <circle cx="40" cy="18" r="5" fill="#1f5f4a"/>
+          <circle cx="52" cy="18" r="5" fill="#b63b2b"/>
+          <circle cx="34" cy="32" r="5" fill="#d79d38"/>
+          <circle cx="46" cy="32" r="5" fill="#2b241b"/>
+          <circle cx="58" cy="32" r="5" fill="#be5c79"/>
+        </g>
+        <text x="144" y="36" class="h2 ink">中国跳棋</text>
+        <text x="144" y="60" class="caption muted">六角星棋盘，跳跃对战</text>
+        <g id="Play Button" transform="translate(305 31)">
+          <circle r="16" class="jade" opacity=".78"/>
+          <use href="#icon-play" x="-9" y="-9" width="18" height="18"/>
+        </g>
+      </g>
+
+      <g id="Game Card - Flying Chess" transform="translate(22 650)">
+        <rect width="346" height="90" rx="8" fill="url(#cardWash)" stroke="#c9b692"/>
+        <g id="Flying Chess Illustration" transform="translate(18 14)">
+          <rect width="82" height="62" rx="6" fill="#f7f0df" stroke="#c9b692"/>
+          <circle cx="25" cy="24" r="8" fill="#b63b2b"/>
+          <circle cx="55" cy="24" r="8" fill="#32799a"/>
+          <circle cx="25" cy="44" r="8" fill="#d79d38"/>
+          <rect x="48" y="36" width="18" height="18" rx="4" fill="#fffaf0" stroke="#2b241b"/>
+          <circle cx="57" cy="45" r="2" fill="#2b241b"/>
+        </g>
+        <text x="144" y="36" class="h2 ink">飞行棋</text>
+        <text x="144" y="60" class="caption muted">经典儿时玩法，起飞冲刺</text>
+        <g id="Play Button" transform="translate(305 31)">
+          <circle r="16" class="jade" opacity=".78"/>
+          <use href="#icon-play" x="-9" y="-9" width="18" height="18"/>
+        </g>
+      </g>
+    </g>
+
+    <g id="Bottom Navigation" transform="translate(0 780)">
+      <rect width="390" height="64" fill="#fffaf0" opacity=".86"/>
+      <text x="68" y="42" text-anchor="middle" class="caption jade">游戏大厅</text>
+      <text x="158" y="42" text-anchor="middle" class="caption muted">棋局记录</text>
+      <text x="248" y="42" text-anchor="middle" class="caption muted">收藏夹</text>
+      <text x="328" y="42" text-anchor="middle" class="caption muted">我的</text>
+    </g>
+  </g>
+
+  <text x="285" y="1000" text-anchor="middle" class="screen-label">1. 游戏大厅</text>
+
+  <g id="Screen 2 - Centered Start Modal" transform="translate(705 92)">
+    <rect id="Modal Screen Frame" width="390" height="844" rx="22" class="paper shadow paper-line"/>
+    <rect width="390" height="844" rx="22" fill="url(#paperTexture)" opacity=".62"/>
+    <g id="Dimmed Underlay">
+      <g id="Dimmed Lobby Placeholder" opacity=".42">
+        <rect x="24" y="28" width="42" height="42" rx="9" class="red"/>
+        <text x="80" y="57" class="h1 ink">PandoraBox 棋局匣</text>
+        <rect x="22" y="92" width="346" height="70" rx="8" fill="#fffaf0" stroke="#c9b692"/>
+        <rect x="22" y="218" width="346" height="90" rx="8" fill="url(#cardWash)" stroke="#c9b692"/>
+        <rect x="22" y="326" width="346" height="90" rx="8" fill="url(#cardWash)" stroke="#c9b692"/>
+        <rect x="22" y="434" width="346" height="90" rx="8" fill="url(#cardWash)" stroke="#c9b692"/>
+      </g>
+      <rect width="390" height="844" rx="22" fill="#251b0e" opacity=".52"/>
+    </g>
+    <g id="Centered Start Modal" transform="translate(34 218)">
+      <rect width="322" height="430" rx="18" class="paper shadow" stroke="#c9b692"/>
+      <path d="M0 330c58-48 104-61 151-42 48 20 78 52 126 35 23-8 37-24 45-40v147H0Z" fill="#1f5f4a" opacity=".06"/>
+      <text x="161" y="54" text-anchor="middle" class="title ink">五子棋开局</text>
+      <g id="Modal Seal" transform="translate(230 31)">
+        <rect width="22" height="28" rx="4" class="red"/>
+        <text x="11" y="19" text-anchor="middle" font-size="13" font-family="Songti SC, serif" fill="#fff3dc">弈</text>
+      </g>
+      <use href="#icon-close" x="284" y="28" width="22" height="22"/>
+
+      <text x="28" y="96" class="small muted">对战模式</text>
+      <g id="Mode Selector" transform="translate(28 116)">
+        <rect width="136" height="52" rx="8" class="jade-soft jade-line" stroke-width="1"/>
+        <circle cx="28" cy="26" r="8" class="jade"/>
+        <text x="50" y="32" class="small jade">单人对弈</text>
+        <rect x="176" width="118" height="52" rx="8" fill="#fffaf0" stroke="#c9b692"/>
+        <circle cx="202" cy="26" r="6" fill="#6f604d"/>
+        <circle cx="214" cy="26" r="6" fill="#6f604d" opacity=".65"/>
+        <text x="232" y="32" class="small ink">本地双人</text>
+      </g>
+
+      <text x="28" y="204" class="small muted">难度选择</text>
+      <g id="Difficulty Selector" transform="translate(28 224)">
+        <rect width="90" height="38" rx="19" fill="url(#jadeButton)"/>
+        <text x="45" y="25" text-anchor="middle" class="small" fill="#fffaf0">简单</text>
+        <rect x="108" width="82" height="38" rx="19" fill="#fffaf0" stroke="#c9b692"/>
+        <text x="149" y="25" text-anchor="middle" class="small ink">中等</text>
+        <rect x="208" width="82" height="38" rx="19" fill="#fffaf0" stroke="#c9b692"/>
+        <text x="249" y="25" text-anchor="middle" class="small ink">困难</text>
+      </g>
+
+      <g id="Board Preview" transform="translate(103 286)">
+        <rect width="116" height="116" rx="6" fill="#f7f0df" stroke="#c9b692"/>
+        <path d="M15 15h86M15 32h86M15 49h86M15 66h86M15 83h86M15 100h86M15 15v86M32 15v86M49 15v86M66 15v86M83 15v86M100 15v86" class="thin" stroke="#6f604d" opacity=".25"/>
+        <circle cx="50" cy="50" r="7" fill="#2b241b"/>
+        <circle cx="66" cy="50" r="7" fill="#fffaf0" stroke="#2b241b"/>
+        <circle cx="58" cy="66" r="7" fill="#fffaf0" stroke="#2b241b"/>
+        <circle cx="74" cy="66" r="7" fill="#2b241b"/>
+        <circle cx="74" cy="82" r="7" fill="#fffaf0" stroke="#2b241b"/>
+        <circle cx="82" cy="50" r="7" fill="#fffaf0" opacity=".6"/>
+        <circle cx="66" cy="82" r="7" fill="#2b241b"/>
+      </g>
+      <g id="Modal Primary Button" transform="translate(28 356)">
+        <rect width="266" height="54" rx="8" fill="url(#jadeButton)"/>
+        <text x="133" y="35" text-anchor="middle" font-size="21" font-weight="700" fill="#fffaf0">开始 ▶</text>
+      </g>
+    </g>
+  </g>
+
+  <text x="900" y="1000" text-anchor="middle" class="screen-label">2. 五子棋开局弹窗（居中）</text>
+
+  <g id="Screen 3 - Settings Page" transform="translate(1320 92)">
+    <rect id="Settings Screen Frame" width="390" height="844" rx="22" class="paper shadow paper-line"/>
+    <rect width="390" height="844" rx="22" fill="url(#paperTexture)" opacity=".62"/>
+    <path id="Settings Ink Wash Top" d="M182 76c46-42 91-52 137-28 28 15 48 17 71 5v68H182Z" fill="#2b241b" opacity=".08"/>
+    <g id="Settings Header" transform="translate(22 26)">
+      <use href="#icon-back" x="0" y="8" width="24" height="24"/>
+      <text x="48" y="35" class="title ink">设置</text>
+      <rect x="116" y="12" width="18" height="24" rx="4" class="red"/>
+      <text x="125" y="29" text-anchor="middle" font-size="11" font-family="Songti SC, serif" fill="#fff3dc">弈</text>
+    </g>
+
+    <g id="Settings Section - Appearance" transform="translate(22 100)">
+      <rect width="346" height="128" rx="8" fill="#fffaf0" opacity=".76" stroke="#c9b692"/>
+      <text x="18" y="26" class="caption muted">外观</text>
+      <line x1="18" y1="40" x2="328" y2="40" stroke="#c9b692" opacity=".5"/>
+      <text x="52" y="76" class="small ink">皮肤包</text>
+      <text x="264" y="76" class="caption muted">水墨玉章</text>
+      <text x="52" y="108" class="small ink">国风棋盘</text>
+      <rect x="294" y="82" width="28" height="28" rx="5" fill="#f7f0df" stroke="#c9b692"/>
+      <path d="M300 88h16M300 96h16M300 104h16M304 86v20M312 86v20" class="thin" stroke="#6f604d" opacity=".5"/>
+      <path d="M326 69l6 6-6 6M326 101l6 6-6 6" class="thin" stroke="#6f604d" stroke-width="1.5"/>
+      <circle cx="26" cy="70" r="7" class="jade"/>
+      <rect x="19" y="96" width="14" height="14" class="jade" opacity=".8"/>
+    </g>
+
+    <g id="Settings Section - Sound" transform="translate(22 246)">
+      <rect width="346" height="116" rx="8" fill="#fffaf0" opacity=".76" stroke="#c9b692"/>
+      <text x="18" y="26" class="caption muted">音效与音乐</text>
+      <line x1="18" y1="40" x2="328" y2="40" stroke="#c9b692" opacity=".5"/>
+      <text x="52" y="73" class="small ink">音效</text>
+      <rect x="290" y="54" width="42" height="24" rx="12" class="jade"/>
+      <circle cx="319" cy="66" r="10" class="paper"/>
+      <text x="52" y="103" class="small ink">音量</text>
+      <line x1="126" y1="98" x2="286" y2="98" stroke="#1f5f4a" stroke-width="3" stroke-linecap="round"/>
+      <line x1="286" y1="98" x2="324" y2="98" stroke="#c9b692" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="286" cy="98" r="7" class="jade"/>
+      <text x="334" y="103" text-anchor="end" class="caption muted">70%</text>
+    </g>
+
+    <g id="Settings Section - Status" transform="translate(22 382)">
+      <rect width="346" height="84" rx="8" fill="#fffaf0" opacity=".76" stroke="#c9b692"/>
+      <text x="18" y="26" class="caption muted">状态</text>
+      <line x1="18" y1="40" x2="328" y2="40" stroke="#c9b692" opacity=".5"/>
+      <circle cx="28" cy="61" r="5" class="jade"/>
+      <text x="52" y="66" class="small ink">离线状态</text>
+      <text x="284" y="66" text-anchor="end" class="caption jade">离线模式</text>
+      <path d="M326 55l6 6-6 6" class="thin" stroke="#6f604d" stroke-width="1.5"/>
+    </g>
+
+    <g id="Settings Section - Data" transform="translate(22 486)">
+      <rect width="346" height="130" rx="8" fill="#fffaf0" opacity=".76" stroke="#c9b692"/>
+      <text x="18" y="26" class="caption muted">数据与存储</text>
+      <line x1="18" y1="40" x2="328" y2="40" stroke="#c9b692" opacity=".5"/>
+      <text x="52" y="73" class="small ink">本地棋局数据</text>
+      <text x="284" y="73" text-anchor="end" class="caption muted">已保存 128 局</text>
+      <text x="52" y="106" class="small ink">清除缓存</text>
+      <text x="284" y="106" text-anchor="end" class="caption muted">12.4 MB</text>
+      <path d="M326 62l6 6-6 6M326 95l6 6-6 6" class="thin" stroke="#6f604d" stroke-width="1.5"/>
+    </g>
+
+    <g id="Update Button" transform="translate(22 650)">
+      <rect width="346" height="54" rx="8" fill="#fffaf0" stroke="#1f5f4a"/>
+      <text x="173" y="34" text-anchor="middle" class="small jade">检查更新（离线）</text>
+    </g>
+  </g>
+
+  <text x="1515" y="1000" text-anchor="middle" class="screen-label">3. 设置页</text>
+</svg>

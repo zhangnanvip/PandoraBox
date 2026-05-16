@@ -1,0 +1,31 @@
+{
+  "name": "潘多拉魔盒游戏大厅",
+  "short_name": "潘多拉魔盒",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f0df",
+  "theme_color": "#1f5f4a",
+  "description": "可离线游玩的移动端棋类小游戏合集",
+  "icons": [
+    {
+      "src": "./public/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./public/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./public/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

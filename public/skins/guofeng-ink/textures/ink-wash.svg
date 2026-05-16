@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="420" viewBox="0 0 760 420">
+  <rect width="760" height="420" fill="none"/>
+  <filter id="soft">
+    <feGaussianBlur stdDeviation="12"/>
+  </filter>
+  <path d="M16 306c70-64 132-93 190-86 64 8 95 54 155 49 67-6 96-78 171-82 72-3 120 57 211 38v195H16Z" fill="#1f5f4a" opacity="0.09" filter="url(#soft)"/>
+  <path d="M28 334c91-56 155-69 213-40 67 33 109 8 152-23 66-47 126-27 178 0 51 26 107 28 165 6v143H28Z" fill="#2b241b" opacity="0.075" filter="url(#soft)"/>
+  <path d="M20 238c62-26 116-29 160-9 48 22 90 21 125-3 54-37 106-39 156-6 44 29 88 29 134 1 38-23 83-26 135-8" fill="none" stroke="#1f5f4a" stroke-opacity="0.16" stroke-width="3"/>
+</svg>

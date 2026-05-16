@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="PandoraBox">
+  <rect width="256" height="256" rx="48" fill="#f7f0df"/>
+  <path d="M54 76h148v104H54z" fill="#d9b36d" stroke="#513d24" stroke-width="8"/>
+  <path d="M74 96h108M74 128h108M74 160h108M96 84v88M128 84v88M160 84v88" stroke="#6f4f29" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="96" cy="128" r="16" fill="#1b1712"/>
+  <circle cx="160" cy="128" r="16" fill="#faf6ea" stroke="#1b1712" stroke-width="5"/>
+  <path d="M72 204h112" stroke="#1f5f4a" stroke-width="12" stroke-linecap="round"/>
+</svg>
