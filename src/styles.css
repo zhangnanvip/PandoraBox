@@ -1140,6 +1140,14 @@ input[type="range"] {
   background: rgba(62, 39, 18, 0.55);
 }
 
+.grid-board button.is-win {
+  background: rgba(198, 66, 52, 0.14);
+}
+
+.grid-board button.is-win .stone {
+  box-shadow: 0 0 0 3px rgba(255, 250, 240, 0.68), 0 0 0 6px rgba(198, 66, 52, 0.45), 0 8px 18px rgba(39, 24, 8, 0.26);
+}
+
 .stone {
   position: absolute;
   inset: 12%;

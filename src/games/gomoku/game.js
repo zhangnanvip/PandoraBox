@@ -18,6 +18,9 @@ function initialState() {
     turn: BLACK,
     winner: EMPTY,
     lastMove: -1,
+    winLine: [],
+    hintMove: -1,
+    hintReason: "",
     history: [],
     message: "黑方先手"
   };
@@ -61,6 +64,34 @@ function hasFive(board, index, player) {
     const b = countDirection(board, x, y, -dx, -dy, player);
     return a.count + b.count + 1 >= 5;
   });
+}
+
+function contiguousLine(board, index, player, dx, dy) {
+  const line = [index];
+  const [x, y] = xy(index);
+  let cx = x + dx;
+  let cy = y + dy;
+  while (inside(cx, cy) && board[indexAt(cx, cy)] === player) {
+    line.push(indexAt(cx, cy));
+    cx += dx;
+    cy += dy;
+  }
+  cx = x - dx;
+  cy = y - dy;
+  while (inside(cx, cy) && board[indexAt(cx, cy)] === player) {
+    line.unshift(indexAt(cx, cy));
+    cx -= dx;
+    cy -= dy;
+  }
+  return line;
+}
+
+function winningLine(board, index, player) {
+  for (const [dx, dy] of DIRS) {
+    const line = contiguousLine(board, index, player, dx, dy);
+    if (line.length >= 5) return line;
+  }
+  return [];
 }
 
 function moveScore(board, index, player) {
@@ -112,8 +143,8 @@ function winningMoves(board, player, moves) {
 }
 
 function candidateMoves(board, difficulty) {
-  if (difficulty === "easy") return nearbyMoves(board);
-  const moves = nearbyMoves(board);
+  const radius = difficulty === "devil" ? 3 : difficulty === "easy" ? 1 : 2;
+  const moves = nearbyMoves(board, radius);
   return moves.length ? moves : legalMoves(board);
 }
 
@@ -121,15 +152,15 @@ function legalMoves(board) {
   return board.flatMap((cell, index) => cell === EMPTY ? [index] : []);
 }
 
-function nearbyMoves(board) {
+function nearbyMoves(board, radius = 2) {
   const occupied = board.flatMap((cell, index) => cell ? [index] : []);
   if (!occupied.length) return [indexAt(7, 7)];
 
   const candidates = new Set();
   for (const index of occupied) {
     const [x, y] = xy(index);
-    for (let dy = -2; dy <= 2; dy += 1) {
-      for (let dx = -2; dx <= 2; dx += 1) {
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      for (let dx = -radius; dx <= radius; dx += 1) {
         const nx = x + dx;
         const ny = y + dy;
         if (inside(nx, ny) && board[indexAt(nx, ny)] === EMPTY) {
@@ -141,43 +172,102 @@ function nearbyMoves(board) {
   return [...candidates];
 }
 
-function chooseAiMove(board, difficulty, player = WHITE) {
+function profileWeight(profile, difficulty) {
+  if (difficulty === "devil") {
+    return profile.four * 18000 + profile.openThree * 5200 + profile.openTwo * 260;
+  }
+  if (difficulty === "hard") {
+    return profile.four * 12500 + profile.openThree * 3100 + profile.openTwo * 180;
+  }
+  return profile.four * 7800 + profile.openThree * 1700 + profile.openTwo * 110;
+}
+
+function classifyMove(board, index, player) {
+  const rival = player === BLACK ? WHITE : BLACK;
+  const ownBoard = applyMoveToBoard(board, index, player);
+  const rivalBoard = applyMoveToBoard(board, index, rival);
+  const profile = threatProfile(ownBoard, index, player);
+  const rivalProfile = threatProfile(rivalBoard, index, rival);
+
+  if (hasFive(ownBoard, index, player)) return "直接连五取胜";
+  if (hasFive(rivalBoard, index, rival)) return "封住对手成五";
+  if (profile.four >= 2) return "形成双四威胁";
+  if (profile.four && profile.openThree) return "形成冲四加活三";
+  if (rivalProfile.four >= 2) return "拆掉对手双四";
+  if (rivalProfile.four) return "封住对手冲四";
+  if (profile.openThree >= 2) return "形成双活三";
+  if (rivalProfile.openThree >= 2) return "压住对手双活三";
+  if (profile.openThree) return "抢出活三";
+  if (rivalProfile.openThree) return "限制对手活三";
+  return moveScore(board, index, player) >= moveScore(board, index, rival) ? "扩展己方棋形" : "压制对手强点";
+}
+
+function evaluateMove(board, index, player, difficulty) {
+  const rival = player === BLACK ? WHITE : BLACK;
+  const attack = moveScore(board, index, player);
+  const defense = moveScore(board, index, rival);
+  const next = applyMoveToBoard(board, index, player);
+  const profile = threatProfile(next, index, player);
+  const rivalProfile = threatProfile(applyMoveToBoard(board, index, rival), index, rival);
+  const doubleThreat = profile.four + profile.openThree >= 2;
+  const blockFork = rivalProfile.four + rivalProfile.openThree >= 2;
+  const ownWeight = profileWeight(profile, difficulty);
+  const blockWeight = profileWeight(rivalProfile, difficulty) * (difficulty === "devil" ? 0.88 : difficulty === "hard" ? 0.72 : 0.45);
+  let score = attack + defense * (difficulty === "medium" ? 0.72 : difficulty === "hard" ? 0.98 : 1.08) + ownWeight + blockWeight;
+
+  if (difficulty === "hard" || difficulty === "devil") {
+    score += doubleThreat ? (difficulty === "devil" ? 22000 : 7800) : 0;
+    score += blockFork ? (difficulty === "devil" ? 14000 : 6200) : 0;
+  }
+
+  if (difficulty === "devil") {
+    const replies = candidateMoves(next, "hard");
+    const rivalWins = winningMoves(next, rival, replies).length;
+    const strongestReply = replies.reduce((max, reply) =>
+      Math.max(max, moveScore(next, reply, rival) + profileWeight(threatProfile(applyMoveToBoard(next, reply, rival), reply, rival), "hard")), 0);
+    score -= rivalWins * 90000;
+    score -= strongestReply * 0.52;
+    score += profile.four * 9000 + profile.openThree * 3400;
+  }
+
+  score += Math.random() * (difficulty === "devil" ? 1.2 : difficulty === "hard" ? 4 : 12);
+  return score;
+}
+
+function recommendMove(board, difficulty, player = WHITE) {
   const rival = player === BLACK ? WHITE : BLACK;
   const moves = candidateMoves(board, difficulty);
-  if (!moves.length) return -1;
+  if (!moves.length) return { index: -1, reason: "" };
 
-  if (difficulty === "easy") return choice(moves);
+  if (difficulty === "easy") {
+    const index = choice(moves);
+    return { index, reason: classifyMove(board, index, player) };
+  }
   const ownWins = winningMoves(board, player, moves);
-  if (ownWins.length) return ownWins.sort((a, b) => moveScore(board, b, player) - moveScore(board, a, player))[0];
+  if (ownWins.length) {
+    const index = ownWins.sort((a, b) => moveScore(board, b, player) - moveScore(board, a, player))[0];
+    return { index, reason: "直接连五取胜" };
+  }
   const rivalWins = winningMoves(board, rival, moves);
-  if (rivalWins.length) return rivalWins.sort((a, b) => moveScore(board, b, rival) - moveScore(board, a, rival))[0];
+  if (rivalWins.length) {
+    const index = rivalWins.sort((a, b) => moveScore(board, b, rival) - moveScore(board, a, rival))[0];
+    return { index, reason: "封住对手成五" };
+  }
 
   let best = moves[0];
   let bestScore = -Infinity;
   for (const move of moves) {
-    const attack = moveScore(board, move, player);
-    const defense = moveScore(board, move, rival);
-    const next = applyMoveToBoard(board, move, player);
-    const profile = threatProfile(next, move, player);
-    const rivalProfile = threatProfile(applyMoveToBoard(board, move, rival), move, rival);
-    const doubleThreat = profile.four + profile.openThree >= 2 ? 5200 : 0;
-    const blockFork = rivalProfile.four + rivalProfile.openThree >= 2 ? 4600 : 0;
-    let score = attack + defense * (difficulty === "hard" || difficulty === "devil" ? 0.96 : 0.72) + doubleThreat + blockFork;
-
-    if (difficulty === "devil") {
-      const replies = candidateMoves(next, "hard");
-      const strongestReply = replies.reduce((max, reply) => Math.max(max, moveScore(next, reply, rival)), 0);
-      score += profile.four * 12000 + profile.openThree * 2600 + profile.openTwo * 180;
-      score -= strongestReply * 0.62;
-    }
-
-    score += Math.random() * (difficulty === "devil" ? 2 : 12);
+    const score = evaluateMove(board, move, player, difficulty);
     if (score > bestScore) {
       bestScore = score;
       best = move;
     }
   }
-  return best;
+  return { index: best, reason: classifyMove(board, best, player) };
+}
+
+function chooseAiMove(board, difficulty, player = WHITE) {
+  return recommendMove(board, difficulty, player).index;
 }
 
 function turnLabel(turn) {
@@ -190,17 +280,21 @@ function renderCell(cell, index, state) {
   const hoshi = [3, 7, 11].includes(row) && [3, 7, 11].includes(col);
   const stone = cell === BLACK ? "black" : cell === WHITE ? "white" : "";
   return `
-    <button class="${hoshi ? "hoshi" : ""}" data-cell="${index}" aria-label="第 ${row + 1} 行第 ${col + 1} 列">
+    <button class="${hoshi ? "hoshi" : ""} ${state.winLine?.includes(index) ? "is-win" : ""}" data-cell="${index}" aria-label="第 ${row + 1} 行第 ${col + 1} 列">
       ${stone ? `<span class="stone ${stone}"></span>` : ""}
       ${state.lastMove === index ? "<span class=\"last-marker\"></span>" : ""}
+      ${state.hintMove === index ? "<span class=\"hint-marker\"></span>" : ""}
     </button>
   `;
 }
 
 export function mountGomoku(root, context) {
-  const storageKey = `gomoku:${context.mode}`;
+  const storageKey = `gomoku:${context.mode}:${context.difficulty}`;
   let state = loadState(storageKey, initialState());
   if (!isValidState(state)) state = initialState();
+  if (!Array.isArray(state.winLine)) state.winLine = [];
+  if (!Number.isFinite(state.hintMove)) state.hintMove = -1;
+  if (typeof state.hintReason !== "string") state.hintReason = "";
 
   let disposed = false;
   let aiTimer = 0;
@@ -216,6 +310,9 @@ export function mountGomoku(root, context) {
       turn: state.turn,
       winner: state.winner,
       lastMove: state.lastMove,
+      winLine: [...state.winLine],
+      hintMove: state.hintMove,
+      hintReason: state.hintReason,
       message: state.message
     };
   }
@@ -225,6 +322,9 @@ export function mountGomoku(root, context) {
     state.turn = previous.turn;
     state.winner = previous.winner;
     state.lastMove = previous.lastMove;
+    state.winLine = [...(previous.winLine || [])];
+    state.hintMove = previous.hintMove ?? -1;
+    state.hintReason = previous.hintReason || "";
     state.message = previous.message;
   }
 
@@ -246,11 +346,14 @@ export function mountGomoku(root, context) {
   function place(index) {
     if (state.winner || state.board[index] !== EMPTY) return false;
     state.history.push(snapshot());
+    state.hintMove = -1;
+    state.hintReason = "";
     state.board[index] = state.turn;
     state.lastMove = index;
 
     if (hasFive(state.board, index, state.turn)) {
       state.winner = state.turn;
+      state.winLine = winningLine(state.board, index, state.turn);
       state.message = `${turnLabel(state.turn)}获胜`;
       reportResult();
     } else if (!legalMoves(state.board).length) {
@@ -260,6 +363,7 @@ export function mountGomoku(root, context) {
     } else {
       state.turn = state.turn === BLACK ? WHITE : BLACK;
       state.message = `轮到${turnLabel(state.turn)}`;
+      context.playSound?.("move");
     }
 
     save();
@@ -274,6 +378,7 @@ export function mountGomoku(root, context) {
       if (!previous) break;
       restore(previous);
     }
+    if (!state.winner) resultReported = false;
     save();
     render();
   }
@@ -332,12 +437,13 @@ export function mountGomoku(root, context) {
     root.querySelector("[data-action='restart']").addEventListener("click", restart);
     root.querySelector("[data-action='hint']").addEventListener("click", () => {
       const player = context.mode === "ai" ? BLACK : state.turn;
-      const move = chooseAiMove(state.board.map((cell) => cell), context.difficulty === "easy" ? "medium" : context.difficulty, player);
-      if (move >= 0) {
-        root.querySelector(`[data-cell='${move}']`)?.classList.add("cell-highlight");
-        state.message = `${turnLabel(player)}可考虑落在第 ${Math.floor(move / SIZE) + 1} 行第 ${move % SIZE + 1} 列`;
+      const recommendation = recommendMove(state.board.map((cell) => cell), context.difficulty === "easy" ? "medium" : context.difficulty, player);
+      if (recommendation.index >= 0) {
+        state.hintMove = recommendation.index;
+        state.hintReason = recommendation.reason;
+        state.message = `${turnLabel(player)}可考虑第 ${Math.floor(recommendation.index / SIZE) + 1} 行第 ${recommendation.index % SIZE + 1} 列：${recommendation.reason}`;
         save();
-        window.setTimeout(render, 650);
+        render();
       }
     });
 
