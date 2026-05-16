@@ -1,4 +1,5 @@
-import { drawFood, drawSnakeArena, drawSnakeSegment } from "../arcade/classic-visuals.js";
+import { bindVirtualJoystick, directionFromSwipe, joystickMarkup } from "../arcade/controls.js";
+import { addBurst, classicArcade, drawEffects, drawFood, drawSnakeArena, drawSnakeSegment, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
 const SIZE = 18;
 const CELL = 20;
@@ -29,6 +30,10 @@ function randomFood(snake) {
   return food;
 }
 
+function cellCenter(cell) {
+  return { x: cell.x * CELL + CELL / 2, y: cell.y * CELL + CELL / 2 };
+}
+
 function initialState() {
   const snake = [
     { x: 8, y: 10 },
@@ -44,7 +49,9 @@ function initialState() {
     time: 0,
     over: false,
     won: false,
-    message: "吃到能量豆，越长越快"
+    message: "吃到能量豆，越长越快",
+    effects: [],
+    shake: 0
   };
 }
 
@@ -71,6 +78,9 @@ function step(state, config, context) {
   const dir = DIRS[state.dir];
   const head = { x: state.snake[0].x + dir.x, y: state.snake[0].y + dir.y };
   if (head.x < 0 || head.y < 0 || head.x >= SIZE || head.y >= SIZE || state.snake.some((cell) => cell.x === head.x && cell.y === head.y)) {
+    const currentHead = cellCenter(state.snake[0]);
+    addBurst(state.effects, currentHead.x, currentHead.y, { count: 22, color: classicArcade.red, secondary: classicArcade.yellow, speed: 90, radius: 12 });
+    state.shake = Math.max(state.shake, 5);
     finish(state, false, context);
     return;
   }
@@ -78,6 +88,8 @@ function step(state, config, context) {
   state.snake.unshift(head);
   if (head.x === state.food.x && head.y === state.food.y) {
     state.score += 10;
+    const foodCenter = cellCenter(head);
+    addBurst(state.effects, foodCenter.x, foodCenter.y, { count: 14, color: classicArcade.green, secondary: classicArcade.yellow, speed: 72, radius: 9 });
     state.food = randomFood(state.snake);
     state.message = `长度 ${state.snake.length}/${config.target}`;
     context.playSound?.("score");
@@ -89,11 +101,16 @@ function step(state, config, context) {
 
 function draw(state, ctx) {
   ctx.clearRect(0, 0, W, W);
+  ctx.save();
+  const offset = shakeOffset(state.shake);
+  ctx.translate(offset.x, offset.y);
   drawSnakeArena(ctx, SIZE, CELL);
   drawFood(ctx, state.food, CELL);
   state.snake.forEach((cell, index) => {
     drawSnakeSegment(ctx, cell, index, CELL, state.dir);
   });
+  drawEffects(ctx, state.effects);
+  ctx.restore();
 }
 
 export function mountSnake(root, context) {
@@ -103,6 +120,8 @@ export function mountSnake(root, context) {
   let last = performance.now();
   let acc = 0;
   let disposed = false;
+  const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0 };
+  let pointerStart = null;
 
   root.innerHTML = `
     <section class="game-panel game-status">
@@ -118,13 +137,10 @@ export function mountSnake(root, context) {
     <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas" width="${W}" height="${W}" aria-label="贪吃蛇"></canvas></div>
       <div class="arcade-controls">
-        <div class="arcade-dpad" aria-label="移动方向">
-          <button data-control="up">上</button>
-          <button data-control="left">左</button>
-          <button data-control="right">右</button>
-          <button data-control="down">下</button>
+        ${joystickMarkup("贪吃蛇方向")}
+        <div class="arcade-control-stack">
+          <button class="arcade-fire compact" data-action="restart">重开</button>
         </div>
-        <button class="arcade-fire" data-action="restart">重开</button>
       </div>
     </section>
   `;
@@ -150,6 +166,8 @@ export function mountSnake(root, context) {
     const dt = Math.min(0.08, (now - last) / 1000);
     last = now;
     state.time += dt;
+    updateEffects(state.effects, dt);
+    state.shake = Math.max(0, state.shake - dt * 18);
     acc += dt;
     while (acc >= config.tick) {
       acc -= config.tick;
@@ -169,9 +187,22 @@ export function mountSnake(root, context) {
     event.preventDefault();
     setDir(dir);
   };
-  root.querySelectorAll("[data-control]").forEach((button) => {
-    button.addEventListener("click", () => setDir(button.dataset.control));
-  });
+  const cleanupJoystick = bindVirtualJoystick(root, controls, { onDirection: setDir });
+  const onPointerDown = (event) => {
+    pointerStart = { x: event.clientX, y: event.clientY };
+  };
+  const onPointerUp = (event) => {
+    if (!pointerStart) return;
+    const dir = directionFromSwipe(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
+    if (dir) setDir(dir);
+    pointerStart = null;
+  };
+  const onPointerCancel = () => {
+    pointerStart = null;
+  };
+  canvas.addEventListener("pointerdown", onPointerDown);
+  canvas.addEventListener("pointerup", onPointerUp);
+  canvas.addEventListener("pointercancel", onPointerCancel);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   window.addEventListener("keydown", onKey);
   raf = requestAnimationFrame(loop);
@@ -179,6 +210,10 @@ export function mountSnake(root, context) {
   return () => {
     disposed = true;
     cancelAnimationFrame(raf);
+    cleanupJoystick();
+    canvas.removeEventListener("pointerdown", onPointerDown);
+    canvas.removeEventListener("pointerup", onPointerUp);
+    canvas.removeEventListener("pointercancel", onPointerCancel);
     window.removeEventListener("keydown", onKey);
   };
 }

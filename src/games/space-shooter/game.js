@@ -1,4 +1,5 @@
-import { classicArcade, drawEnemyShip, drawPlayerShip, drawStarfield } from "../arcade/classic-visuals.js";
+import { bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { addBurst, classicArcade, drawEffects, drawEnemyShip, drawPlayerShip, drawStarfield, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
 const W = 300;
 const H = 400;
@@ -11,6 +12,10 @@ const CONFIG = {
 
 function overlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function initialState(config) {
@@ -26,7 +31,9 @@ function initialState(config) {
     time: 0,
     over: false,
     won: false,
-    message: "穿过弹幕"
+    message: "穿过弹幕",
+    effects: [],
+    shake: 0
   };
 }
 
@@ -56,11 +63,13 @@ function spawnEnemy(state, config) {
 }
 
 function update(state, config, controls, dt, context) {
-  if (state.over) return;
   state.time += dt;
+  updateEffects(state.effects, dt);
+  state.shake = Math.max(0, state.shake - dt * 18);
+  if (state.over) return;
   const player = state.player;
-  const moveX = (controls.right ? 1 : 0) - (controls.left ? 1 : 0);
-  const moveY = (controls.down ? 1 : 0) - (controls.up ? 1 : 0);
+  const moveX = controls.axisX || ((controls.right ? 1 : 0) - (controls.left ? 1 : 0));
+  const moveY = controls.axisY || ((controls.down ? 1 : 0) - (controls.up ? 1 : 0));
   player.x = Math.max(14, Math.min(W - 14, player.x + moveX * 152 * dt));
   player.y = Math.max(32, Math.min(H - 18, player.y + moveY * 152 * dt));
   if (controls.pointer) {
@@ -72,6 +81,7 @@ function update(state, config, controls, dt, context) {
   if (player.reload <= 0) {
     state.bullets.push({ x: player.x - 5, y: player.y - 16, vy: -230 });
     state.bullets.push({ x: player.x + 5, y: player.y - 16, vy: -230 });
+    addBurst(state.effects, player.x, player.y - 18, { count: 4, color: classicArcade.cyan, secondary: classicArcade.white, speed: 34, life: 0.12, radius: 3 });
     player.reload = 0.18;
   }
 
@@ -107,19 +117,25 @@ function update(state, config, controls, dt, context) {
     if (hit) {
       hit.hp -= 1;
       bullet.y = -99;
+      addBurst(state.effects, bullet.x, bullet.y, { count: 6, color: classicArcade.cyan, secondary: classicArcade.white, speed: 46, life: 0.18, radius: 4 });
       if (hit.hp <= 0) {
+        addBurst(state.effects, hit.x, hit.y, { count: 18, color: classicArcade.red, secondary: classicArcade.yellow, speed: 94, radius: 11 });
         state.killed += 1;
         state.score += 80;
         state.message = `击落敌机 ${state.killed}/${config.waves}`;
+        state.shake = Math.max(state.shake, 3.4);
         context.playSound?.("score");
       }
     }
   }
+  state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
 
   const playerRect = { x: player.x - 12, y: player.y - 13, w: 24, h: 26 };
   const hitByBullet = state.enemyBullets.some((bullet) => overlap(playerRect, { x: bullet.x - 4, y: bullet.y - 4, w: 8, h: 8 }));
   const hitByEnemy = state.enemies.some((enemy) => overlap(playerRect, { x: enemy.x - 13, y: enemy.y - 11, w: 26, h: 22 }));
   if ((hitByBullet || hitByEnemy) && player.invuln <= 0) {
+    addBurst(state.effects, player.x, player.y, { count: 22, color: classicArcade.red, secondary: classicArcade.yellow, speed: 104, radius: 13 });
+    state.shake = Math.max(state.shake, 6);
     player.lives -= 1;
     player.invuln = 1.2;
     state.enemyBullets = [];
@@ -132,6 +148,9 @@ function update(state, config, controls, dt, context) {
 
 function draw(state, ctx) {
   ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  const offset = shakeOffset(state.shake);
+  ctx.translate(offset.x, offset.y);
   drawStarfield(ctx, W, H, state.time);
   drawPlayerShip(ctx, state.player);
 
@@ -146,12 +165,14 @@ function draw(state, ctx) {
     ctx.arc(bullet.x, bullet.y, 4, 0, Math.PI * 2);
     ctx.fill();
   });
+  drawEffects(ctx, state.effects);
+  ctx.restore();
 }
 
 export function mountSpaceShooter(root, context) {
   const config = CONFIG[context.difficulty] || CONFIG.medium;
   let state = initialState(config);
-  const controls = { up: false, down: false, left: false, right: false, pointer: null };
+  const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0, pointer: null, pointerOffset: null };
   let raf = 0;
   let last = performance.now();
   let disposed = false;
@@ -170,13 +191,12 @@ export function mountSpaceShooter(root, context) {
     </section>
     <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas tall" width="${W}" height="${H}" aria-label="雷霆战机"></canvas></div>
-      <div class="arcade-control-row">
-        <button data-control="left">左</button>
-        <button data-control="up">上</button>
-        <button data-control="right">右</button>
-        <button data-control="down">下</button>
-        <button data-action="restart">重开</button>
-        <button data-action="clear-pointer">停靠</button>
+      <div class="arcade-controls">
+        ${joystickMarkup("战机移动")}
+        <div class="arcade-control-stack">
+          <button class="arcade-fire compact" data-action="restart">重开</button>
+          <button class="arcade-fire compact" data-action="clear-pointer">停靠</button>
+        </div>
       </div>
     </section>
   `;
@@ -208,15 +228,28 @@ export function mountSpaceShooter(root, context) {
   function restart() {
     state = initialState(config);
     controls.pointer = null;
+    controls.pointerOffset = null;
     last = performance.now();
   }
 
-  const onPointerMove = (event) => {
+  const onPointerDown = (event) => {
     event.preventDefault();
-    controls.pointer = toCanvasPoint(event);
+    const point = toCanvasPoint(event);
+    controls.pointerOffset = { x: state.player.x - point.x, y: state.player.y - point.y };
+    controls.pointer = { x: state.player.x, y: state.player.y };
+  };
+  const onPointerMove = (event) => {
+    if (!controls.pointerOffset) return;
+    event.preventDefault();
+    const point = toCanvasPoint(event);
+    controls.pointer = {
+      x: clamp(point.x + controls.pointerOffset.x, 14, W - 14),
+      y: clamp(point.y + controls.pointerOffset.y, 32, H - 18)
+    };
   };
   const onPointerLeave = () => {
     controls.pointer = null;
+    controls.pointerOffset = null;
   };
   const onKeyDown = (event) => setKey(event, true);
   const onKeyUp = (event) => setKey(event, false);
@@ -227,14 +260,10 @@ export function mountSpaceShooter(root, context) {
     event.preventDefault();
     controls[key] = pressed;
   }
-  function hold(button, key) {
-    button.addEventListener("pointerdown", () => { controls[key] = true; controls.pointer = null; });
-    ["pointerup", "pointerleave", "pointercancel"].forEach((type) => button.addEventListener(type, () => { controls[key] = false; }));
-  }
-  root.querySelectorAll("[data-control]").forEach((button) => hold(button, button.dataset.control));
+  const cleanupJoystick = bindVirtualJoystick(root, controls);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
-  root.querySelector("[data-action='clear-pointer']").addEventListener("click", () => { controls.pointer = null; });
-  canvas.addEventListener("pointerdown", onPointerMove);
+  root.querySelector("[data-action='clear-pointer']").addEventListener("click", () => { controls.pointer = null; controls.pointerOffset = null; });
+  canvas.addEventListener("pointerdown", onPointerDown);
   canvas.addEventListener("pointermove", onPointerMove);
   canvas.addEventListener("pointerup", onPointerLeave);
   canvas.addEventListener("pointercancel", onPointerLeave);
@@ -245,6 +274,7 @@ export function mountSpaceShooter(root, context) {
   return () => {
     disposed = true;
     cancelAnimationFrame(raf);
+    cleanupJoystick();
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
   };

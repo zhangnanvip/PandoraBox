@@ -1,4 +1,5 @@
-import { drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawPaddle } from "../arcade/classic-visuals.js";
+import { bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { addBurst, classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawEffects, drawPaddle, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
 const W = 360;
 const H = 360;
@@ -11,6 +12,10 @@ const CONFIG = {
 
 function overlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function makeBricks(rows) {
@@ -36,7 +41,9 @@ function initialState(config) {
     time: 0,
     over: false,
     won: false,
-    message: "接住弹球"
+    message: "接住弹球",
+    effects: [],
+    shake: 0
   };
 }
 
@@ -58,9 +65,11 @@ function finish(state, won, context) {
 }
 
 function update(state, config, controls, dt, context) {
-  if (state.over) return;
   state.time += dt;
-  const move = (controls.right ? 1 : 0) - (controls.left ? 1 : 0);
+  updateEffects(state.effects, dt);
+  state.shake = Math.max(0, state.shake - dt * 16);
+  if (state.over) return;
+  const move = controls.axisX || ((controls.right ? 1 : 0) - (controls.left ? 1 : 0));
   state.paddle.x = Math.max(state.paddle.w / 2, Math.min(W - state.paddle.w / 2, state.paddle.x + move * 220 * dt));
   if (Number.isFinite(controls.pointerX)) state.paddle.x = Math.max(state.paddle.w / 2, Math.min(W - state.paddle.w / 2, controls.pointerX));
 
@@ -70,16 +79,19 @@ function update(state, config, controls, dt, context) {
   if (ball.x < 7 || ball.x > W - 7) {
     ball.x = Math.max(7, Math.min(W - 7, ball.x));
     ball.vx *= -1;
+    addBurst(state.effects, ball.x, ball.y, { count: 4, color: classicArcade.cyan, secondary: classicArcade.white, speed: 38, life: 0.16, radius: 3 });
   }
   if (ball.y < 7) {
     ball.y = 7;
     ball.vy *= -1;
+    addBurst(state.effects, ball.x, ball.y, { count: 4, color: classicArcade.cyan, secondary: classicArcade.white, speed: 38, life: 0.16, radius: 3 });
   }
   const paddleRect = { x: state.paddle.x - state.paddle.w / 2, y: state.paddle.y, w: state.paddle.w, h: 12 };
   if (ball.vy > 0 && overlap({ x: ball.x - 6, y: ball.y - 6, w: 12, h: 12 }, paddleRect)) {
     const offset = (ball.x - state.paddle.x) / (state.paddle.w / 2);
     ball.vx = offset * config.speed * 0.9;
     ball.vy = -Math.abs(ball.vy);
+    addBurst(state.effects, ball.x, state.paddle.y, { count: 8, color: classicArcade.cyan, secondary: classicArcade.white, speed: 48, life: 0.2, radius: 4 });
     context.playSound?.("move");
   }
 
@@ -88,9 +100,12 @@ function update(state, config, controls, dt, context) {
     hit.hp -= 1;
     ball.vy *= -1;
     state.score += 20;
+    addBurst(state.effects, ball.x, ball.y, { count: 8, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 52, life: 0.22, radius: 5 });
     if (hit.hp <= 0) {
+      addBurst(state.effects, hit.x + hit.w / 2, hit.y + hit.h / 2, { count: 14, color: classicArcade.orange, secondary: classicArcade.yellow, speed: 76, radius: 8 });
       state.bricks = state.bricks.filter((brick) => brick !== hit);
       state.score += 30;
+      state.shake = Math.max(state.shake, 2.5);
       context.playSound?.("score");
     }
     state.message = `剩余砖块 ${state.bricks.length}`;
@@ -100,6 +115,8 @@ function update(state, config, controls, dt, context) {
     state.lives -= 1;
     if (state.lives <= 0) finish(state, false, context);
     else {
+      addBurst(state.effects, state.paddle.x, H - 18, { count: 16, color: classicArcade.red, secondary: classicArcade.yellow, speed: 84, radius: 10 });
+      state.shake = Math.max(state.shake, 4.5);
       state.message = "漏球，重新发球";
       resetBall(state, config);
     }
@@ -109,18 +126,23 @@ function update(state, config, controls, dt, context) {
 
 function draw(state, ctx) {
   ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  const offset = shakeOffset(state.shake);
+  ctx.translate(offset.x, offset.y);
   drawBreakoutBackdrop(ctx, W, H, state.time);
   for (const brick of state.bricks) {
     drawBreakoutBrick(ctx, brick, brick.row);
   }
   drawPaddle(ctx, state.paddle);
   drawBall(ctx, state.ball);
+  drawEffects(ctx, state.effects);
+  ctx.restore();
 }
 
 export function mountBreakout(root, context) {
   const config = CONFIG[context.difficulty] || CONFIG.medium;
   let state = initialState(config);
-  const controls = { left: false, right: false, pointerX: NaN };
+  const controls = { left: false, right: false, up: false, down: false, axisX: 0, axisY: 0, pointerX: NaN, dragOffsetX: NaN };
   let raf = 0;
   let last = performance.now();
   let disposed = false;
@@ -139,10 +161,11 @@ export function mountBreakout(root, context) {
     </section>
     <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas" width="${W}" height="${H}" aria-label="打砖块"></canvas></div>
-      <div class="arcade-control-row">
-        <button data-control="left">左</button>
-        <button data-action="restart">重开</button>
-        <button data-control="right">右</button>
+      <div class="arcade-controls">
+        ${joystickMarkup("挡板移动")}
+        <div class="arcade-control-stack">
+          <button class="arcade-fire compact" data-action="restart">重开</button>
+        </div>
       </div>
     </section>
   `;
@@ -156,6 +179,7 @@ export function mountBreakout(root, context) {
   function restart() {
     state = initialState(config);
     controls.pointerX = NaN;
+    controls.dragOffsetX = NaN;
     last = performance.now();
   }
 
@@ -181,21 +205,27 @@ export function mountBreakout(root, context) {
     controls.pointerX = NaN;
     event.preventDefault();
   }
-  function hold(button, key) {
-    button.addEventListener("pointerdown", () => { controls[key] = true; controls.pointerX = NaN; });
-    ["pointerup", "pointerleave", "pointercancel"].forEach((type) => button.addEventListener(type, () => { controls[key] = false; }));
-  }
-  root.querySelectorAll("[data-control]").forEach((button) => hold(button, button.dataset.control));
+  const cleanupJoystick = bindVirtualJoystick(root, controls);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
-  canvas.addEventListener("pointerdown", (event) => {
+  const onPointerDown = (event) => {
     const rect = canvas.getBoundingClientRect();
-    controls.pointerX = ((event.clientX - rect.left) / rect.width) * W;
-  });
-  canvas.addEventListener("pointermove", (event) => {
-    if (event.buttons !== 1) return;
+    const x = ((event.clientX - rect.left) / rect.width) * W;
+    controls.dragOffsetX = state.paddle.x - x;
+    controls.pointerX = state.paddle.x;
+  };
+  const onPointerMove = (event) => {
+    if (!Number.isFinite(controls.dragOffsetX)) return;
     const rect = canvas.getBoundingClientRect();
-    controls.pointerX = ((event.clientX - rect.left) / rect.width) * W;
-  });
+    const x = ((event.clientX - rect.left) / rect.width) * W;
+    controls.pointerX = clamp(x + controls.dragOffsetX, state.paddle.w / 2, W - state.paddle.w / 2);
+  };
+  const onPointerEnd = () => {
+    controls.dragOffsetX = NaN;
+  };
+  canvas.addEventListener("pointerdown", onPointerDown);
+  canvas.addEventListener("pointermove", onPointerMove);
+  canvas.addEventListener("pointerup", onPointerEnd);
+  canvas.addEventListener("pointercancel", onPointerEnd);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   raf = requestAnimationFrame(loop);
@@ -203,6 +233,11 @@ export function mountBreakout(root, context) {
   return () => {
     disposed = true;
     cancelAnimationFrame(raf);
+    cleanupJoystick();
+    canvas.removeEventListener("pointerdown", onPointerDown);
+    canvas.removeEventListener("pointermove", onPointerMove);
+    canvas.removeEventListener("pointerup", onPointerEnd);
+    canvas.removeEventListener("pointercancel", onPointerEnd);
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
   };

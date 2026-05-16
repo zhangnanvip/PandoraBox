@@ -1,4 +1,5 @@
-import { classicArcade, drawArcadeBackdrop, drawBase, drawTankSprite, drawTankWall } from "../arcade/classic-visuals.js";
+import { bindHold, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { addBurst, classicArcade, drawArcadeBackdrop, drawBase, drawEffects, drawTankSprite, drawTankWall, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
 const W = 360;
 const H = 360;
@@ -29,6 +30,14 @@ function tankRect(tank, x = tank.x, y = tank.y) {
   return { x: x - 11, y: y - 11, w: 22, h: 22 };
 }
 
+function wantedDirection(controls) {
+  if (Math.abs(controls.axisX || 0) > Math.abs(controls.axisY || 0)) {
+    return controls.axisX > 0 ? "right" : "left";
+  }
+  if (Math.abs(controls.axisY || 0) > 0) return controls.axisY > 0 ? "down" : "up";
+  return ["up", "down", "left", "right"].find((dir) => controls[dir]);
+}
+
 function makeWalls() {
   const bricks = [
     [2, 2], [3, 2], [8, 2], [9, 2], [5, 4], [6, 4], [1, 6], [2, 6], [9, 6], [10, 6],
@@ -54,7 +63,9 @@ function initialState(config) {
     over: false,
     won: false,
     time: 0,
-    spawnTimer: 0
+    spawnTimer: 0,
+    effects: [],
+    shake: 0
   };
 }
 
@@ -99,28 +110,51 @@ function moveTank(state, tank, speed, dt) {
 }
 
 function fire(state, tank, owner) {
-  if (tank.reload > 0) return;
+  if (tank.reload > 0) return false;
   const dir = DIRS[tank.dir];
+  const muzzleX = tank.x + dir.x * 18;
+  const muzzleY = tank.y + dir.y * 18;
   state.bullets.push({
-    x: tank.x + dir.x * 14,
-    y: tank.y + dir.y * 14,
+    x: muzzleX,
+    y: muzzleY,
     vx: dir.x * 178,
     vy: dir.y * 178,
     owner
   });
+  addBurst(state.effects, muzzleX, muzzleY, {
+    count: owner === "player" ? 5 : 3,
+    color: owner === "player" ? classicArcade.cyan : classicArcade.orange,
+    secondary: classicArcade.white,
+    speed: 46,
+    life: 0.16,
+    radius: 3
+  });
+  if (owner === "player") state.shake = Math.max(state.shake, 1.4);
   tank.reload = owner === "player" ? 0.46 : 0.9;
+  return true;
 }
 
 function hitWall(state, bulletRect) {
   const index = state.walls.findIndex((wall) => rectsOverlap(bulletRect, wall));
   if (index < 0) return false;
   const wall = state.walls[index];
+  addBurst(state.effects, bulletRect.x + bulletRect.w / 2, bulletRect.y + bulletRect.h / 2, {
+    count: wall.type === "brick" ? 10 : 6,
+    color: wall.type === "brick" ? classicArcade.brick2 : classicArcade.steel,
+    secondary: classicArcade.white,
+    speed: wall.type === "brick" ? 62 : 38,
+    life: 0.24,
+    radius: 5
+  });
+  state.shake = Math.max(state.shake, wall.type === "brick" ? 2.2 : 1.2);
   if (wall.type === "brick") state.walls.splice(index, 1);
   return true;
 }
 
 function damagePlayer(state) {
   if (state.player.invuln > 0) return;
+  addBurst(state.effects, state.player.x, state.player.y, { count: 18, color: classicArcade.red, secondary: classicArcade.yellow, speed: 92, radius: 11 });
+  state.shake = Math.max(state.shake, 5);
   state.player.lives -= 1;
   state.player.x = W / 2;
   state.player.y = H - 44;
@@ -143,8 +177,10 @@ function finish(state, won, context) {
 }
 
 function update(state, config, controls, dt, context) {
-  if (state.over) return;
   state.time += dt;
+  updateEffects(state.effects, dt);
+  state.shake = Math.max(0, state.shake - dt * 16);
+  if (state.over) return;
   state.spawnTimer -= dt;
   if (state.spawnTimer <= 0) {
     spawnEnemy(state, config);
@@ -153,12 +189,12 @@ function update(state, config, controls, dt, context) {
 
   state.player.reload = Math.max(0, state.player.reload - dt);
   state.player.invuln = Math.max(0, state.player.invuln - dt);
-  const wanted = ["up", "down", "left", "right"].find((dir) => controls[dir]);
+  const wanted = wantedDirection(controls);
   if (wanted) {
     state.player.dir = wanted;
     moveTank(state, state.player, 74, dt);
   }
-  if (controls.fire) fire(state, state.player, "player");
+  if (controls.fire && fire(state, state.player, "player")) context.playSound?.("move");
 
   for (const enemy of state.enemies) {
     enemy.reload = Math.max(0, enemy.reload - dt);
@@ -182,6 +218,8 @@ function update(state, config, controls, dt, context) {
     if (hitWall(state, rect)) return false;
     if (state.base.alive && rectsOverlap(rect, state.base)) {
       state.base.alive = false;
+      addBurst(state.effects, state.base.x + state.base.w / 2, state.base.y + state.base.h / 2, { count: 24, color: classicArcade.red, secondary: classicArcade.yellow, speed: 98, radius: 14 });
+      state.shake = Math.max(state.shake, 7);
       finish(state, false, context);
       return false;
     }
@@ -189,11 +227,14 @@ function update(state, config, controls, dt, context) {
       const hit = state.enemies.find((enemy) => rectsOverlap(rect, tankRect(enemy)));
       if (hit) {
         hit.hp -= 1;
+        addBurst(state.effects, bullet.x, bullet.y, { count: 8, color: classicArcade.red, secondary: classicArcade.yellow, speed: 56, life: 0.22, radius: 5 });
         if (hit.hp <= 0) {
+          addBurst(state.effects, hit.x, hit.y, { count: 20, color: classicArcade.red, secondary: classicArcade.yellow, speed: 92, radius: 12 });
           state.enemies = state.enemies.filter((enemy) => enemy !== hit);
           state.destroyed += 1;
           state.score += 100;
           state.message = `击毁敌坦 ${state.destroyed}/${state.total}`;
+          state.shake = Math.max(state.shake, 4);
           context.playSound?.("score");
         }
         return false;
@@ -211,6 +252,9 @@ function update(state, config, controls, dt, context) {
 
 function draw(state, ctx) {
   ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  const offset = shakeOffset(state.shake);
+  ctx.translate(offset.x, offset.y);
   drawArcadeBackdrop(ctx, W, H, state.time, { top: "#101616", bottom: "#17231e", grid: "rgba(93,255,139,.09)", gridSize: TILE });
   ctx.strokeStyle = "rgba(255, 255, 255, .05)";
   for (let x = 0; x <= W; x += TILE) {
@@ -245,24 +289,14 @@ function draw(state, ctx) {
     ctx.arc(bullet.x, bullet.y, 3.5, 0, Math.PI * 2);
     ctx.fill();
   }
-}
-
-function bindHold(root, controls, selector, key) {
-  root.querySelector(selector)?.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    controls[key] = true;
-  });
-  ["pointerup", "pointerleave", "pointercancel"].forEach((type) => {
-    root.querySelector(selector)?.addEventListener(type, () => {
-      controls[key] = false;
-    });
-  });
+  drawEffects(ctx, state.effects);
+  ctx.restore();
 }
 
 export function mountTankBattle(root, context) {
   const config = DIFFICULTY[context.difficulty] || DIFFICULTY.medium;
   let state = initialState(config);
-  const controls = { up: false, down: false, left: false, right: false, fire: false };
+  const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0, fire: false };
   let raf = 0;
   let last = performance.now();
   let disposed = false;
@@ -282,13 +316,10 @@ export function mountTankBattle(root, context) {
     <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas" width="${W}" height="${H}" aria-label="坦克大战"></canvas></div>
       <div class="arcade-controls">
-        <div class="arcade-dpad" aria-label="移动方向">
-          <button data-control="up">上</button>
-          <button data-control="left">左</button>
-          <button data-control="right">右</button>
-          <button data-control="down">下</button>
+        ${joystickMarkup("坦克移动")}
+        <div class="arcade-control-stack">
+          <button class="arcade-fire" data-control="fire">开火</button>
         </div>
-        <button class="arcade-fire" data-control="fire">开火</button>
       </div>
     </section>
     <section class="game-panel toolbar">
@@ -345,7 +376,8 @@ export function mountTankBattle(root, context) {
   const onKeyDown = (event) => onKey(event, true);
   const onKeyUp = (event) => onKey(event, false);
 
-  ["up", "down", "left", "right", "fire"].forEach((key) => bindHold(root, controls, `[data-control="${key}"]`, key));
+  const cleanupJoystick = bindVirtualJoystick(root, controls);
+  const cleanupFire = bindHold(root, "[data-control='fire']", (pressed) => { controls.fire = pressed; });
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
@@ -354,6 +386,8 @@ export function mountTankBattle(root, context) {
   return () => {
     disposed = true;
     cancelAnimationFrame(raf);
+    cleanupJoystick();
+    cleanupFire();
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
   };
