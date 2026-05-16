@@ -81,14 +81,27 @@ function closeModal() {
   render();
 }
 
-function startPendingGame() {
+function collectSetupValuesFromModal(game) {
+  const values = {};
+  app.querySelectorAll("[data-modal-option]").forEach((field) => {
+    const id = field.dataset.modalOption;
+    if (id) values[id] = field.value;
+  });
+  return {
+    ...selectedGameOptions(game),
+    ...values
+  };
+}
+
+function startPendingGame(optionsOverride = null) {
   if (!state.pendingGame) return;
   const game = findGame(state.pendingGame);
   const mode = selectedModeFor(game);
   const difficulty = selectedDifficultyFor(game);
+  const options = optionsOverride || selectedGameOptions(game);
   state.gameOptions = {
     ...state.gameOptions,
-    [game.id]: { ...(state.gameOptions[game.id] || {}), mode, difficulty }
+    [game.id]: options
   };
   recordGameStart(game, mode, difficulty);
   setState({
@@ -129,6 +142,12 @@ function selectedDifficultyFor(game) {
   return supportedValue(state.gameOptions[game.id]?.difficulty || state.difficulty, game.difficultySupport || ["easy", "medium", "hard"], "medium");
 }
 
+function selectedSetupValue(game, field) {
+  const stored = state.gameOptions[game.id]?.[field.id];
+  const supported = field.options.map((item) => item.value);
+  return supportedValue(stored || field.defaultValue, supported, supported[0]);
+}
+
 function updateGameOption(game, patch) {
   state.gameOptions = {
     ...state.gameOptions,
@@ -138,6 +157,15 @@ function updateGameOption(game, patch) {
   if (patch.difficulty) state.difficulty = patch.difficulty;
   persistPreferences();
   render();
+}
+
+function renderSetupFields(game) {
+  return (game.setupFields || []).map((field) => renderSelectField({
+    label: field.label,
+    attr: `data-modal-option="${field.id}"`,
+    value: selectedSetupValue(game, field),
+    options: field.options
+  })).join("");
 }
 
 function progressFor(gameId) {
@@ -167,6 +195,16 @@ function recordGameStart(game, mode, difficulty) {
     lastMode: mode,
     lastDifficulty: difficulty
   });
+}
+
+function selectedGameOptions(game) {
+  const setupOptions = Object.fromEntries((game.setupFields || []).map((field) => [field.id, selectedSetupValue(game, field)]));
+  return {
+    ...(state.gameOptions[game.id] || {}),
+    ...setupOptions,
+    mode: selectedModeFor(game),
+    difficulty: selectedDifficultyFor(game)
+  };
 }
 
 function outcomeLabel(outcome) {
@@ -514,6 +552,7 @@ function renderGame() {
   const token = gameLoadToken;
   const mode = selectedModeFor(game);
   const difficulty = selectedDifficultyFor(game);
+  const options = selectedGameOptions(game);
   app.innerHTML = `
     <main class="app-frame play-frame">
       <header class="play-header">
@@ -551,6 +590,7 @@ function renderGame() {
       cleanupGame = plugin.mount(gameRoot, {
         difficulty,
         mode,
+        options,
         labels: { difficulty: difficultyLabel[difficulty], mode: modeLabel[mode] },
         reportResult: (result) => handleGameResult(game, result)
       });
@@ -603,6 +643,7 @@ function modalContent() {
           ${renderProgressPills(game)}
           ${renderModeField(game)}
           ${renderDifficultyField(game)}
+          ${renderSetupFields(game)}
           <button class="primary-button wide-button" data-start-game>${icon("play")} 开始</button>
         </div>
       `
@@ -700,6 +741,7 @@ function renderModal() {
   app.querySelector(".modal-backdrop")?.remove();
   if (!state.modal) return;
 
+  const game = findGame(state.currentGame || state.pendingGame);
   const content = modalContent();
   app.insertAdjacentHTML("beforeend", `
     <div class="modal-backdrop" role="presentation" data-close-modal>
@@ -720,6 +762,9 @@ function renderModal() {
   });
   app.querySelector("[data-modal-mode]")?.addEventListener("change", (event) => updateGameOption(game, { mode: event.target.value }));
   app.querySelector("[data-modal-difficulty]")?.addEventListener("change", (event) => updateGameOption(game, { difficulty: event.target.value }));
+  app.querySelectorAll("[data-modal-option]").forEach((field) => {
+    field.addEventListener("change", (event) => updateGameOption(game, { [event.target.dataset.modalOption]: event.target.value }));
+  });
   app.querySelector("[data-modal-sound]")?.addEventListener("change", (event) => setState({ sound: event.target.checked }));
   app.querySelector("[data-modal-volume]")?.addEventListener("input", (event) => setState({ volume: Number(event.target.value) }));
   app.querySelectorAll(".modal-panel [data-open-modal]").forEach((button) => {
@@ -733,7 +778,7 @@ function renderModal() {
     render();
   });
   app.querySelector("[data-start-game]")?.addEventListener("click", () => {
-    startPendingGame();
+    startPendingGame(collectSetupValuesFromModal(game));
   });
   app.querySelector("[data-result-close]")?.addEventListener("click", () => {
     state.modal = "";

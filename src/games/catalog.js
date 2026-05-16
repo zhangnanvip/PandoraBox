@@ -231,11 +231,25 @@ const registrations = [
       complexity: "简单",
       modeSupport: ["solo"],
       progressType: "score",
+      setupFields: [
+        {
+          id: "boardSize",
+          label: "棋盘规格",
+          defaultValue: "4",
+          options: [
+            { value: "4", label: "4x4 经典" },
+            { value: "5", label: "5x5 舒展" },
+            { value: "6", label: "6x6 策略" },
+            { value: "8", label: "8x8 沙盒" }
+          ]
+        }
+      ],
       accent: "sky",
       icon: "./public/skins/guofeng-ink/icons/2048.svg",
       rules: [
-        "上下左右滑动棋盘，相同数字会合并。",
+        "在棋盘区域滑动，相同数字会沿滑动方向合并。",
         "每次有效移动后会出现新的 2 或 4。",
+        "4x4 是经典节奏，5x5 更宽松，6x6 更适合长线规划，8x8 偏沙盒挑战。",
         "达到目标数字后可继续挑战最高分。"
       ]
     },

@@ -1,46 +1,58 @@
 import { loadState, removeState, saveState } from "../../utils/storage.js";
 
-const SIZE = 4;
-const CELLS = SIZE * SIZE;
+const BOARD_PRESETS = {
+  4: { size: 4, label: "4x4 经典", target: { easy: 1024, medium: 2048, hard: 4096, devil: 8192 }, fourRate: 0 },
+  5: { size: 5, label: "5x5 舒展", target: { easy: 2048, medium: 4096, hard: 8192, devil: 16384 }, fourRate: 0.02 },
+  6: { size: 6, label: "6x6 策略", target: { easy: 4096, medium: 8192, hard: 16384, devil: 32768 }, fourRate: 0.04 },
+  8: { size: 8, label: "8x8 沙盒", target: { easy: 8192, medium: 16384, hard: 32768, devil: 65536 }, fourRate: 0.06 }
+};
 
-function targetFor(difficulty) {
-  return difficulty === "hard" ? 4096 : 2048;
+function presetFor(value) {
+  return BOARD_PRESETS[Number(value)] || BOARD_PRESETS[4];
 }
 
-function emptyGrid() {
-  return Array(CELLS).fill(0);
+function targetFor(difficulty, preset) {
+  return preset.target[difficulty] || preset.target.medium;
 }
 
-function initialState(difficulty) {
+function emptyGrid(size) {
+  return Array(size * size).fill(0);
+}
+
+function initialState(difficulty, preset) {
   const state = {
-    grid: emptyGrid(),
+    size: preset.size,
+    presetLabel: preset.label,
+    grid: emptyGrid(preset.size),
     score: 0,
-    best: loadState("2048:best", 0),
-    target: targetFor(difficulty),
+    best: loadState(`2048:best:${preset.size}`, 0),
+    target: targetFor(difficulty, preset),
     won: false,
     over: false,
     history: [],
-    message: "滑动或点击方向开始"
+    message: "滑动棋盘开始"
   };
-  addRandomTile(state.grid, difficulty);
-  addRandomTile(state.grid, difficulty);
+  addRandomTile(state.grid, difficulty, preset);
+  addRandomTile(state.grid, difficulty, preset);
   return state;
 }
 
-function isValidState(state) {
-  return state?.grid?.length === CELLS && Array.isArray(state.history);
+function isValidState(state, preset) {
+  return state?.size === preset.size && state?.grid?.length === preset.size * preset.size && Array.isArray(state.history);
 }
 
-function addRandomTile(grid, difficulty) {
+function addRandomTile(grid, difficulty, preset) {
   const empty = grid.flatMap((value, index) => (value ? [] : [index]));
   if (!empty.length) return;
   const index = empty[Math.floor(Math.random() * empty.length)];
-  const fourRate = difficulty === "hard" ? 0.18 : difficulty === "medium" ? 0.12 : 0.08;
+  const fourRate = (difficulty === "devil" ? 0.22 : difficulty === "hard" ? 0.18 : difficulty === "medium" ? 0.12 : 0.08) + preset.fourRate;
   grid[index] = Math.random() < fourRate ? 4 : 2;
 }
 
 function cloneState(state) {
   return {
+    size: state.size,
+    presetLabel: state.presetLabel,
     grid: [...state.grid],
     score: state.score,
     best: state.best,
@@ -55,14 +67,14 @@ function restore(state, snapshot) {
   Object.assign(state, snapshot, { grid: [...snapshot.grid] });
 }
 
-function indexesFor(direction, line) {
-  if (direction === "left") return Array.from({ length: SIZE }, (_, col) => line * SIZE + col);
-  if (direction === "right") return Array.from({ length: SIZE }, (_, col) => line * SIZE + (SIZE - 1 - col));
-  if (direction === "up") return Array.from({ length: SIZE }, (_, row) => row * SIZE + line);
-  return Array.from({ length: SIZE }, (_, row) => (SIZE - 1 - row) * SIZE + line);
+function indexesFor(direction, line, size) {
+  if (direction === "left") return Array.from({ length: size }, (_, col) => line * size + col);
+  if (direction === "right") return Array.from({ length: size }, (_, col) => line * size + (size - 1 - col));
+  if (direction === "up") return Array.from({ length: size }, (_, row) => row * size + line);
+  return Array.from({ length: size }, (_, row) => (size - 1 - row) * size + line);
 }
 
-function slideValues(values) {
+function slideValues(values, size) {
   const compact = values.filter(Boolean);
   let gained = 0;
   const result = [];
@@ -76,31 +88,31 @@ function slideValues(values) {
       result.push(compact[i]);
     }
   }
-  while (result.length < SIZE) result.push(0);
+  while (result.length < size) result.push(0);
   return { result, gained };
 }
 
-function canMove(grid) {
+function canMove(grid, size) {
   if (grid.some((value) => value === 0)) return true;
-  for (let row = 0; row < SIZE; row += 1) {
-    for (let col = 0; col < SIZE; col += 1) {
-      const value = grid[row * SIZE + col];
-      if (col < SIZE - 1 && grid[row * SIZE + col + 1] === value) return true;
-      if (row < SIZE - 1 && grid[(row + 1) * SIZE + col] === value) return true;
+  for (let row = 0; row < size; row += 1) {
+    for (let col = 0; col < size; col += 1) {
+      const value = grid[row * size + col];
+      if (col < size - 1 && grid[row * size + col + 1] === value) return true;
+      if (row < size - 1 && grid[(row + 1) * size + col] === value) return true;
     }
   }
   return false;
 }
 
-function applyMove(state, direction, difficulty) {
+function applyMove(state, direction, difficulty, preset) {
   if (state.over) return false;
   const before = state.grid.join(",");
   const snapshot = cloneState(state);
   let gained = 0;
 
-  for (let line = 0; line < SIZE; line += 1) {
-    const indexes = indexesFor(direction, line);
-    const { result, gained: lineScore } = slideValues(indexes.map((index) => state.grid[index]));
+  for (let line = 0; line < state.size; line += 1) {
+    const indexes = indexesFor(direction, line, state.size);
+    const { result, gained: lineScore } = slideValues(indexes.map((index) => state.grid[index]), state.size);
     gained += lineScore;
     indexes.forEach((index, offset) => {
       state.grid[index] = result[offset];
@@ -115,11 +127,11 @@ function applyMove(state, direction, difficulty) {
   state.history.push(snapshot);
   state.score += gained;
   state.best = Math.max(state.best, state.score);
-  addRandomTile(state.grid, difficulty);
+  addRandomTile(state.grid, difficulty, preset);
   if (!state.won && state.grid.some((value) => value >= state.target)) {
     state.won = true;
     state.message = `达成 ${state.target}，还可以继续挑战`;
-  } else if (!canMove(state.grid)) {
+  } else if (!canMove(state.grid, state.size)) {
     state.over = true;
     state.message = "没有可移动空间了";
   } else {
@@ -139,9 +151,10 @@ function tileClass(value) {
 }
 
 export function mount2048(root, context) {
-  const storageKey = `2048:${context.difficulty}`;
-  let state = loadState(storageKey, initialState(context.difficulty));
-  if (!isValidState(state) || state.target !== targetFor(context.difficulty)) state = initialState(context.difficulty);
+  const preset = presetFor(context.options?.boardSize);
+  const storageKey = `2048:${context.difficulty}:${preset.size}`;
+  let state = loadState(storageKey, initialState(context.difficulty, preset));
+  if (!isValidState(state, preset) || state.target !== targetFor(context.difficulty, preset)) state = initialState(context.difficulty, preset);
 
   let startX = 0;
   let startY = 0;
@@ -150,7 +163,7 @@ export function mount2048(root, context) {
 
   function save() {
     saveState(storageKey, state);
-    saveState("2048:best", state.best);
+    saveState(`2048:best:${preset.size}`, state.best);
   }
 
   function reportResult(outcome) {
@@ -166,7 +179,7 @@ export function mount2048(root, context) {
 
   function move(direction) {
     if (!direction) return;
-    if (applyMove(state, direction, context.difficulty)) save();
+    if (applyMove(state, direction, context.difficulty, preset)) save();
     if (state.won) reportResult("complete");
     else if (state.over) reportResult("score");
     render();
@@ -181,7 +194,7 @@ export function mount2048(root, context) {
   }
 
   function restart() {
-    state = initialState(context.difficulty);
+    state = initialState(context.difficulty, preset);
     resultReported = false;
     removeState(storageKey);
     save();
@@ -205,7 +218,7 @@ export function mount2048(root, context) {
       <section class="game-panel game-status">
         <div>
           <strong>${state.message}</strong>
-          <p class="game-note">${context.labels.difficulty} · 目标 ${state.target}</p>
+          <p class="game-note">${state.presetLabel} · ${context.labels.difficulty} · 目标 ${state.target}</p>
         </div>
         <div class="mini-stats">
           <span>分数 ${state.score}</span>
@@ -214,16 +227,13 @@ export function mount2048(root, context) {
       </section>
 
       <section class="board-wrap">
-        <div class="number-board" aria-label="2048 棋盘">
+        <div class="number-board number-board-${state.size}" style="--number-size:${state.size};" aria-label="2048 棋盘">
           ${state.grid.map((value) => `<div class="number-tile ${tileClass(value)}">${value || ""}</div>`).join("")}
         </div>
       </section>
 
-      <section class="game-panel toolbar number-controls">
-        <button class="secondary-button" data-move="up">上</button>
-        <button class="secondary-button" data-move="left">左</button>
-        <button class="secondary-button" data-move="right">右</button>
-        <button class="secondary-button" data-move="down">下</button>
+      <section class="game-panel number-help">
+        <span>在棋盘上滑动操作</span>
         <button class="secondary-button" data-action="undo" ${state.history.length ? "" : "disabled"}>悔棋</button>
         <button class="danger-button" data-action="restart">重开</button>
       </section>
@@ -243,9 +253,6 @@ export function mount2048(root, context) {
     });
     board.addEventListener("pointercancel", () => {
       pointerActive = false;
-    });
-    root.querySelectorAll("[data-move]").forEach((button) => {
-      button.addEventListener("click", () => move(button.dataset.move));
     });
     root.querySelector("[data-action='undo']").addEventListener("click", undo);
     root.querySelector("[data-action='restart']").addEventListener("click", restart);

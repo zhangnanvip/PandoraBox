@@ -1446,7 +1446,8 @@ input[type="range"] {
 
 .number-board {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--number-size, 4), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--number-size, 4), minmax(0, 1fr));
   gap: 8px;
   width: min(92vw, 430px);
   aspect-ratio: 1;
@@ -1458,15 +1459,38 @@ input[type="range"] {
   touch-action: none;
 }
 
+.number-board-5,
+.number-board-6 {
+  width: min(92vw, 500px);
+  gap: 7px;
+}
+
+.number-board-8 {
+  width: min(94vw, 560px);
+  gap: 5px;
+  padding: 8px;
+}
+
 .number-tile {
   display: grid;
   place-items: center;
   min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1;
+  overflow: hidden;
   border-radius: var(--radius);
   background: rgba(255, 250, 240, 0.52);
   color: var(--ink);
-  font-size: clamp(1.15rem, 8vw, 2.4rem);
+  font-size: clamp(0.82rem, calc(12vw / var(--number-size, 4)), 2.2rem);
   font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.number-board-6 .number-tile,
+.number-board-8 .number-tile {
+  border-radius: 6px;
 }
 
 .tile-2 { background: #f3ead6; }
@@ -1482,8 +1506,17 @@ input[type="range"] {
 .tile-2048,
 .tile-4096 { background: #1f5f4a; color: #fffaf0; }
 
-.number-controls {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.number-help {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.number-help > span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
 }
 
 .tictactoe-board {
@@ -1777,6 +1810,14 @@ input[type="range"] {
 
   .skin-tabs {
     grid-template-columns: 1fr;
+  }
+
+  .number-help {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .number-help > span {
+    grid-column: 1 / -1;
   }
 
   .play-header {
