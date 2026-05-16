@@ -6,6 +6,7 @@ export const categories = [
   { id: "race", title: "跳跃竞速", shortTitle: "竞速" },
   { id: "puzzle", title: "益智解谜", shortTitle: "解谜" },
   { id: "number", title: "数字休闲", shortTitle: "数字" },
+  { id: "arcade", title: "动作街机", shortTitle: "街机" },
   { id: "quick", title: "快速对弈", shortTitle: "快局" }
 ];
 
@@ -293,6 +294,98 @@ const registrations = [
       ]
     },
     () => import("./number-2048/game.js").then((module) => module.mount2048)
+  ),
+  defineLocalGame(
+    {
+      id: "tank-battle",
+      title: "坦克大战",
+      subtitle: "守住基地，击破敌方装甲",
+      tag: "基地攻防",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      accent: "cinnabar",
+      icon: "./public/skins/guofeng-ink/icons/tank-battle.svg",
+      rules: [
+        "移动坦克躲避敌火，发射炮弹击破敌方坦克。",
+        "砖墙可被炮弹击毁，钢墙不可击毁。",
+        "基地被击中或生命耗尽则失败，清空本关敌人则胜利。",
+        "难度会影响敌人数量、速度、开火频率和追击强度。"
+      ]
+    },
+    () => import("./tank-battle/game.js").then((module) => module.mountTankBattle)
+  ),
+  defineLocalGame(
+    {
+      id: "space-shooter",
+      title: "雷霆战机",
+      subtitle: "竖版弹幕，穿梭火线",
+      tag: "弹幕突击",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      accent: "sky",
+      icon: "./public/skins/guofeng-ink/icons/space-shooter.svg",
+      rules: [
+        "拖动或方向键移动战机，自动射击前方敌机。",
+        "击毁敌机获得分数，避开敌方弹幕。",
+        "生命归零失败，撑过本轮波次即胜利。",
+        "难度会影响敌机密度、子弹速度和波次数。"
+      ]
+    },
+    () => import("./space-shooter/game.js").then((module) => module.mountSpaceShooter)
+  ),
+  defineLocalGame(
+    {
+      id: "snake",
+      title: "贪吃蛇",
+      subtitle: "游走棋盘，越吃越长",
+      tag: "反应练习",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      accent: "jade",
+      icon: "./public/skins/guofeng-ink/icons/snake.svg",
+      rules: [
+        "控制蛇头吃到食物，每吃一个食物身体增长。",
+        "撞墙或撞到自己即结束。",
+        "难度会影响移动速度和目标分数。",
+        "移动端可用方向键，桌面端可用方向键或 WASD。"
+      ]
+    },
+    () => import("./snake/game.js").then((module) => module.mountSnake)
+  ),
+  defineLocalGame(
+    {
+      id: "breakout",
+      title: "打砖块",
+      subtitle: "弹球破阵，清空砖墙",
+      tag: "弹射街机",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      accent: "lotus",
+      icon: "./public/skins/guofeng-ink/icons/breakout.svg",
+      rules: [
+        "移动挡板反弹小球，击碎上方砖块。",
+        "漏球会损失生命，清空砖块则胜利。",
+        "难度会影响小球速度、砖块行数和挡板宽度。",
+        "移动端可拖动挡板或按左右键。"
+      ]
+    },
+    () => import("./breakout/game.js").then((module) => module.mountBreakout)
   )
 ];
 

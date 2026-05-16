@@ -1096,6 +1096,90 @@ input[type="range"] {
   z-index: 10;
 }
 
+.arcade-shell {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.arcade-stage {
+  display: grid;
+  place-items: center;
+  width: min(94vw, 560px);
+  padding: 10px;
+  border: 1px solid rgba(31, 95, 74, 0.24);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(31, 95, 74, 0.1), transparent 46%),
+    rgba(255, 250, 240, 0.78);
+  box-shadow: var(--shadow);
+}
+
+.arcade-canvas {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  aspect-ratio: 1;
+  border: 2px solid rgba(70, 46, 22, 0.5);
+  border-radius: var(--radius);
+  background: #19251f;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+.arcade-canvas.tall {
+  max-width: 430px;
+  aspect-ratio: 3 / 4;
+}
+
+.arcade-controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  width: min(94vw, 560px);
+}
+
+.arcade-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 52px);
+  grid-template-rows: repeat(3, 46px);
+  gap: 6px;
+  justify-content: start;
+}
+
+.arcade-dpad button,
+.arcade-fire,
+.arcade-control-row button {
+  min-height: 44px;
+  border: 1px solid rgba(31, 95, 74, 0.24);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.arcade-dpad [data-control="up"] { grid-column: 2; grid-row: 1; }
+.arcade-dpad [data-control="left"] { grid-column: 1; grid-row: 2; }
+.arcade-dpad [data-control="down"] { grid-column: 2; grid-row: 3; }
+.arcade-dpad [data-control="right"] { grid-column: 3; grid-row: 2; }
+
+.arcade-fire {
+  width: 84px;
+  min-height: 84px;
+  border-radius: 50%;
+  background: var(--cinnabar);
+  color: #fffaf0;
+  box-shadow: 0 10px 20px rgba(182, 59, 43, 0.22);
+}
+
+.arcade-control-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(64px, 1fr));
+  gap: 8px;
+  width: min(94vw, 520px);
+}
+
 .board-wrap {
   display: grid;
   place-items: center;
@@ -1831,6 +1915,20 @@ input[type="range"] {
 
   .sudoku-pad {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .arcade-controls {
+    grid-template-columns: 1fr auto;
+  }
+
+  .arcade-dpad {
+    grid-template-columns: repeat(3, 45px);
+    grid-template-rows: repeat(3, 42px);
+  }
+
+  .arcade-fire {
+    width: 74px;
+    min-height: 74px;
   }
 
   .toolbar .secondary-button,

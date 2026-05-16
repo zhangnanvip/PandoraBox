@@ -1,4 +1,4 @@
-const CACHE_NAME = "pandora-box-v23";
+const CACHE_NAME = "pandora-box-v24";
 const SCOPE_URL = new URL(self.registration.scope);
 
 const APP_SHELL = [
@@ -27,6 +27,10 @@ const APP_SHELL = [
   "./src/games/sudoku/game.js",
   "./src/games/klotski/game.js",
   "./src/games/number-2048/game.js",
+  "./src/games/tank-battle/game.js",
+  "./src/games/space-shooter/game.js",
+  "./src/games/snake/game.js",
+  "./src/games/breakout/game.js",
   "./public/skins/guofeng/textures/paper.svg",
   "./public/skins/guofeng/textures/wood.svg",
   "./public/skins/guofeng/ornaments/cloud-corner.svg",
@@ -50,7 +54,11 @@ const APP_SHELL = [
   "./public/skins/guofeng-ink/icons/flying.svg",
   "./public/skins/guofeng-ink/icons/sudoku.svg",
   "./public/skins/guofeng-ink/icons/klotski.svg",
-  "./public/skins/guofeng-ink/icons/2048.svg"
+  "./public/skins/guofeng-ink/icons/2048.svg",
+  "./public/skins/guofeng-ink/icons/tank-battle.svg",
+  "./public/skins/guofeng-ink/icons/space-shooter.svg",
+  "./public/skins/guofeng-ink/icons/snake.svg",
+  "./public/skins/guofeng-ink/icons/breakout.svg"
 ];
 const APP_SHELL_URLS = APP_SHELL.map((path) => new URL(path, SCOPE_URL).toString());
 const INDEX_URL = new URL("./index.html", SCOPE_URL).toString();
