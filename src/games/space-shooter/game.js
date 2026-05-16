@@ -1,3 +1,5 @@
+import { classicArcade, drawEnemyShip, drawPlayerShip, drawStarfield } from "../arcade/classic-visuals.js";
+
 const W = 300;
 const H = 400;
 const CONFIG = {
@@ -130,44 +132,15 @@ function update(state, config, controls, dt, context) {
 
 function draw(state, ctx) {
   ctx.clearRect(0, 0, W, H);
-  const gradient = ctx.createLinearGradient(0, 0, 0, H);
-  gradient.addColorStop(0, "#0d1827");
-  gradient.addColorStop(1, "#173327");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = "rgba(255,250,240,.35)";
-  for (let i = 0; i < 38; i += 1) {
-    const y = (i * 41 + state.time * 48) % H;
-    ctx.fillRect((i * 67) % W, y, 2, 2);
-  }
-
-  const p = state.player;
-  ctx.save();
-  ctx.translate(p.x, p.y);
-  ctx.fillStyle = p.invuln > 0 ? "#d79d38" : "#32799a";
-  ctx.beginPath();
-  ctx.moveTo(0, -18);
-  ctx.lineTo(13, 15);
-  ctx.lineTo(0, 8);
-  ctx.lineTo(-13, 15);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = "#fffaf0";
-  ctx.fillRect(-4, -5, 8, 11);
-  ctx.restore();
+  drawStarfield(ctx, W, H, state.time);
+  drawPlayerShip(ctx, state.player);
 
   for (const enemy of state.enemies) {
-    ctx.fillStyle = enemy.hp > 1 ? "#b63b2b" : "#be5c79";
-    ctx.beginPath();
-    ctx.moveTo(enemy.x, enemy.y + 14);
-    ctx.lineTo(enemy.x - 14, enemy.y - 10);
-    ctx.lineTo(enemy.x + 14, enemy.y - 10);
-    ctx.closePath();
-    ctx.fill();
+    drawEnemyShip(ctx, enemy);
   }
-  ctx.fillStyle = "#fffaf0";
+  ctx.fillStyle = classicArcade.cyan;
   state.bullets.forEach((bullet) => ctx.fillRect(bullet.x - 2, bullet.y - 8, 4, 12));
-  ctx.fillStyle = "#d79d38";
+  ctx.fillStyle = classicArcade.orange;
   state.enemyBullets.forEach((bullet) => {
     ctx.beginPath();
     ctx.arc(bullet.x, bullet.y, 4, 0, Math.PI * 2);
@@ -195,7 +168,7 @@ export function mountSpaceShooter(root, context) {
         <span data-kills>击落 0</span>
       </div>
     </section>
-    <section class="arcade-shell">
+    <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas tall" width="${W}" height="${H}" aria-label="雷霆战机"></canvas></div>
       <div class="arcade-control-row">
         <button data-control="left">左</button>

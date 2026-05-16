@@ -1,3 +1,5 @@
+import { drawFood, drawSnakeArena, drawSnakeSegment } from "../arcade/classic-visuals.js";
+
 const SIZE = 18;
 const CELL = 20;
 const W = SIZE * CELL;
@@ -42,7 +44,7 @@ function initialState() {
     time: 0,
     over: false,
     won: false,
-    message: "吃到朱果，越长越快"
+    message: "吃到能量豆，越长越快"
   };
 }
 
@@ -87,26 +89,10 @@ function step(state, config, context) {
 
 function draw(state, ctx) {
   ctx.clearRect(0, 0, W, W);
-  ctx.fillStyle = "#162820";
-  ctx.fillRect(0, 0, W, W);
-  ctx.strokeStyle = "rgba(255,250,240,.08)";
-  for (let i = 0; i <= SIZE; i += 1) {
-    ctx.beginPath();
-    ctx.moveTo(i * CELL, 0);
-    ctx.lineTo(i * CELL, W);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, i * CELL);
-    ctx.lineTo(W, i * CELL);
-    ctx.stroke();
-  }
-  ctx.fillStyle = "#b63b2b";
-  ctx.beginPath();
-  ctx.arc(state.food.x * CELL + CELL / 2, state.food.y * CELL + CELL / 2, 7, 0, Math.PI * 2);
-  ctx.fill();
+  drawSnakeArena(ctx, SIZE, CELL);
+  drawFood(ctx, state.food, CELL);
   state.snake.forEach((cell, index) => {
-    ctx.fillStyle = index === 0 ? "#d79d38" : "#1f8d67";
-    ctx.fillRect(cell.x * CELL + 2, cell.y * CELL + 2, CELL - 4, CELL - 4);
+    drawSnakeSegment(ctx, cell, index, CELL, state.dir);
   });
 }
 
@@ -129,7 +115,7 @@ export function mountSnake(root, context) {
         <span data-length>长度 3</span>
       </div>
     </section>
-    <section class="arcade-shell">
+    <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas" width="${W}" height="${W}" aria-label="贪吃蛇"></canvas></div>
       <div class="arcade-controls">
         <div class="arcade-dpad" aria-label="移动方向">

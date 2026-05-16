@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="贪吃蛇">
-  <rect x="10" y="10" width="76" height="76" rx="14" fill="#fffaf0" stroke="#1f5f4a" stroke-width="4"/>
-  <path d="M27 64h26a13 13 0 0 0 0-26H43a9 9 0 0 1 0-18h21" fill="none" stroke="#1f5f4a" stroke-width="11" stroke-linecap="round"/>
-  <circle cx="66" cy="20" r="3" fill="#fffaf0"/>
-  <circle cx="76" cy="62" r="7" fill="#b63b2b"/>
-  <path d="M23 64h-8" stroke="#d79d38" stroke-width="5" stroke-linecap="round"/>
-</svg>

@@ -335,7 +335,8 @@ const registrations = [
       progressType: "score",
       ...gameVisualStyle("classicArcade"),
       accent: "cinnabar",
-      icon: "./public/skins/guofeng-ink/icons/tank-battle.svg",
+      icon: "./public/games/arcade/icons/tank-battle.svg",
+      assets: ["./public/games/arcade/icons/tank-battle.svg"],
       rules: [
         "移动坦克躲避敌火，发射炮弹击破敌方坦克。",
         "砖墙可被炮弹击毁，钢墙不可击毁。",
@@ -359,7 +360,8 @@ const registrations = [
       progressType: "score",
       ...gameVisualStyle("classicArcade"),
       accent: "sky",
-      icon: "./public/skins/guofeng-ink/icons/space-shooter.svg",
+      icon: "./public/games/arcade/icons/space-shooter.svg",
+      assets: ["./public/games/arcade/icons/space-shooter.svg"],
       rules: [
         "拖动或方向键移动战机，自动射击前方敌机。",
         "击毁敌机获得分数，避开敌方弹幕。",
@@ -383,7 +385,8 @@ const registrations = [
       progressType: "score",
       ...gameVisualStyle("classicArcade"),
       accent: "jade",
-      icon: "./public/skins/guofeng-ink/icons/snake.svg",
+      icon: "./public/games/arcade/icons/snake.svg",
+      assets: ["./public/games/arcade/icons/snake.svg"],
       rules: [
         "控制蛇头吃到食物，每吃一个食物身体增长。",
         "撞墙或撞到自己即结束。",
@@ -407,7 +410,8 @@ const registrations = [
       progressType: "score",
       ...gameVisualStyle("classicArcade"),
       accent: "lotus",
-      icon: "./public/skins/guofeng-ink/icons/breakout.svg",
+      icon: "./public/games/arcade/icons/breakout.svg",
+      assets: ["./public/games/arcade/icons/breakout.svg"],
       rules: [
         "移动挡板反弹小球，击碎上方砖块。",
         "漏球会损失生命，清空砖块则胜利。",

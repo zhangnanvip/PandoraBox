@@ -1,3 +1,5 @@
+import { drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawPaddle } from "../arcade/classic-visuals.js";
+
 const W = 360;
 const H = 360;
 const CONFIG = {
@@ -18,7 +20,7 @@ function makeBricks(rows) {
   const bw = (W - 32 - gap * (cols - 1)) / cols;
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < cols; x += 1) {
-      bricks.push({ x: 16 + x * (bw + gap), y: 34 + y * 18, w: bw, h: 13, hp: y < 2 ? 1 : 2 });
+      bricks.push({ x: 16 + x * (bw + gap), y: 34 + y * 18, w: bw, h: 13, hp: y < 2 ? 1 : 2, row: y });
     }
   }
   return bricks;
@@ -107,20 +109,12 @@ function update(state, config, controls, dt, context) {
 
 function draw(state, ctx) {
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = "#18251f";
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = "rgba(255,250,240,.08)";
-  for (let x = 0; x < W; x += 24) ctx.fillRect(x, 0, 1, H);
+  drawBreakoutBackdrop(ctx, W, H, state.time);
   for (const brick of state.bricks) {
-    ctx.fillStyle = brick.hp > 1 ? "#be5c79" : "#d79d38";
-    ctx.fillRect(brick.x, brick.y, brick.w, brick.h);
+    drawBreakoutBrick(ctx, brick, brick.row);
   }
-  ctx.fillStyle = "#1f8d67";
-  ctx.fillRect(state.paddle.x - state.paddle.w / 2, state.paddle.y, state.paddle.w, 12);
-  ctx.fillStyle = "#fffaf0";
-  ctx.beginPath();
-  ctx.arc(state.ball.x, state.ball.y, 6, 0, Math.PI * 2);
-  ctx.fill();
+  drawPaddle(ctx, state.paddle);
+  drawBall(ctx, state.ball);
 }
 
 export function mountBreakout(root, context) {
@@ -143,7 +137,7 @@ export function mountBreakout(root, context) {
         <span data-left>砖块 ${state.bricks.length}</span>
       </div>
     </section>
-    <section class="arcade-shell">
+    <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas" width="${W}" height="${H}" aria-label="打砖块"></canvas></div>
       <div class="arcade-control-row">
         <button data-control="left">左</button>

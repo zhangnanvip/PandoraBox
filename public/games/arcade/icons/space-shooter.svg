@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="雷霆战机">
+  <rect width="96" height="96" rx="14" fill="#090d1c"/>
+  <path d="M16 14h4v4h-4zM72 20h3v3h-3zM22 70h3v3h-3zM78 64h4v4h-4zM42 12h2v10h-2zM58 76h2v8h-2z" fill="#42f2ff" opacity=".85"/>
+  <path d="M48 13 63 69 52 62 48 83 44 62 33 69 48 13Z" fill="#42f2ff"/>
+  <path d="M48 26 55 58 48 53 41 58 48 26Z" fill="#f8fbff"/>
+  <path d="M39 70h6v12h-6zM51 70h6v12h-6z" fill="#ff9f1c"/>
+  <path d="M18 38 30 25l12 13-12 6-12-6ZM54 38l12-13 12 13-12 6-12-6Z" fill="#ff4d5e"/>
+</svg>

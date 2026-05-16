@@ -17,6 +17,8 @@
 src/platform/game-plugin.js    插件协议、manifest 标准化、入口加载
 src/games/catalog.js           游戏注册表，只暴露元信息和异步 loader
 src/games/<game>/game.js       独立游戏实现，导出 mount(root, context)
+src/games/arcade/*.js          动作街机类共享视觉/输入辅助，不属于全局界面主题
+public/games/<type>/...        游戏自己的图标与素材目录
 ```
 
 大厅使用 `games` 元信息渲染分类与卡片；进入游戏页时调用 `loadGamePlugin(id)`，动态导入对应游戏模块，再执行 `mount`。

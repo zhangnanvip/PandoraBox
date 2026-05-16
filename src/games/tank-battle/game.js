@@ -1,3 +1,5 @@
+import { classicArcade, drawArcadeBackdrop, drawBase, drawTankSprite, drawTankWall } from "../arcade/classic-visuals.js";
+
 const W = 360;
 const H = 360;
 const TILE = 30;
@@ -207,28 +209,10 @@ function update(state, config, controls, dt, context) {
   if (state.destroyed >= state.total && !state.enemies.length) finish(state, true, context);
 }
 
-function drawTank(ctx, tank, color, stroke) {
-  ctx.save();
-  ctx.translate(tank.x, tank.y);
-  const angle = { up: 0, right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2 }[tank.dir];
-  ctx.rotate(angle);
-  ctx.fillStyle = color;
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth = 2;
-  ctx.fillRect(-12, -11, 24, 22);
-  ctx.strokeRect(-12, -11, 24, 22);
-  ctx.fillStyle = stroke;
-  ctx.fillRect(-3, -20, 6, 18);
-  ctx.fillStyle = "rgba(255,250,240,.82)";
-  ctx.fillRect(-7, -5, 14, 10);
-  ctx.restore();
-}
-
 function draw(state, ctx) {
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = "#17231e";
-  ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = "rgba(255,250,240,.08)";
+  drawArcadeBackdrop(ctx, W, H, state.time, { top: "#101616", bottom: "#17231e", grid: "rgba(93,255,139,.09)", gridSize: TILE });
+  ctx.strokeStyle = "rgba(255, 255, 255, .05)";
   for (let x = 0; x <= W; x += TILE) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
@@ -243,21 +227,20 @@ function draw(state, ctx) {
   }
 
   for (const wall of state.walls) {
-    ctx.fillStyle = wall.type === "steel" ? "#8f9389" : "#9f4c35";
-    ctx.fillRect(wall.x + 2, wall.y + 2, wall.w - 4, wall.h - 4);
-    ctx.strokeStyle = "rgba(255,250,240,.25)";
-    ctx.strokeRect(wall.x + 4, wall.y + 4, wall.w - 8, wall.h - 8);
+    drawTankWall(ctx, wall);
   }
-  ctx.fillStyle = state.base.alive ? "#d79d38" : "#4b2b25";
-  ctx.fillRect(state.base.x, state.base.y, state.base.w, state.base.h);
-  ctx.fillStyle = "#1f5f4a";
-  ctx.fillRect(state.base.x + 9, state.base.y + 6, 14, 13);
+  drawBase(ctx, state.base, state.base.alive);
 
-  drawTank(ctx, state.player, state.player.invuln > 0 ? "#f0c76d" : "#1f8d67", "#fffaf0");
-  state.enemies.forEach((enemy) => drawTank(ctx, enemy, enemy.hp > 1 ? "#b63b2b" : "#be5c79", "#fffaf0"));
+  drawTankSprite(ctx, state.player, "player");
+  if (state.player.invuln > 0 && Math.floor(state.time * 12) % 2 === 0) {
+    ctx.strokeStyle = classicArcade.yellow;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(state.player.x - 16, state.player.y - 16, 32, 32);
+  }
+  state.enemies.forEach((enemy) => drawTankSprite(ctx, enemy, "enemy"));
 
   for (const bullet of state.bullets) {
-    ctx.fillStyle = bullet.owner === "player" ? "#fffaf0" : "#d79d38";
+    ctx.fillStyle = bullet.owner === "player" ? classicArcade.white : classicArcade.orange;
     ctx.beginPath();
     ctx.arc(bullet.x, bullet.y, 3.5, 0, Math.PI * 2);
     ctx.fill();
@@ -296,7 +279,7 @@ export function mountTankBattle(root, context) {
         <span data-left>敌军 ${config.total}</span>
       </div>
     </section>
-    <section class="arcade-shell">
+    <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas" width="${W}" height="${H}" aria-label="坦克大战"></canvas></div>
       <div class="arcade-controls">
         <div class="arcade-dpad" aria-label="移动方向">
