@@ -270,6 +270,7 @@ export function mountGo(root, context) {
 
   let disposed = false;
   let aiTimer = 0;
+  let resultReported = false;
 
   function save() {
     saveState(storageKey, state);
@@ -296,10 +297,24 @@ export function mountGo(root, context) {
     });
   }
 
+  function reportResult(score) {
+    if (resultReported || !state.winner) return;
+    resultReported = true;
+    const outcome = context.mode === "ai"
+      ? state.winner === BLACK ? "win" : "loss"
+      : "complete";
+    context.reportResult?.({
+      outcome,
+      detail: state.message,
+      extra: `黑 ${score[BLACK]} · 白 ${score[WHITE]}`
+    });
+  }
+
   function finishByScore() {
     const score = scoreBoard(state.board, state.captures, state.size);
     state.winner = score[BLACK] >= score[WHITE] ? BLACK : WHITE;
     state.message = `双方停一手，${turnLabel(state.winner)}胜 ${score[BLACK]}:${score[WHITE]}`;
+    reportResult(score);
   }
 
   function play(index) {
@@ -350,6 +365,7 @@ export function mountGo(root, context) {
 
   function restart(size = state.size) {
     state = initialState(size);
+    resultReported = false;
     removeState(storageKey);
     save();
     render();

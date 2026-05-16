@@ -368,6 +368,7 @@ export function mountXiangqi(root, context) {
 
   let disposed = false;
   let aiTimer = 0;
+  let resultReported = false;
 
   function save() {
     saveState(storageKey, state);
@@ -391,6 +392,19 @@ export function mountXiangqi(root, context) {
     state.moves = [];
   }
 
+  function reportResult() {
+    if (resultReported || !state.winner) return;
+    resultReported = true;
+    const outcome = context.mode === "ai"
+      ? state.winner === RED ? "win" : "loss"
+      : "complete";
+    context.reportResult?.({
+      outcome,
+      detail: state.message,
+      moves: state.history.length
+    });
+  }
+
   function movePiece(from, to) {
     const moving = state.board[from];
     const captured = state.board[to];
@@ -403,6 +417,7 @@ export function mountXiangqi(root, context) {
     if (captured && typeOf(captured) === "G") {
       state.winner = colorOf(moving);
       state.message = `${sideLabel(state.winner)}获胜`;
+      reportResult();
     } else {
       state.turn = state.turn === RED ? BLACK : RED;
       state.message = captured ? `${sideLabel(colorOf(moving))}吃子，轮到${sideLabel(state.turn)}` : `轮到${sideLabel(state.turn)}`;
@@ -445,6 +460,7 @@ export function mountXiangqi(root, context) {
 
   function restart() {
     state = initialState();
+    resultReported = false;
     removeState(storageKey);
     render();
   }

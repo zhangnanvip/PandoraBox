@@ -146,15 +146,29 @@ export function mount2048(root, context) {
   let startX = 0;
   let startY = 0;
   let pointerActive = false;
+  let resultReported = false;
 
   function save() {
     saveState(storageKey, state);
     saveState("2048:best", state.best);
   }
 
+  function reportResult(outcome) {
+    if (resultReported) return;
+    resultReported = true;
+    context.reportResult?.({
+      outcome,
+      detail: state.message,
+      score: state.score,
+      extra: `目标 ${state.target}`
+    });
+  }
+
   function move(direction) {
     if (!direction) return;
     if (applyMove(state, direction, context.difficulty)) save();
+    if (state.won) reportResult("complete");
+    else if (state.over) reportResult("score");
     render();
   }
 
@@ -168,6 +182,7 @@ export function mount2048(root, context) {
 
   function restart() {
     state = initialState(context.difficulty);
+    resultReported = false;
     removeState(storageKey);
     save();
     render();

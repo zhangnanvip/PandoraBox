@@ -103,6 +103,7 @@ export function mountTicTacToe(root, context) {
 
   let disposed = false;
   let aiTimer = 0;
+  let resultReported = false;
 
   function save() {
     saveState(storageKey, state);
@@ -125,12 +126,28 @@ export function mountTicTacToe(root, context) {
     });
   }
 
+  function reportResult() {
+    if (resultReported || !state.winner) return;
+    resultReported = true;
+    const outcome = state.winner === "draw"
+      ? "draw"
+      : context.mode === "ai"
+      ? state.winner === HUMAN ? "win" : "loss"
+      : "complete";
+    context.reportResult?.({
+      outcome,
+      detail: state.message,
+      moves: state.board.filter(Boolean).length
+    });
+  }
+
   function finishTurn() {
     const result = evaluate(state.board);
     state.winner = result.winner;
     state.line = result.line;
     if (state.winner) {
       state.message = state.winner === "draw" ? "平局" : `${labelFor(state.winner)} 获胜`;
+      reportResult();
       return;
     }
     state.turn = state.turn === HUMAN ? AI : HUMAN;
@@ -160,6 +177,7 @@ export function mountTicTacToe(root, context) {
 
   function restart() {
     state = initialState();
+    resultReported = false;
     removeState(storageKey);
     render();
   }

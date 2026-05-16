@@ -204,6 +204,7 @@ export function mountGomoku(root, context) {
 
   let disposed = false;
   let aiTimer = 0;
+  let resultReported = false;
 
   function save() {
     saveState(storageKey, state);
@@ -227,6 +228,21 @@ export function mountGomoku(root, context) {
     state.message = previous.message;
   }
 
+  function reportResult() {
+    if (resultReported || !state.winner) return;
+    resultReported = true;
+    const outcome = state.winner === 3
+      ? "draw"
+      : context.mode === "ai"
+      ? state.winner === BLACK ? "win" : "loss"
+      : "complete";
+    context.reportResult?.({
+      outcome,
+      detail: state.message,
+      moves: state.board.filter(Boolean).length
+    });
+  }
+
   function place(index) {
     if (state.winner || state.board[index] !== EMPTY) return false;
     state.history.push(snapshot());
@@ -236,9 +252,11 @@ export function mountGomoku(root, context) {
     if (hasFive(state.board, index, state.turn)) {
       state.winner = state.turn;
       state.message = `${turnLabel(state.turn)}获胜`;
+      reportResult();
     } else if (!legalMoves(state.board).length) {
       state.winner = 3;
       state.message = "棋盘已满，平局";
+      reportResult();
     } else {
       state.turn = state.turn === BLACK ? WHITE : BLACK;
       state.message = `轮到${turnLabel(state.turn)}`;
@@ -262,6 +280,7 @@ export function mountGomoku(root, context) {
 
   function restart() {
     state = initialState();
+    resultReported = false;
     removeState(storageKey);
     render();
   }

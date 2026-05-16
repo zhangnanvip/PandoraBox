@@ -209,6 +209,7 @@ export function mountChineseCheckers(root, context) {
 
   let disposed = false;
   let aiTimer = 0;
+  let resultReported = false;
 
   function save() {
     saveState(storageKey, state);
@@ -232,6 +233,19 @@ export function mountChineseCheckers(root, context) {
     state.moves = [];
   }
 
+  function reportResult() {
+    if (resultReported || !state.winner) return;
+    resultReported = true;
+    const outcome = context.mode === "ai"
+      ? state.winner === HUMAN ? "win" : "loss"
+      : "complete";
+    context.reportResult?.({
+      outcome,
+      detail: state.message,
+      moves: state.history.length
+    });
+  }
+
   function movePiece(from, to) {
     state.history.push(snapshot());
     state.pieces[to] = state.pieces[from];
@@ -242,6 +256,7 @@ export function mountChineseCheckers(root, context) {
     if (hasWon(state.pieces, state.turn)) {
       state.winner = state.turn;
       state.message = `${sideLabel(state.turn)}获胜`;
+      reportResult();
     } else {
       state.turn = state.turn === HUMAN ? AI : HUMAN;
       state.message = `轮到${sideLabel(state.turn)}`;
@@ -283,6 +298,7 @@ export function mountChineseCheckers(root, context) {
 
   function restart() {
     state = initialState();
+    resultReported = false;
     removeState(storageKey);
     render();
   }

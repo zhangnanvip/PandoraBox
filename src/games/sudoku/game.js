@@ -110,6 +110,7 @@ export function mountSudoku(root, context) {
   let state = loadState(storageKey, initialState(context.difficulty));
   if (!isValidState(state)) state = initialState(context.difficulty);
   if (!Array.isArray(state.history)) state.history = [];
+  let resultReported = false;
 
   function save() {
     saveState(storageKey, state);
@@ -131,6 +132,17 @@ export function mountSudoku(root, context) {
     });
   }
 
+  function reportResult() {
+    if (resultReported || !state.complete) return;
+    resultReported = true;
+    context.reportResult?.({
+      outcome: "complete",
+      detail: state.message,
+      moves: state.history.length,
+      score: Math.max(0, 1000 - state.mistakes * 80 - state.history.length * 3)
+    });
+  }
+
   function select(index) {
     state.selected = index;
     save();
@@ -148,6 +160,7 @@ export function mountSudoku(root, context) {
     } else if (isSolved(state)) {
       state.complete = true;
       state.message = "完成数独";
+      reportResult();
     } else {
       state.message = value ? "填入正确" : "已清除";
     }
@@ -165,6 +178,7 @@ export function mountSudoku(root, context) {
     state.values[index] = state.solution[index];
     state.message = `提示填入 ${state.solution[index]}`;
     state.complete = isSolved(state);
+    reportResult();
     save();
     render();
   }
@@ -187,6 +201,7 @@ export function mountSudoku(root, context) {
     } else {
       state.complete = true;
       state.message = "完成数独";
+      reportResult();
     }
     save();
     render();
@@ -194,6 +209,7 @@ export function mountSudoku(root, context) {
 
   function restart() {
     state = initialState(context.difficulty);
+    resultReported = false;
     removeState(storageKey);
     render();
   }

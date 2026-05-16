@@ -215,6 +215,7 @@ export function mountReversi(root, context) {
   let aiTimer = 0;
   let hintTimer = 0;
   let hintedMove = -1;
+  let resultReported = false;
 
   function save() {
     saveState(storageKey, state);
@@ -234,6 +235,21 @@ export function mountReversi(root, context) {
     Object.assign(state, previous, { board: [...previous.board] });
   }
 
+  function reportResult() {
+    if (resultReported || !state.winner) return;
+    resultReported = true;
+    const outcome = state.winner === 3
+      ? "draw"
+      : context.mode === "ai"
+      ? state.winner === BLACK ? "win" : "loss"
+      : "complete";
+    context.reportResult?.({
+      outcome,
+      detail: state.message,
+      extra: `黑 ${count(state.board, BLACK)} · 白 ${count(state.board, WHITE)}`
+    });
+  }
+
   function resolveNextTurn() {
     const next = opponent(state.turn);
     const nextMoves = validMoves(state.board, next);
@@ -241,6 +257,7 @@ export function mountReversi(root, context) {
     if (!nextMoves.length && !currentMoves.length) {
       state.winner = winnerFor(state.board);
       state.message = state.winner === 3 ? "终局平局" : `${playerName(state.winner)}获胜`;
+      reportResult();
       return;
     }
     if (!nextMoves.length) {
@@ -280,6 +297,7 @@ export function mountReversi(root, context) {
 
   function restart() {
     state = initialState();
+    resultReported = false;
     hintedMove = -1;
     removeState(storageKey);
     render();

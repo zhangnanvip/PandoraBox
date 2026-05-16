@@ -237,6 +237,7 @@ export function mountDraughts(root, context) {
 
   let disposed = false;
   let aiTimer = 0;
+  let resultReported = false;
 
   function save() {
     saveState(storageKey, state);
@@ -257,6 +258,19 @@ export function mountDraughts(root, context) {
     Object.assign(state, previous, { board: [...previous.board] });
   }
 
+  function reportResult() {
+    if (resultReported || !state.winner) return;
+    resultReported = true;
+    const outcome = context.mode === "ai"
+      ? state.winner === RED ? "win" : "loss"
+      : "complete";
+    context.reportResult?.({
+      outcome,
+      detail: state.message,
+      moves: state.history.length
+    });
+  }
+
   function finishTurn(lastMove) {
     if (lastMove?.capture >= 0) {
       const moreCaptures = pieceMoves(state.board, lastMove.to, true).filter((move) => move.capture >= 0);
@@ -273,6 +287,7 @@ export function mountDraughts(root, context) {
     if (!countPieces(state.board, next) || !allMoves(state.board, next).length) {
       state.winner = state.turn;
       state.message = `${sideName(state.turn)}获胜`;
+      reportResult();
       return;
     }
     state.turn = next;
@@ -322,6 +337,7 @@ export function mountDraughts(root, context) {
 
   function restart() {
     state = initialState();
+    resultReported = false;
     removeState(storageKey);
     render();
   }

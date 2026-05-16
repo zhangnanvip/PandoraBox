@@ -122,6 +122,7 @@ export function mountFlyingChess(root, context) {
   let disposed = false;
   let aiTimer = 0;
   let passTimer = 0;
+  let resultReported = false;
 
   function save() {
     saveState(storageKey, state);
@@ -145,6 +146,19 @@ export function mountFlyingChess(root, context) {
     state.rolled = previous.rolled;
     state.winner = previous.winner;
     state.message = previous.message;
+  }
+
+  function reportResult() {
+    if (resultReported || state.winner < 0) return;
+    resultReported = true;
+    const outcome = context.mode === "ai"
+      ? state.winner === 0 ? "win" : "loss"
+      : "complete";
+    context.reportResult?.({
+      outcome,
+      detail: state.message,
+      moves: state.history.length
+    });
   }
 
   function isHumanTurn() {
@@ -195,6 +209,7 @@ export function mountFlyingChess(root, context) {
     if (state.pieces[state.turn].every((steps) => steps === FINISH)) {
       state.winner = state.turn;
       state.message = `${playerLabel(state.turn)}获胜`;
+      reportResult();
     } else {
       nextTurn(state.dice === 6);
       return;
@@ -217,6 +232,7 @@ export function mountFlyingChess(root, context) {
 
   function restart() {
     state = initialState();
+    resultReported = false;
     removeState(storageKey);
     render();
   }

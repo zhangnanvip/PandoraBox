@@ -476,6 +476,26 @@ select {
   font-weight: 800;
 }
 
+.progress-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.progress-pills span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid rgba(31, 95, 74, 0.14);
+  border-radius: var(--radius);
+  background: rgba(255, 250, 240, 0.62);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
 .accent-cinnabar .game-tag {
   color: var(--cinnabar);
 }
@@ -878,9 +898,47 @@ select {
   display: grid;
   gap: 10px;
   margin: 0;
-  padding-left: 1.2rem;
+  padding-left: 0;
+  list-style: none;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.modal-list li {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.modal-list li b {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--jade-soft);
+  color: var(--jade);
+  font-size: 0.8rem;
+}
+
+.rules-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.rules-context span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 800;
 }
 
 .modal-stack {
@@ -947,6 +1005,22 @@ select {
   margin-bottom: 0;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.result-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.result-panel > strong {
+  color: var(--jade);
+  font-size: 1.35rem;
+}
+
+.result-panel p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .toggle-row {

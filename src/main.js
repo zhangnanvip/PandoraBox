@@ -9,19 +9,24 @@ const preferences = loadState("preferences", {
   mode: "ai",
   skin: "guofeng",
   sound: true,
-  volume: 70
+  volume: 70,
+  gameOptions: {}
 });
+const savedProgress = loadState("progress", {});
 
 const state = {
   currentGame: "",
   difficulty: preferences.difficulty || "medium",
   mode: preferences.mode || "ai",
+  gameOptions: preferences.gameOptions && typeof preferences.gameOptions === "object" ? preferences.gameOptions : {},
   skin: skins[preferences.skin] ? preferences.skin : "guofeng",
   sound: preferences.sound !== false,
   volume: Number.isFinite(preferences.volume) ? preferences.volume : 70,
   modal: "",
   pendingGame: "",
-  activeCategory: "all"
+  activeCategory: "all",
+  progress: savedProgress && typeof savedProgress === "object" ? savedProgress : {},
+  resultSummary: null
 };
 
 let cleanupGame = null;
@@ -48,8 +53,13 @@ function persistPreferences() {
     mode: state.mode,
     skin: state.skin,
     sound: state.sound,
-    volume: state.volume
+    volume: state.volume,
+    gameOptions: state.gameOptions
   });
+}
+
+function persistProgress() {
+  saveState("progress", state.progress);
 }
 
 function setState(patch) {
@@ -67,16 +77,24 @@ function openModal(name, patch = {}) {
 function closeModal() {
   state.modal = "";
   state.pendingGame = "";
+  state.resultSummary = null;
   render();
 }
 
 function startPendingGame() {
   if (!state.pendingGame) return;
   const game = findGame(state.pendingGame);
+  const mode = selectedModeFor(game);
+  const difficulty = selectedDifficultyFor(game);
+  state.gameOptions = {
+    ...state.gameOptions,
+    [game.id]: { ...(state.gameOptions[game.id] || {}), mode, difficulty }
+  };
+  recordGameStart(game, mode, difficulty);
   setState({
     currentGame: game.id,
-    mode: selectedModeFor(game),
-    difficulty: selectedDifficultyFor(game),
+    mode,
+    difficulty,
     modal: "",
     pendingGame: ""
   });
@@ -104,11 +122,131 @@ function supportedValue(current, supported, fallback) {
 }
 
 function selectedModeFor(game) {
-  return supportedValue(state.mode, game.modeSupport || ["ai", "local"], "local");
+  return supportedValue(state.gameOptions[game.id]?.mode || state.mode, game.modeSupport || ["ai", "local"], "local");
 }
 
 function selectedDifficultyFor(game) {
-  return supportedValue(state.difficulty, game.difficultySupport || ["easy", "medium", "hard"], "medium");
+  return supportedValue(state.gameOptions[game.id]?.difficulty || state.difficulty, game.difficultySupport || ["easy", "medium", "hard"], "medium");
+}
+
+function updateGameOption(game, patch) {
+  state.gameOptions = {
+    ...state.gameOptions,
+    [game.id]: { ...(state.gameOptions[game.id] || {}), ...patch }
+  };
+  if (patch.mode) state.mode = patch.mode;
+  if (patch.difficulty) state.difficulty = patch.difficulty;
+  persistPreferences();
+  render();
+}
+
+function progressFor(gameId) {
+  return state.progress[gameId] || {
+    started: 0,
+    completed: 0,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    bestScore: 0,
+    lastPlayed: "",
+    lastResult: ""
+  };
+}
+
+function saveProgressFor(gameId, progress) {
+  state.progress = { ...state.progress, [gameId]: progress };
+  persistProgress();
+}
+
+function recordGameStart(game, mode, difficulty) {
+  const progress = progressFor(game.id);
+  saveProgressFor(game.id, {
+    ...progress,
+    started: progress.started + 1,
+    lastPlayed: new Date().toISOString(),
+    lastMode: mode,
+    lastDifficulty: difficulty
+  });
+}
+
+function outcomeLabel(outcome) {
+  const labels = {
+    win: "胜利",
+    loss: "失利",
+    draw: "平局",
+    complete: "完成",
+    score: "结算"
+  };
+  return labels[outcome] || "完成";
+}
+
+function formatTime(value) {
+  if (!value) return "暂无";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "暂无";
+  return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function progressSummary(game) {
+  const progress = progressFor(game.id);
+  const decided = progress.wins + progress.losses + progress.draws;
+  return {
+    ...progress,
+    winRate: decided ? Math.round((progress.wins / decided) * 100) : 0
+  };
+}
+
+function renderProgressPills(game, compact = false) {
+  const progress = progressSummary(game);
+  if (!progress.started && compact) return "";
+  const items = compact
+    ? [`已玩 ${progress.started}`, progress.completed ? `完成 ${progress.completed}` : ""].filter(Boolean)
+    : [
+      `开局 ${progress.started}`,
+      `完成 ${progress.completed}`,
+      `胜 ${progress.wins}`,
+      `负 ${progress.losses}`,
+      `平 ${progress.draws}`,
+      progress.bestScore ? `最高 ${progress.bestScore}` : "",
+      `最近 ${formatTime(progress.lastPlayed)}`
+    ].filter(Boolean);
+  return `
+    <div class="progress-pills">
+      ${items.map((item) => `<span>${item}</span>`).join("")}
+    </div>
+  `;
+}
+
+function normalizeResult(game, result = {}) {
+  const outcome = result.outcome || "complete";
+  const score = Number.isFinite(result.score) ? result.score : 0;
+  const progress = progressFor(game.id);
+  const next = {
+    ...progress,
+    completed: progress.completed + 1,
+    wins: progress.wins + Number(outcome === "win"),
+    losses: progress.losses + Number(outcome === "loss"),
+    draws: progress.draws + Number(outcome === "draw"),
+    bestScore: Math.max(progress.bestScore || 0, score || 0),
+    lastPlayed: new Date().toISOString(),
+    lastResult: outcome
+  };
+  saveProgressFor(game.id, next);
+  return {
+    gameTitle: game.title,
+    outcome,
+    score,
+    detail: result.detail || result.message || "",
+    extra: result.extra || "",
+    moves: result.moves,
+    progress: next
+  };
+}
+
+function handleGameResult(game, result) {
+  state.resultSummary = normalizeResult(game, result);
+  state.modal = "result";
+  renderModal();
 }
 
 function renderSelectField({ label, attr, value, options }) {
@@ -301,6 +439,7 @@ function renderGameCard(game) {
           <div class="game-meta">
             <span>${category.shortTitle}</span>
           </div>
+          ${renderProgressPills(game, true)}
         </div>
         ${boardPreview(game)}
       </div>
@@ -412,7 +551,8 @@ function renderGame() {
       cleanupGame = plugin.mount(gameRoot, {
         difficulty,
         mode,
-        labels: { difficulty: difficultyLabel[difficulty], mode: modeLabel[mode] }
+        labels: { difficulty: difficultyLabel[difficulty], mode: modeLabel[mode] },
+        reportResult: (result) => handleGameResult(game, result)
       });
     })
     .catch((error) => {
@@ -460,6 +600,7 @@ function modalContent() {
               <p>${game.subtitle}</p>
             </div>
           </div>
+          ${renderProgressPills(game)}
           ${renderModeField(game)}
           ${renderDifficultyField(game)}
           <button class="primary-button wide-button" data-start-game>${icon("play")} 开始</button>
@@ -472,9 +613,38 @@ function modalContent() {
     return {
       title: `${game.title}规则`,
       body: `
+        <div class="rules-context">
+          <span>${modeLabel[selectedModeFor(game)] || "单人挑战"}</span>
+          <span>${difficultyLabel[selectedDifficultyFor(game)] || "中等"}</span>
+        </div>
         <ul class="modal-list">
-          ${(game.rules || []).map((rule) => `<li>${rule}</li>`).join("")}
+          ${(game.rules || []).map((rule, index) => `<li><b>${index + 1}</b><span>${rule}</span></li>`).join("")}
         </ul>
+      `
+    };
+  }
+
+  if (state.modal === "result" && state.resultSummary) {
+    const result = state.resultSummary;
+    return {
+      title: `${result.gameTitle}结束`,
+      body: `
+        <div class="result-panel">
+          <strong>${outcomeLabel(result.outcome)}</strong>
+          ${result.detail ? `<p>${result.detail}</p>` : ""}
+          <div class="progress-pills">
+            <span>完成 ${result.progress.completed}</span>
+            <span>胜 ${result.progress.wins}</span>
+            <span>负 ${result.progress.losses}</span>
+            <span>平 ${result.progress.draws}</span>
+            ${result.score ? `<span>分数 ${result.score}</span>` : ""}
+            ${result.progress.bestScore ? `<span>最高 ${result.progress.bestScore}</span>` : ""}
+          </div>
+          <div class="settings-actions">
+            <button class="secondary-button" data-result-close>继续查看</button>
+            <button class="primary-button" data-result-lobby>返回大厅</button>
+          </div>
+        </div>
       `
     };
   }
@@ -510,6 +680,13 @@ function modalContent() {
           <span>音量 ${state.volume}%</span>
           <input type="range" min="0" max="100" step="5" value="${state.volume}" data-modal-volume />
         </label>
+        <div>
+          <span class="modal-label">对局记录</span>
+          <div class="progress-pills">
+            <span>开局 ${Object.values(state.progress).reduce((sum, item) => sum + (item.started || 0), 0)}</span>
+            <span>完成 ${Object.values(state.progress).reduce((sum, item) => sum + (item.completed || 0), 0)}</span>
+          </div>
+        </div>
         <div class="settings-actions">
           <button class="secondary-button" data-open-modal="offline">${icon("offline")} 离线状态</button>
           <button class="secondary-button" data-install-app ${installPrompt ? "" : "disabled"}>安装到设备</button>
@@ -541,8 +718,8 @@ function renderModal() {
     const closeButton = event.target.closest("button[data-close-modal]");
     if (event.target === backdrop || closeButton) closeModal();
   });
-  app.querySelector("[data-modal-mode]")?.addEventListener("change", (event) => setState({ mode: event.target.value }));
-  app.querySelector("[data-modal-difficulty]")?.addEventListener("change", (event) => setState({ difficulty: event.target.value }));
+  app.querySelector("[data-modal-mode]")?.addEventListener("change", (event) => updateGameOption(game, { mode: event.target.value }));
+  app.querySelector("[data-modal-difficulty]")?.addEventListener("change", (event) => updateGameOption(game, { difficulty: event.target.value }));
   app.querySelector("[data-modal-sound]")?.addEventListener("change", (event) => setState({ sound: event.target.checked }));
   app.querySelector("[data-modal-volume]")?.addEventListener("input", (event) => setState({ volume: Number(event.target.value) }));
   app.querySelectorAll(".modal-panel [data-open-modal]").forEach((button) => {
@@ -557,6 +734,14 @@ function renderModal() {
   });
   app.querySelector("[data-start-game]")?.addEventListener("click", () => {
     startPendingGame();
+  });
+  app.querySelector("[data-result-close]")?.addEventListener("click", () => {
+    state.modal = "";
+    state.resultSummary = null;
+    renderModal();
+  });
+  app.querySelector("[data-result-lobby]")?.addEventListener("click", () => {
+    setState({ currentGame: "", modal: "", pendingGame: "", resultSummary: null });
   });
   app.querySelectorAll(".modal-panel [data-skin]").forEach((button) => {
     button.addEventListener("click", () => {

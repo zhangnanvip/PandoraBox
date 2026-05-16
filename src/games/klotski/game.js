@@ -178,6 +178,7 @@ export function mountKlotski(root, context) {
   if (!isValidState(state, context.difficulty)) state = initialState(context.difficulty);
   let pointerStart = null;
   let ignoreClick = false;
+  let resultReported = false;
 
   function beginDrag(id, x, y) {
     pointerStart = { id, x, y };
@@ -220,6 +221,17 @@ export function mountKlotski(root, context) {
     return state.pieces.find((piece) => piece.id === state.selected) || state.pieces[0];
   }
 
+  function reportResult() {
+    if (resultReported || !state.complete) return;
+    resultReported = true;
+    context.reportResult?.({
+      outcome: "complete",
+      detail: state.message,
+      moves: state.steps,
+      score: Math.max(0, levelFor(state.level).target * 20 - state.steps)
+    });
+  }
+
   function select(id) {
     state.selected = id;
     const piece = selectedPiece();
@@ -245,6 +257,7 @@ export function mountKlotski(root, context) {
     if (isSolved(state)) {
       state.complete = true;
       state.message = `曹操出关，用时 ${state.steps} 步`;
+      reportResult();
     } else {
       state.message = `${piece.name} 向${moveInfo.label}移动`;
     }
@@ -262,6 +275,7 @@ export function mountKlotski(root, context) {
 
   function restart() {
     state = initialState(context.difficulty);
+    resultReported = false;
     removeState(storageKey);
     render();
   }
