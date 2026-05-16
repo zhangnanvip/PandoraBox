@@ -1,4 +1,4 @@
-const CACHE_NAME = "pandora-box-v18";
+const CACHE_NAME = "pandora-box-v19";
 const SCOPE_URL = new URL(self.registration.scope);
 
 const APP_SHELL = [
@@ -11,6 +11,7 @@ const APP_SHELL = [
   "./src/styles.css",
   "./src/main.js",
   "./src/platform/game-plugin.js",
+  "./src/platform/sound.js",
   "./src/theme/skins.js",
   "./src/utils/storage.js",
   "./src/utils/random.js",

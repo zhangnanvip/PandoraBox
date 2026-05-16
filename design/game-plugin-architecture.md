@@ -55,12 +55,19 @@ export function mount(root, context) {
 {
   mode: "ai",
   difficulty: "medium",
+  options: {
+    boardSize: "4"
+  },
   labels: {
     mode: "单人对弈",
     difficulty: "中等"
-  }
+  },
+  playSound: (name) => {},
+  reportResult: (result) => {}
 }
 ```
+
+`options` 来自开局弹窗里的游戏自定义字段；`playSound` 统一走平台音效和音量设置；`reportResult` 用来把胜负、完成、分数等结果写入大厅进度统计。
 
 ## 后续远程插件扩展
 

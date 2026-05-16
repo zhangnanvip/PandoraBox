@@ -1,4 +1,5 @@
 import { categories, games, findCategory, findGame, getGameSections, loadGamePlugin } from "./games/catalog.js";
+import { configureSound, playResultSound, playSound as playFeedbackSound } from "./platform/sound.js";
 import { skins, skinOrder } from "./theme/skins.js";
 import { loadState, saveState } from "./utils/storage.js";
 
@@ -47,6 +48,10 @@ const modeLabel = {
   solo: "单人挑战"
 };
 
+function syncSoundPreferences() {
+  configureSound({ enabled: state.sound, volume: state.volume });
+}
+
 function persistPreferences() {
   saveState("preferences", {
     difficulty: state.difficulty,
@@ -56,7 +61,10 @@ function persistPreferences() {
     volume: state.volume,
     gameOptions: state.gameOptions
   });
+  syncSoundPreferences();
 }
+
+syncSoundPreferences();
 
 function persistProgress() {
   saveState("progress", state.progress);
@@ -104,6 +112,7 @@ function startPendingGame(optionsOverride = null) {
     [game.id]: options
   };
   recordGameStart(game, mode, difficulty);
+  playFeedbackSound("start");
   setState({
     currentGame: game.id,
     mode,
@@ -284,6 +293,7 @@ function normalizeResult(game, result = {}) {
 function handleGameResult(game, result) {
   state.resultSummary = normalizeResult(game, result);
   state.modal = "result";
+  playResultSound(state.resultSummary.outcome);
   renderModal();
 }
 
@@ -592,6 +602,7 @@ function renderGame() {
         mode,
         options,
         labels: { difficulty: difficultyLabel[difficulty], mode: modeLabel[mode] },
+        playSound: (name) => playFeedbackSound(name),
         reportResult: (result) => handleGameResult(game, result)
       });
     })
@@ -765,8 +776,18 @@ function renderModal() {
   app.querySelectorAll("[data-modal-option]").forEach((field) => {
     field.addEventListener("change", (event) => updateGameOption(game, { [event.target.dataset.modalOption]: event.target.value }));
   });
-  app.querySelector("[data-modal-sound]")?.addEventListener("change", (event) => setState({ sound: event.target.checked }));
-  app.querySelector("[data-modal-volume]")?.addEventListener("input", (event) => setState({ volume: Number(event.target.value) }));
+  app.querySelector("[data-modal-sound]")?.addEventListener("change", (event) => {
+    const sound = event.target.checked;
+    setState({ sound });
+    if (sound) playFeedbackSound("start");
+  });
+  const volumeInput = app.querySelector("[data-modal-volume]");
+  volumeInput?.addEventListener("input", (event) => {
+    state.volume = Number(event.target.value);
+    event.target.closest(".modal-field")?.querySelector("span")?.replaceChildren(`音量 ${state.volume}%`);
+    persistPreferences();
+  });
+  volumeInput?.addEventListener("change", () => playFeedbackSound("tap"));
   app.querySelectorAll(".modal-panel [data-open-modal]").forEach((button) => {
     button.addEventListener("click", () => openModal(button.dataset.openModal));
   });
@@ -817,6 +838,16 @@ window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   installPrompt = event;
   render();
+});
+
+app.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button || button.disabled || !app.contains(button) || button.hasAttribute("data-start-game")) return;
+  const action = button.dataset.action;
+  if (action === "undo") playFeedbackSound("undo");
+  else if (action === "hint") playFeedbackSound("hint");
+  else if (action === "restart" || button.classList.contains("danger-button")) playFeedbackSound("restart");
+  else playFeedbackSound("tap");
 });
 
 render();

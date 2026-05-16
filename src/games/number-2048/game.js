@@ -179,7 +179,12 @@ export function mount2048(root, context) {
 
   function move(direction) {
     if (!direction) return;
-    if (applyMove(state, direction, context.difficulty, preset)) save();
+    if (applyMove(state, direction, context.difficulty, preset)) {
+      context.playSound?.("move");
+      save();
+    } else {
+      context.playSound?.("invalid");
+    }
     if (state.won) reportResult("complete");
     else if (state.over) reportResult("score");
     render();
