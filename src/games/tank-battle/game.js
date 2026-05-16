@@ -1,5 +1,5 @@
 import { bindHold, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
-import { addBurst, classicArcade, drawArcadeBackdrop, drawBase, drawEffects, drawTankSprite, drawTankWall, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { addBurst, classicArcade, drawArcadeBackdrop, drawBase, drawEffects, drawPowerup, drawTankSprite, drawTankWall, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
 const W = 360;
 const H = 360;
@@ -17,6 +17,14 @@ const DIFFICULTY = {
   hard: { total: 9, active: 3, enemySpeed: 50, enemyFire: 1.05, playerLives: 3 },
   devil: { total: 12, active: 4, enemySpeed: 58, enemyFire: 0.78, playerLives: 2 }
 };
+const PLAYER_SPAWN = { x: W / 2 - 50, y: H - 44 };
+const POWERUP_SPAWNS = [
+  { x: 75, y: 75 },
+  { x: 285, y: 75 },
+  { x: 75, y: 210 },
+  { x: 285, y: 210 },
+  { x: W / 2, y: 255 }
+];
 
 function rectsOverlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -50,10 +58,12 @@ function makeWalls() {
 
 function initialState(config) {
   return {
-    player: { x: W / 2, y: H - 44, dir: "up", lives: config.playerLives, reload: 0, invuln: 1 },
+    player: { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y, dir: "up", lives: config.playerLives, reload: 0, invuln: 1 },
     enemies: [],
     bullets: [],
     walls: makeWalls(),
+    powerups: [],
+    buffs: { rapid: 0, shield: 0, freeze: 0 },
     base: { x: W / 2 - 16, y: H - 28, w: 32, h: 24, alive: true },
     score: 0,
     spawned: 0,
@@ -67,6 +77,33 @@ function initialState(config) {
     effects: [],
     shake: 0
   };
+}
+
+function spawnPowerup(state, forcedType = "") {
+  if (state.powerups.length >= 2) return;
+  const types = ["rapid", "shield", "repair", "freeze"];
+  const type = forcedType || types[Math.floor(Math.random() * types.length)];
+  const spot = POWERUP_SPAWNS[(state.destroyed + state.powerups.length + Math.floor(Math.random() * POWERUP_SPAWNS.length)) % POWERUP_SPAWNS.length];
+  state.powerups.push({ type, x: spot.x, y: spot.y, ttl: 11 });
+}
+
+function applyPowerup(state, item, context) {
+  if (item.type === "rapid") {
+    state.buffs.rapid = 7;
+    state.message = "速射补给：装填加快";
+  } else if (item.type === "shield") {
+    state.buffs.shield = 6;
+    state.player.invuln = Math.max(state.player.invuln, 6);
+    state.message = "护盾补给：短暂无敌";
+  } else if (item.type === "freeze") {
+    state.buffs.freeze = 4.5;
+    state.message = "冻结补给：敌军减速";
+  } else {
+    state.player.lives = Math.min(5, state.player.lives + 1);
+    state.message = "维修补给：生命 +1";
+  }
+  addBurst(state.effects, item.x, item.y, { count: 16, color: classicArcade.green, secondary: classicArcade.yellow, speed: 72, radius: 10 });
+  context.playSound?.("score");
 }
 
 function spawnEnemy(state, config) {
@@ -130,7 +167,7 @@ function fire(state, tank, owner) {
     radius: 3
   });
   if (owner === "player") state.shake = Math.max(state.shake, 1.4);
-  tank.reload = owner === "player" ? 0.46 : 0.9;
+  tank.reload = owner === "player" ? (state.buffs.rapid > 0 ? 0.22 : 0.46) : 0.9;
   return true;
 }
 
@@ -156,8 +193,8 @@ function damagePlayer(state) {
   addBurst(state.effects, state.player.x, state.player.y, { count: 18, color: classicArcade.red, secondary: classicArcade.yellow, speed: 92, radius: 11 });
   state.shake = Math.max(state.shake, 5);
   state.player.lives -= 1;
-  state.player.x = W / 2;
-  state.player.y = H - 44;
+  state.player.x = PLAYER_SPAWN.x;
+  state.player.y = PLAYER_SPAWN.y;
   state.player.dir = "up";
   state.player.invuln = 1.4;
   state.message = state.player.lives > 0 ? "被击中，重新出击" : "坦克被击毁";
@@ -180,6 +217,9 @@ function update(state, config, controls, dt, context) {
   state.time += dt;
   updateEffects(state.effects, dt);
   state.shake = Math.max(0, state.shake - dt * 16);
+  for (const key of Object.keys(state.buffs)) state.buffs[key] = Math.max(0, state.buffs[key] - dt);
+  state.powerups.forEach((item) => { item.ttl -= dt; });
+  state.powerups = state.powerups.filter((item) => item.ttl > 0);
   if (state.over) return;
   state.spawnTimer -= dt;
   if (state.spawnTimer <= 0) {
@@ -196,6 +236,12 @@ function update(state, config, controls, dt, context) {
   }
   if (controls.fire && fire(state, state.player, "player")) context.playSound?.("move");
 
+  state.powerups = state.powerups.filter((item) => {
+    const collected = rectsOverlap(tankRect(state.player), { x: item.x - 11, y: item.y - 11, w: 22, h: 22 });
+    if (collected) applyPowerup(state, item, context);
+    return !collected;
+  });
+
   for (const enemy of state.enemies) {
     enemy.reload = Math.max(0, enemy.reload - dt);
     enemy.turn -= dt;
@@ -206,8 +252,8 @@ function update(state, config, controls, dt, context) {
       if (Math.random() < 0.25) enemy.dir = ["up", "down", "left", "right"][Math.floor(Math.random() * 4)];
       enemy.turn = 0.55 + Math.random() * 0.8;
     }
-    if (!moveTank(state, enemy, config.enemySpeed, dt)) enemy.turn = 0;
-    if (Math.random() < dt / config.enemyFire) fire(state, enemy, "enemy");
+    if (!moveTank(state, enemy, config.enemySpeed * (state.buffs.freeze > 0 ? 0.45 : 1), dt)) enemy.turn = 0;
+    if (state.buffs.freeze <= 0 && Math.random() < dt / config.enemyFire) fire(state, enemy, "enemy");
   }
 
   state.bullets = state.bullets.filter((bullet) => {
@@ -236,6 +282,7 @@ function update(state, config, controls, dt, context) {
           state.message = `击毁敌坦 ${state.destroyed}/${state.total}`;
           state.shake = Math.max(state.shake, 4);
           context.playSound?.("score");
+          if (Math.random() < 0.36 || state.destroyed === 2) spawnPowerup(state);
         }
         return false;
       }
@@ -282,6 +329,7 @@ function draw(state, ctx) {
     ctx.strokeRect(state.player.x - 16, state.player.y - 16, 32, 32);
   }
   state.enemies.forEach((enemy) => drawTankSprite(ctx, enemy, "enemy"));
+  state.powerups.forEach((item) => drawPowerup(ctx, item));
 
   for (const bullet of state.bullets) {
     ctx.fillStyle = bullet.owner === "player" ? classicArcade.white : classicArcade.orange;
@@ -318,12 +366,10 @@ export function mountTankBattle(root, context) {
       <div class="arcade-controls">
         ${joystickMarkup("坦克移动")}
         <div class="arcade-control-stack">
+          <button class="arcade-fire compact" data-action="restart">重开</button>
           <button class="arcade-fire" data-control="fire">开火</button>
         </div>
       </div>
-    </section>
-    <section class="game-panel toolbar">
-      <button class="danger-button" data-action="restart">重开</button>
     </section>
   `;
 
@@ -333,12 +379,22 @@ export function mountTankBattle(root, context) {
   const lives = root.querySelector("[data-lives]");
   const score = root.querySelector("[data-score]");
   const left = root.querySelector("[data-left]");
+  const power = document.createElement("span");
+  power.dataset.power = "true";
+  power.textContent = "道具 无";
+  left.after(power);
 
   function refreshHud() {
     status.textContent = state.message;
     lives.textContent = `生命 ${state.player.lives}`;
     score.textContent = `分数 ${state.score}`;
     left.textContent = `敌军 ${Math.max(0, state.total - state.destroyed)}`;
+    const buffs = [
+      state.buffs.rapid > 0 ? `速射 ${Math.ceil(state.buffs.rapid)}` : "",
+      state.buffs.shield > 0 ? `护盾 ${Math.ceil(state.buffs.shield)}` : "",
+      state.buffs.freeze > 0 ? `冻结 ${Math.ceil(state.buffs.freeze)}` : ""
+    ].filter(Boolean);
+    power.textContent = buffs.length ? buffs.join(" · ") : "道具 无";
   }
 
   function loop(now) {

@@ -1097,10 +1097,65 @@ input[type="range"] {
   z-index: 10;
 }
 
+.arcade-play-frame {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.arcade-play-frame .play-header,
+.arcade-play-frame .game-root {
+  width: min(100%, 860px);
+  margin: 0 auto;
+}
+
+.arcade-play-frame .play-header {
+  padding: 0;
+}
+
+.arcade-play-frame .game-root {
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+}
+
+.arcade-play-frame .game-status {
+  padding: 10px 12px;
+}
+
+.arcade-play-frame .game-status .game-note {
+  font-size: 0.78rem;
+}
+
+.arcade-play-frame .game-status .mini-stats {
+  gap: 6px;
+}
+
+.arcade-play-frame .game-status .mini-stats span {
+  padding: 5px 8px;
+}
+
 .arcade-shell {
   display: grid;
   gap: 12px;
   justify-items: center;
+}
+
+.arcade-play-frame .arcade-shell {
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+  gap: 8px;
+  touch-action: none;
 }
 
 .arcade-stage {
@@ -1114,6 +1169,12 @@ input[type="range"] {
     linear-gradient(135deg, rgba(31, 95, 74, 0.1), transparent 46%),
     rgba(255, 250, 240, 0.78);
   box-shadow: var(--shadow);
+}
+
+.arcade-play-frame .arcade-stage {
+  width: min(100%, 560px);
+  max-height: 100%;
+  padding: 8px;
 }
 
 .arcade-shell[data-visual-style="classic-arcade"] .arcade-stage {
@@ -1136,6 +1197,16 @@ input[type="range"] {
   touch-action: none;
 }
 
+.arcade-play-frame .arcade-canvas {
+  width: auto;
+  max-width: 100%;
+  max-height: min(52svh, 520px);
+}
+
+.arcade-play-frame .arcade-canvas.tall {
+  max-height: min(56svh, 560px);
+}
+
 .arcade-shell[data-visual-style="classic-arcade"] .arcade-canvas {
   border-color: rgba(248, 251, 255, 0.38);
   border-radius: 4px;
@@ -1156,6 +1227,10 @@ input[type="range"] {
   gap: 12px;
   align-items: center;
   width: min(94vw, 560px);
+}
+
+.arcade-play-frame .arcade-controls {
+  width: min(100%, 560px);
 }
 
 .arcade-control-stack {
@@ -1790,6 +1865,7 @@ input[type="range"] {
   background-size: 25% 20%;
   box-shadow: var(--shadow);
   overflow: hidden;
+  touch-action: none;
 }
 
 .klotski-piece {
@@ -2015,6 +2091,22 @@ input[type="range"] {
 
   .arcade-controls {
     grid-template-columns: 1fr auto;
+  }
+
+  .arcade-play-frame {
+    padding: max(8px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+  }
+
+  .arcade-play-frame .play-header h1 {
+    font-size: 1.12rem;
+  }
+
+  .arcade-play-frame .play-header .eyebrow {
+    display: none;
+  }
+
+  .arcade-play-frame .game-status {
+    grid-template-columns: 1fr;
   }
 
   .arcade-joystick {

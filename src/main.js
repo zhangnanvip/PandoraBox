@@ -592,8 +592,9 @@ function renderGame() {
   const mode = selectedModeFor(game);
   const difficulty = selectedDifficultyFor(game);
   const options = selectedGameOptions(game);
+  const frameClass = game.category === "arcade" ? " arcade-play-frame" : "";
   app.innerHTML = `
-    <main class="app-frame play-frame">
+    <main class="app-frame play-frame${frameClass}">
       <header class="play-header">
         <button class="icon-button" id="back-button" aria-label="返回大厅">${icon("back")}</button>
         <div>

@@ -1,5 +1,5 @@
 import { bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
-import { addBurst, classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawEffects, drawPaddle, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { addBurst, classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawEffects, drawPaddle, drawPowerup, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
 const W = 360;
 const H = 360;
@@ -33,9 +33,11 @@ function makeBricks(rows) {
 
 function initialState(config) {
   return {
-    paddle: { x: W / 2, y: H - 34, w: config.paddle },
+    paddle: { x: W / 2, y: H - 34, w: config.paddle, baseW: config.paddle },
     ball: { x: W / 2, y: H - 56, vx: config.speed * 0.56, vy: -config.speed },
     bricks: makeBricks(config.rows),
+    powerups: [],
+    buffs: { expand: 0, slow: 0 },
     lives: config.lives,
     score: 0,
     time: 0,
@@ -45,6 +47,33 @@ function initialState(config) {
     effects: [],
     shake: 0
   };
+}
+
+function spawnPowerup(state, brick) {
+  if (Math.random() > 0.32 && state.bricks.length % 7 !== 0) return;
+  const types = ["expand", "slow", "life"];
+  state.powerups.push({
+    type: types[Math.floor(Math.random() * types.length)],
+    x: brick.x + brick.w / 2,
+    y: brick.y + brick.h / 2,
+    vy: 58,
+    ttl: 8
+  });
+}
+
+function applyPowerup(state, item, context) {
+  if (item.type === "expand") {
+    state.buffs.expand = 9;
+    state.message = "扩展挡板：接球范围增加";
+  } else if (item.type === "slow") {
+    state.buffs.slow = 7;
+    state.message = "慢速力场：球速降低";
+  } else {
+    state.lives = Math.min(5, state.lives + 1);
+    state.message = "备用球：生命 +1";
+  }
+  addBurst(state.effects, item.x, item.y, { count: 16, color: classicArcade.green, secondary: classicArcade.yellow, speed: 72, radius: 10 });
+  context.playSound?.("score");
 }
 
 function resetBall(state, config) {
@@ -68,14 +97,22 @@ function update(state, config, controls, dt, context) {
   state.time += dt;
   updateEffects(state.effects, dt);
   state.shake = Math.max(0, state.shake - dt * 16);
+  for (const key of Object.keys(state.buffs)) state.buffs[key] = Math.max(0, state.buffs[key] - dt);
   if (state.over) return;
+  state.paddle.w = state.paddle.baseW + (state.buffs.expand > 0 ? 36 : 0);
   const move = controls.axisX || ((controls.right ? 1 : 0) - (controls.left ? 1 : 0));
   state.paddle.x = Math.max(state.paddle.w / 2, Math.min(W - state.paddle.w / 2, state.paddle.x + move * 220 * dt));
   if (Number.isFinite(controls.pointerX)) state.paddle.x = Math.max(state.paddle.w / 2, Math.min(W - state.paddle.w / 2, controls.pointerX));
 
   const ball = state.ball;
-  ball.x += ball.vx * dt;
-  ball.y += ball.vy * dt;
+  const ballDt = dt * (state.buffs.slow > 0 ? 0.72 : 1);
+  ball.x += ball.vx * ballDt;
+  ball.y += ball.vy * ballDt;
+  state.powerups.forEach((item) => {
+    item.y += item.vy * dt;
+    item.ttl -= dt;
+  });
+  state.powerups = state.powerups.filter((item) => item.y < H + 24 && item.ttl > 0);
   if (ball.x < 7 || ball.x > W - 7) {
     ball.x = Math.max(7, Math.min(W - 7, ball.x));
     ball.vx *= -1;
@@ -103,6 +140,7 @@ function update(state, config, controls, dt, context) {
     addBurst(state.effects, ball.x, ball.y, { count: 8, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 52, life: 0.22, radius: 5 });
     if (hit.hp <= 0) {
       addBurst(state.effects, hit.x + hit.w / 2, hit.y + hit.h / 2, { count: 14, color: classicArcade.orange, secondary: classicArcade.yellow, speed: 76, radius: 8 });
+      spawnPowerup(state, hit);
       state.bricks = state.bricks.filter((brick) => brick !== hit);
       state.score += 30;
       state.shake = Math.max(state.shake, 2.5);
@@ -110,6 +148,13 @@ function update(state, config, controls, dt, context) {
     }
     state.message = `剩余砖块 ${state.bricks.length}`;
   }
+
+  const paddleRectForPower = { x: state.paddle.x - state.paddle.w / 2, y: state.paddle.y - 8, w: state.paddle.w, h: 26 };
+  state.powerups = state.powerups.filter((item) => {
+    const collected = overlap(paddleRectForPower, { x: item.x - 10, y: item.y - 10, w: 20, h: 20 });
+    if (collected) applyPowerup(state, item, context);
+    return !collected;
+  });
 
   if (ball.y > H + 10) {
     state.lives -= 1;
@@ -133,6 +178,7 @@ function draw(state, ctx) {
   for (const brick of state.bricks) {
     drawBreakoutBrick(ctx, brick, brick.row);
   }
+  state.powerups.forEach((item) => drawPowerup(ctx, item));
   drawPaddle(ctx, state.paddle);
   drawBall(ctx, state.ball);
   drawEffects(ctx, state.effects);
@@ -157,6 +203,7 @@ export function mountBreakout(root, context) {
         <span data-lives>生命 ${state.lives}</span>
         <span data-score>分数 0</span>
         <span data-left>砖块 ${state.bricks.length}</span>
+        <span data-power>道具 无</span>
       </div>
     </section>
     <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
@@ -175,6 +222,7 @@ export function mountBreakout(root, context) {
   const lives = root.querySelector("[data-lives]");
   const score = root.querySelector("[data-score]");
   const left = root.querySelector("[data-left]");
+  const power = root.querySelector("[data-power]");
 
   function restart() {
     state = initialState(config);
@@ -193,6 +241,11 @@ export function mountBreakout(root, context) {
     lives.textContent = `生命 ${state.lives}`;
     score.textContent = `分数 ${state.score}`;
     left.textContent = `砖块 ${state.bricks.length}`;
+    const buffs = [
+      state.buffs.expand > 0 ? `扩板 ${Math.ceil(state.buffs.expand)}` : "",
+      state.buffs.slow > 0 ? `慢速 ${Math.ceil(state.buffs.slow)}` : ""
+    ].filter(Boolean);
+    power.textContent = buffs.length ? buffs.join(" · ") : "道具 无";
     raf = requestAnimationFrame(loop);
   }
 

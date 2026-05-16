@@ -1,5 +1,5 @@
 import { bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
-import { addBurst, classicArcade, drawEffects, drawEnemyShip, drawPlayerShip, drawStarfield, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { addBurst, classicArcade, drawEffects, drawEnemyShip, drawPlayerShip, drawPowerup, drawStarfield, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
 const W = 300;
 const H = 400;
@@ -24,6 +24,8 @@ function initialState(config) {
     enemies: [],
     bullets: [],
     enemyBullets: [],
+    powerups: [],
+    buffs: { weapon: 0, shield: 0 },
     spawned: 0,
     killed: 0,
     score: 0,
@@ -35,6 +37,31 @@ function initialState(config) {
     effects: [],
     shake: 0
   };
+}
+
+function spawnPowerup(state, x, y) {
+  const types = ["weapon", "shield", "repair", "clear"];
+  const type = types[Math.floor(Math.random() * types.length)];
+  state.powerups.push({ type, x, y, vy: 42, ttl: 9 });
+}
+
+function applyPowerup(state, item, context) {
+  if (item.type === "weapon") {
+    state.buffs.weapon = 9;
+    state.message = "火力升级：三线射击";
+  } else if (item.type === "shield") {
+    state.buffs.shield = 7;
+    state.player.invuln = Math.max(state.player.invuln, 2.2);
+    state.message = "护盾启动：抵挡一次伤害";
+  } else if (item.type === "clear") {
+    state.enemyBullets = [];
+    state.message = "清屏脉冲：弹幕清除";
+  } else {
+    state.player.lives = Math.min(5, state.player.lives + 1);
+    state.message = "维修胶囊：生命 +1";
+  }
+  addBurst(state.effects, item.x, item.y, { count: 18, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 78, radius: 10 });
+  context.playSound?.("score");
 }
 
 function finish(state, won, context) {
@@ -66,6 +93,7 @@ function update(state, config, controls, dt, context) {
   state.time += dt;
   updateEffects(state.effects, dt);
   state.shake = Math.max(0, state.shake - dt * 18);
+  for (const key of Object.keys(state.buffs)) state.buffs[key] = Math.max(0, state.buffs[key] - dt);
   if (state.over) return;
   const player = state.player;
   const moveX = controls.axisX || ((controls.right ? 1 : 0) - (controls.left ? 1 : 0));
@@ -81,6 +109,10 @@ function update(state, config, controls, dt, context) {
   if (player.reload <= 0) {
     state.bullets.push({ x: player.x - 5, y: player.y - 16, vy: -230 });
     state.bullets.push({ x: player.x + 5, y: player.y - 16, vy: -230 });
+    if (state.buffs.weapon > 0) {
+      state.bullets.push({ x: player.x - 15, y: player.y - 10, vx: -34, vy: -218 });
+      state.bullets.push({ x: player.x + 15, y: player.y - 10, vx: 34, vy: -218 });
+    }
     addBurst(state.effects, player.x, player.y - 18, { count: 4, color: classicArcade.cyan, secondary: classicArcade.white, speed: 34, life: 0.12, radius: 3 });
     player.reload = 0.18;
   }
@@ -109,10 +141,16 @@ function update(state, config, controls, dt, context) {
   state.enemyBullets.forEach((bullet) => {
     bullet.y += bullet.vy * dt;
   });
+  state.powerups.forEach((item) => {
+    item.y += item.vy * dt;
+    item.ttl -= dt;
+  });
   state.bullets = state.bullets.filter((bullet) => bullet.y > -20);
   state.enemyBullets = state.enemyBullets.filter((bullet) => bullet.y < H + 20);
+  state.powerups = state.powerups.filter((item) => item.y < H + 20 && item.ttl > 0);
 
   for (const bullet of state.bullets) {
+    bullet.x += (bullet.vx || 0) * dt;
     const hit = state.enemies.find((enemy) => overlap({ x: bullet.x - 3, y: bullet.y - 8, w: 6, h: 12 }, { x: enemy.x - 13, y: enemy.y - 11, w: 26, h: 22 }));
     if (hit) {
       hit.hp -= 1;
@@ -125,15 +163,31 @@ function update(state, config, controls, dt, context) {
         state.message = `击落敌机 ${state.killed}/${config.waves}`;
         state.shake = Math.max(state.shake, 3.4);
         context.playSound?.("score");
+        if (Math.random() < 0.24 || state.killed === 3) spawnPowerup(state, hit.x, hit.y);
       }
     }
   }
   state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
 
   const playerRect = { x: player.x - 12, y: player.y - 13, w: 24, h: 26 };
+  state.powerups = state.powerups.filter((item) => {
+    const collected = overlap(playerRect, { x: item.x - 10, y: item.y - 10, w: 20, h: 20 });
+    if (collected) applyPowerup(state, item, context);
+    return !collected;
+  });
+
   const hitByBullet = state.enemyBullets.some((bullet) => overlap(playerRect, { x: bullet.x - 4, y: bullet.y - 4, w: 8, h: 8 }));
   const hitByEnemy = state.enemies.some((enemy) => overlap(playerRect, { x: enemy.x - 13, y: enemy.y - 11, w: 26, h: 22 }));
   if ((hitByBullet || hitByEnemy) && player.invuln <= 0) {
+    if (state.buffs.shield > 0) {
+      state.buffs.shield = 0;
+      player.invuln = 1.4;
+      state.enemyBullets = [];
+      addBurst(state.effects, player.x, player.y, { count: 18, color: classicArcade.blue, secondary: classicArcade.white, speed: 96, radius: 13 });
+      state.message = "护盾抵消伤害";
+      context.playSound?.("move");
+      return;
+    }
     addBurst(state.effects, player.x, player.y, { count: 22, color: classicArcade.red, secondary: classicArcade.yellow, speed: 104, radius: 13 });
     state.shake = Math.max(state.shake, 6);
     player.lives -= 1;
@@ -157,6 +211,7 @@ function draw(state, ctx) {
   for (const enemy of state.enemies) {
     drawEnemyShip(ctx, enemy);
   }
+  state.powerups.forEach((item) => drawPowerup(ctx, item));
   ctx.fillStyle = classicArcade.cyan;
   state.bullets.forEach((bullet) => ctx.fillRect(bullet.x - 2, bullet.y - 8, 4, 12));
   ctx.fillStyle = classicArcade.orange;
@@ -206,6 +261,10 @@ export function mountSpaceShooter(root, context) {
   const lives = root.querySelector("[data-lives]");
   const score = root.querySelector("[data-score]");
   const kills = root.querySelector("[data-kills]");
+  const power = document.createElement("span");
+  power.dataset.power = "true";
+  power.textContent = "道具 无";
+  kills.after(power);
 
   function toCanvasPoint(event) {
     const rect = canvas.getBoundingClientRect();
@@ -222,6 +281,11 @@ export function mountSpaceShooter(root, context) {
     lives.textContent = `生命 ${state.player.lives}`;
     score.textContent = `分数 ${state.score}`;
     kills.textContent = `击落 ${state.killed}`;
+    const buffs = [
+      state.buffs.weapon > 0 ? `火力 ${Math.ceil(state.buffs.weapon)}` : "",
+      state.buffs.shield > 0 ? `护盾 ${Math.ceil(state.buffs.shield)}` : ""
+    ].filter(Boolean);
+    power.textContent = buffs.length ? buffs.join(" · ") : "道具 无";
     raf = requestAnimationFrame(loop);
   }
 

@@ -204,6 +204,49 @@ export function drawBall(ctx, ball) {
   ctx.fillRect(ball.x - 2, ball.y - 2, 3, 3);
 }
 
+export function drawPowerup(ctx, item) {
+  const colors = {
+    rapid: classicArcade.cyan,
+    shield: classicArcade.blue,
+    repair: classicArcade.green,
+    freeze: classicArcade.magenta,
+    weapon: classicArcade.cyan,
+    clear: classicArcade.yellow,
+    slow: classicArcade.blue,
+    expand: classicArcade.green,
+    life: classicArcade.red,
+    bonus: classicArcade.yellow
+  };
+  const labels = {
+    rapid: "R",
+    shield: "S",
+    repair: "+",
+    freeze: "F",
+    weapon: "W",
+    clear: "B",
+    slow: "L",
+    expand: "E",
+    life: "+",
+    bonus: "B"
+  };
+  const color = colors[item.type] || classicArcade.yellow;
+  ctx.save();
+  ctx.translate(item.x, item.y);
+  ctx.fillStyle = classicArcade.shadow;
+  ctx.fillRect(-11, -8, 22, 22);
+  ctx.fillStyle = color;
+  ctx.fillRect(-10, -10, 20, 20);
+  ctx.strokeStyle = classicArcade.white;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-9, -9, 18, 18);
+  ctx.fillStyle = classicArcade.bg;
+  ctx.font = "bold 14px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(labels[item.type] || "?", 0, 1);
+  ctx.restore();
+}
+
 export function addBurst(effects, x, y, options = {}) {
   const count = options.count || 12;
   const color = options.color || classicArcade.orange;
