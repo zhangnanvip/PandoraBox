@@ -1,4 +1,5 @@
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
+import { drawCirclePulse, feedbackTimeScale, triggerFlash, triggerHitStop, updateFeedback } from "../arcade/feedback.js";
 import { classicArcade, drawArcadeBackdrop } from "../arcade/classic-visuals.js";
 import { clamp, distance, withinDistance } from "../arcade/collision.js";
 import { bindActionKeys } from "../arcade/controls.js";
@@ -164,6 +165,7 @@ function restoreState(config, saved) {
     selectedType: TOWER_TYPES[saved.selectedType] ? saved.selectedType : "arrow",
     selectedTower: saved.selectedTower || null,
     transition: null,
+    feedback: null,
     over: false,
     resultReported: false,
     message: saved.message || state.message
@@ -171,7 +173,7 @@ function restoreState(config, saved) {
 }
 
 function serializeState(state) {
-  const { effects, resultReported, transition, ...snapshot } = state;
+  const { effects, resultReported, transition, feedback, ...snapshot } = state;
   return {
     ...snapshot,
     enemies: state.enemies.map((enemy) => ({ ...enemy })),
@@ -180,7 +182,8 @@ function serializeState(state) {
     queue: state.queue.map((enemy) => ({ ...enemy })),
     effects: undefined,
     resultReported: undefined,
-    transition: undefined
+    transition: undefined,
+    feedback: undefined
   };
 }
 
@@ -377,6 +380,7 @@ function damageEnemy(state, enemy, amount, shot) {
   if (enemy.hp <= 0) {
     state.gold += enemy.reward;
     state.score += enemy.kind === "boss" ? 360 : 18 + enemy.reward;
+    if (enemy.kind === "boss") triggerHitStop(state, 0.1, 0.36);
     addBurst(state.effects, enemy.x, enemy.y, {
       color: enemy.kind === "boss" ? classicArcade.red : classicArcade.orange,
       secondary: classicArcade.yellow,
@@ -386,6 +390,7 @@ function damageEnemy(state, enemy, amount, shot) {
     addFloatingText(state.effects, enemy.x, enemy.y - 12, enemy.kind === "boss" ? "+360" : `+${enemy.reward}`, { color: classicArcade.yellow, size: enemy.kind === "boss" ? 16 : 13 });
     return true;
   }
+  triggerFlash(enemy, enemy.kind === "boss" ? 0.16 : 0.1);
   return false;
 }
 
@@ -499,11 +504,12 @@ function updateShots(state, dt) {
   }
 }
 
-function update(state, config, dt, context) {
+function update(state, config, dt, context, rawDt = dt) {
   if (state.over) return;
   state.time += dt;
   state.shake = Math.max(0, state.shake - dt * 18);
   updateEffects(state.effects, dt);
+  updateFeedback(state, rawDt, state.enemies);
   updateStageTransition(state, dt);
   if (state.spawning) {
     const waveCfg = waveConfig(config, state.level, state.wave);
@@ -613,6 +619,7 @@ function drawEnemy(ctx, enemy) {
   ctx.strokeStyle = enemy.slowTimer > 0 ? classicArcade.blue : "rgba(255,255,255,.38)";
   ctx.lineWidth = 2;
   ctx.stroke();
+  if (enemy.flash) drawCirclePulse(ctx, enemy, radius + 5, enemy.flash * 20, { color: classicArcade.yellow, alpha: 0.52, growth: 3 });
   const barW = radius * 2;
   ctx.fillStyle = "rgba(0,0,0,.45)";
   ctx.fillRect(enemy.x - radius, enemy.y - radius - 7, barW, 4);
@@ -722,7 +729,8 @@ export function mountTowerDefense(root, context) {
 
   const loop = createArcadeLoop({
     context,
-    update: (dt) => update(state, config, dt, context),
+    timeScale: () => feedbackTimeScale(state),
+    update: (dt, rawDt) => update(state, config, dt, context, rawDt),
     draw: () => {
       draw(state, ctx);
       refreshHud();

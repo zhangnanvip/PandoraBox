@@ -1,6 +1,7 @@
 import { HORIZONTAL_KEY_MAP, bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collision.js";
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
+import { drawFlashHalo, feedbackTimeScale, triggerFlash, triggerHitStop, updateFeedback } from "../arcade/feedback.js";
 import { classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawPaddle, drawPowerup } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { bossHealthLabel, bossHealthRatio, createBoss, isBossDefeated, spawnBossOnce } from "../arcade/bosses.js";
@@ -74,6 +75,7 @@ function serializeState(state) {
   snapshot.effects = [];
   snapshot.shake = 0;
   snapshot.transition = null;
+  snapshot.feedback = null;
   snapshot.over = false;
   snapshot.won = false;
   snapshot.version = 1;
@@ -93,6 +95,7 @@ function restoreState(config, savedState) {
     levelConfig: levelTuning(config, level),
     effects: [],
     transition: null,
+    feedback: null,
     shake: 0,
     over: false,
     won: false
@@ -144,7 +147,9 @@ function spawnBoss(state) {
     hp: state.levelConfig.bossHp
   }), {
     message: "Boss 砖核心出现",
-    onSpawn: () => {
+    onSpawn: (boss) => {
+      triggerFlash(boss, 0.42);
+      triggerHitStop(state, 0.07, 0.45);
       addBurst(state.effects, W / 2, 86, { count: 34, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 92, radius: 24 });
       state.shake = Math.max(state.shake, 4.5);
     }
@@ -189,9 +194,10 @@ function finish(state, won, context) {
   });
 }
 
-function update(state, config, controls, dt, context) {
+function update(state, config, controls, dt, context, rawDt = dt) {
   state.time += dt;
   updateEffects(state.effects, dt);
+  updateFeedback(state, rawDt, [state.paddle, state.boss, state.bricks]);
   updateStageTransition(state, dt);
   state.shake = Math.max(0, state.shake - dt * 16);
   for (const key of Object.keys(state.buffs)) state.buffs[key] = Math.max(0, state.buffs[key] - dt);
@@ -251,6 +257,8 @@ function update(state, config, controls, dt, context) {
       state.boss.hp -= 1;
       ball.vy = Math.abs(ball.vy);
       ball.vx += (ball.x - state.boss.x) * 0.9;
+      triggerFlash(state.boss, 0.1);
+      triggerHitStop(state, 0.035, 0.5);
       state.score += 40;
       addBurst(state.effects, ball.x, ball.y, { count: 10, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 66, life: 0.24, radius: 7 });
       state.shake = Math.max(state.shake, 3);
@@ -286,6 +294,8 @@ function update(state, config, controls, dt, context) {
     if (state.lives <= 0) finish(state, false, context);
     else {
       addBurst(state.effects, state.paddle.x, H - 18, { count: 16, color: classicArcade.red, secondary: classicArcade.yellow, speed: 84, radius: 10 });
+      triggerFlash(state.paddle, 0.24);
+      triggerHitStop(state, 0.065, 0.42);
       state.shake = Math.max(state.shake, 4.5);
       state.message = "漏球，重新发球";
       resetBall(state);
@@ -309,9 +319,11 @@ function draw(state, ctx) {
   if (state.boss) {
     const boss = state.boss;
     drawPixelBoss(ctx, boss);
+    if (boss.flash) drawFlashHalo(ctx, { x: boss.x - boss.w / 2, y: boss.y, w: boss.w, h: boss.h }, { alpha: 0.62, color: classicArcade.yellow, pad: 5 });
   }
   state.powerups.forEach((item) => drawPowerup(ctx, item));
   drawPaddle(ctx, state.paddle);
+  if (state.paddle.flash) drawFlashHalo(ctx, { x: state.paddle.x - state.paddle.w / 2, y: state.paddle.y, w: state.paddle.w, h: 12 }, { alpha: 0.62, color: classicArcade.red, pad: 4 });
   drawBall(ctx, state.ball);
   drawEffects(ctx, state.effects);
   ctx.restore();
@@ -397,7 +409,8 @@ export function mountBreakout(root, context) {
 
   const loop = createArcadeLoop({
     context,
-    update: (dt) => update(state, config, controls, dt, context),
+    timeScale: () => feedbackTimeScale(state),
+    update: (dt, rawDt) => update(state, config, controls, dt, context, rawDt),
     draw: () => {
       draw(state, ctx);
       refreshHud();

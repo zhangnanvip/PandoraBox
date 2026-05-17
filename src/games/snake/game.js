@@ -1,6 +1,7 @@
 import { bindActionKeys, bindSwipeDirection, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { gridCellInBounds, gridKey, sameGridCell } from "../arcade/collision.js";
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
+import { feedbackTimeScale, triggerHitStop, updateFeedback } from "../arcade/feedback.js";
 import { classicArcade, drawFood, drawPixelRect, drawPowerup, drawSnakeArena, drawSnakeSegment } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { announceStageStart, drawStageTransition, updateStageTransition } from "../arcade/progression.js";
@@ -100,6 +101,7 @@ function serializeState(state) {
   snapshot.effects = [];
   snapshot.shake = 0;
   snapshot.transition = null;
+  snapshot.feedback = null;
   snapshot.over = false;
   snapshot.won = false;
   snapshot.version = 1;
@@ -119,6 +121,7 @@ function restoreState(config, savedState) {
     levelConfig: levelTuning(config, level),
     effects: [],
     transition: null,
+    feedback: null,
     shake: 0,
     over: false,
     won: false
@@ -194,6 +197,7 @@ function step(state, config, context) {
     state.obstacles = state.obstacles.filter((cell) => cell !== hitObstacle);
     state.shield = 0;
     state.message = "护盾破障";
+    triggerHitStop(state, 0.045, 0.55);
     addBurst(state.effects, center.x, center.y, { count: 18, color: classicArcade.blue, secondary: classicArcade.white, speed: 82, radius: 10 });
     addFloatingText(state.effects, center.x, center.y - 12, "破障", { color: classicArcade.blue });
     context.playSound?.("move");
@@ -202,6 +206,7 @@ function step(state, config, context) {
   if (!gridCellInBounds(head, SIZE) || hitObstacle || state.snake.some((cell) => sameGridCell(cell, head))) {
     const currentHead = cellCenter(state.snake[0]);
     addBurst(state.effects, currentHead.x, currentHead.y, { count: 22, color: classicArcade.red, secondary: classicArcade.yellow, speed: 90, radius: 12 });
+    triggerHitStop(state, 0.09, 0.35);
     state.shake = Math.max(state.shake, 5);
     finish(state, false, context);
     return;
@@ -319,9 +324,11 @@ export function mountSnake(root, context) {
   const loop = createArcadeLoop({
     context,
     maxDelta: 0.08,
-    update: (dt) => {
+    timeScale: () => feedbackTimeScale(state),
+    update: (dt, rawDt) => {
       state.time += dt;
       updateEffects(state.effects, dt);
+      updateFeedback(state, rawDt);
       updateStageTransition(state, dt);
       state.shake = Math.max(0, state.shake - dt * 18);
       state.slow = Math.max(0, state.slow - dt);

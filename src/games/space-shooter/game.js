@@ -1,6 +1,7 @@
 import { bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collision.js";
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
+import { drawFlashHalo, feedbackTimeScale, triggerFlash, triggerHitStop, updateFeedback } from "../arcade/feedback.js";
 import { classicArcade, drawEnemyShip, drawPlayerShip, drawPowerup, drawStarfield } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { bossHealthLabel, bossHealthRatio, createBoss, isBossDefeated, spawnBossOnce } from "../arcade/bosses.js";
@@ -66,6 +67,7 @@ function serializeState(state) {
   snapshot.effects = [];
   snapshot.shake = 0;
   snapshot.transition = null;
+  snapshot.feedback = null;
   snapshot.over = false;
   snapshot.won = false;
   snapshot.version = 1;
@@ -85,6 +87,7 @@ function restoreState(config, savedState) {
     levelConfig: levelTuning(config, level),
     effects: [],
     transition: null,
+    feedback: null,
     shake: 0,
     over: false,
     won: false
@@ -188,7 +191,9 @@ function spawnBoss(state) {
     fire: 0.65
   }), {
     message: "Boss 出现：核心战舰",
-    onSpawn: () => {
+    onSpawn: (boss) => {
+      triggerFlash(boss, 0.44);
+      triggerHitStop(state, 0.08, 0.42);
       addBurst(state.effects, W / 2, 58, { count: 34, color: classicArcade.red, secondary: classicArcade.magenta, speed: 88, radius: 28 });
       state.shake = Math.max(state.shake, 5);
     }
@@ -199,9 +204,10 @@ function bossRect(boss) {
   return { x: boss.x - 36, y: boss.y - 18, w: 72, h: 38 };
 }
 
-function update(state, config, controls, dt, context) {
+function update(state, config, controls, dt, context, rawDt = dt) {
   state.time += dt;
   updateEffects(state.effects, dt);
+  updateFeedback(state, rawDt, [state.player, state.boss, state.enemies]);
   updateStageTransition(state, dt);
   state.shake = Math.max(0, state.shake - dt * 18);
   for (const key of Object.keys(state.buffs)) state.buffs[key] = Math.max(0, state.buffs[key] - dt);
@@ -298,11 +304,15 @@ function update(state, config, controls, dt, context) {
         state.shake = Math.max(state.shake, 3.4);
         context.playSound?.("score");
         if (shouldDropReward({ rate: 0.24, count: state.levelKills, forceAt: [3] })) spawnPowerup(state, hit.x, hit.y);
+      } else {
+        triggerFlash(hit, 0.12);
       }
     }
     if (bullet.y > -90 && state.boss && overlap(rectFromCenter({ x: bullet.x, y: bullet.y - 2 }, 6, 12), bossRect(state.boss))) {
       state.boss.hp -= 1;
       bullet.y = -99;
+      triggerFlash(state.boss, 0.1);
+      triggerHitStop(state, 0.035, 0.48);
       addBurst(state.effects, bullet.x, bullet.y, { count: 7, color: classicArcade.cyan, secondary: classicArcade.white, speed: 48, life: 0.18, radius: 4 });
       if (isBossDefeated(state.boss)) {
         addBurst(state.effects, state.boss.x, state.boss.y, { count: 42, color: classicArcade.red, secondary: classicArcade.yellow, speed: 118, radius: 28 });
@@ -332,12 +342,16 @@ function update(state, config, controls, dt, context) {
       state.buffs.shield = 0;
       player.invuln = 1.4;
       state.enemyBullets = [];
+      triggerFlash(player, 0.24);
+      triggerHitStop(state, 0.06, 0.5);
       addBurst(state.effects, player.x, player.y, { count: 18, color: classicArcade.blue, secondary: classicArcade.white, speed: 96, radius: 13 });
       state.message = "护盾抵消伤害";
       context.playSound?.("move");
       return;
     }
     addBurst(state.effects, player.x, player.y, { count: 22, color: classicArcade.red, secondary: classicArcade.yellow, speed: 104, radius: 13 });
+    triggerFlash(player, 0.28);
+    triggerHitStop(state, 0.09, 0.35);
     state.shake = Math.max(state.shake, 6);
     player.lives -= 1;
     player.invuln = 1.2;
@@ -359,9 +373,11 @@ function draw(state, ctx) {
   ctx.translate(offset.x, offset.y);
   drawStarfield(ctx, W, H, state.time);
   drawPlayerShip(ctx, state.player);
+  drawFlashHalo(ctx, { x: state.player.x - 16, y: state.player.y - 21, w: 32, h: 40 }, { alpha: state.player.flash ? 0.68 : 0, color: classicArcade.yellow });
 
   for (const enemy of state.enemies) {
     drawEnemyShip(ctx, enemy);
+    if (enemy.flash) drawFlashHalo(ctx, { x: enemy.x - 16, y: enemy.y - 16, w: 32, h: 32 }, { alpha: 0.58, color: classicArcade.yellow, pad: 3 });
   }
   if (state.boss) {
     const boss = state.boss;
@@ -381,6 +397,7 @@ function draw(state, ctx) {
     ctx.fillStyle = classicArcade.yellow;
     ctx.fillRect(-7, -14, 14, 14);
     ctx.restore();
+    if (boss.flash) drawFlashHalo(ctx, bossRect(boss), { alpha: 0.62, color: classicArcade.yellow, pad: 5 });
     ctx.fillStyle = "rgba(255,255,255,.28)";
     ctx.fillRect(48, 10, W - 96, 5);
     ctx.fillStyle = classicArcade.red;
@@ -463,7 +480,8 @@ export function mountSpaceShooter(root, context) {
 
   const loop = createArcadeLoop({
     context,
-    update: (dt) => update(state, config, controls, dt, context),
+    timeScale: () => feedbackTimeScale(state),
+    update: (dt, rawDt) => update(state, config, controls, dt, context, rawDt),
     draw: () => {
       draw(state, ctx);
       refreshHud();

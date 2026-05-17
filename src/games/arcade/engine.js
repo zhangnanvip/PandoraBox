@@ -13,7 +13,7 @@ export function bindShellRestart(root, context, restart) {
   return () => root.removeEventListener(RESTART_EVENT, listener);
 }
 
-export function createArcadeLoop({ context, update, draw, save, maxDelta = 0.033, saveEvery = 1 }) {
+export function createArcadeLoop({ context, update, draw, save, maxDelta = 0.033, saveEvery = 1, timeScale }) {
   let raf = 0;
   let last = performance.now();
   let saveTimer = 0;
@@ -28,11 +28,13 @@ export function createArcadeLoop({ context, update, draw, save, maxDelta = 0.033
       return;
     }
 
-    const dt = Math.min(maxDelta, (now - last) / 1000);
+    const rawDt = Math.min(maxDelta, (now - last) / 1000);
     last = now;
-    update?.(dt);
+    const scale = Math.max(0.05, Math.min(1, timeScale?.() ?? 1));
+    const dt = rawDt * scale;
+    update?.(dt, rawDt);
     draw?.();
-    saveTimer += dt;
+    saveTimer += rawDt;
     if (save && saveTimer >= saveEvery) {
       saveTimer = 0;
       save();
