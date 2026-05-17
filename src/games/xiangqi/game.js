@@ -359,6 +359,27 @@ function renderPiece(piece) {
   return `<span class="piece ${side}">${LABELS[piece]}</span>`;
 }
 
+function renderBoardLines() {
+  const horizontal = Array.from({ length: 10 }, (_, y) => `<line x1="0" y1="${y}" x2="8" y2="${y}" />`).join("");
+  const verticalEdges = [0, 8].map((x) => `<line x1="${x}" y1="0" x2="${x}" y2="9" />`).join("");
+  const verticals = Array.from({ length: 7 }, (_, index) => index + 1)
+    .map((x) => `<line x1="${x}" y1="0" x2="${x}" y2="4" /><line x1="${x}" y1="5" x2="${x}" y2="9" />`)
+    .join("");
+  return `
+    <svg class="xiangqi-lines" viewBox="0 0 8 9" preserveAspectRatio="none" aria-hidden="true">
+      <g>
+        ${horizontal}
+        ${verticalEdges}
+        ${verticals}
+        <line class="palace-line" x1="3" y1="0" x2="5" y2="2" />
+        <line class="palace-line" x1="5" y1="0" x2="3" y2="2" />
+        <line class="palace-line" x1="3" y1="7" x2="5" y2="9" />
+        <line class="palace-line" x1="5" y1="7" x2="3" y2="9" />
+      </g>
+    </svg>
+  `;
+}
+
 export function mountXiangqi(root, context) {
   const storageKey = `xiangqi:${context.mode}`;
   let state = loadState(storageKey, initialState());
@@ -493,6 +514,7 @@ export function mountXiangqi(root, context) {
 
       <section class="board-wrap">
         <div class="xiangqi-board">
+          ${renderBoardLines()}
           <div class="xiangqi-river">楚河　汉界</div>
           ${state.board.map((piece, index) => `
             <button class="xiangqi-cell ${state.selected === index ? "selected" : ""}" data-cell="${index}" aria-label="${piece ? LABELS[piece] : "空位"}">

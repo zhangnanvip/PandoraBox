@@ -34,8 +34,55 @@
   color: var(--cinnabar);
 }
 
+.play-frame[data-game-id="draughts"] .game-status {
+  min-height: 104px;
+}
+
+.play-frame[data-game-id="draughts"] .game-status strong,
+.play-frame[data-game-id="draughts"] .game-note {
+  min-height: 1.35em;
+}
+
+.play-frame[data-game-id="draughts"] .draughts-board {
+  grid-template-rows: repeat(8, 1fr);
+  width: min(100%, 440px);
+  border-color: rgba(15, 118, 105, 0.22);
+  transform: translateZ(0);
+}
+
+.play-frame[data-game-id="draughts"] .draughts-cell {
+  contain: layout paint;
+}
+
+.play-frame[data-game-id="draughts"] .draughts-cell.is-selected {
+  outline: 0;
+  box-shadow: inset 0 0 0 3px rgba(15, 118, 105, 0.82);
+}
+
+.play-frame[data-game-id="draughts"] .draughts-cell.has-move .checker-piece,
+.play-frame[data-game-id="draughts"] .draughts-cell.must-capture .checker-piece {
+  outline: 0;
+}
+
+.play-frame[data-game-id="draughts"] .draughts-cell.has-move .checker-piece {
+  box-shadow:
+    0 0 0 3px rgba(15, 118, 105, 0.22),
+    0 5px 9px rgba(36, 20, 6, 0.28);
+}
+
+.play-frame[data-game-id="draughts"] .draughts-cell.must-capture .checker-piece {
+  box-shadow:
+    0 0 0 4px rgba(196, 73, 57, 0.18),
+    0 0 0 7px rgba(196, 73, 57, 0.08),
+    0 5px 9px rgba(36, 20, 6, 0.28);
+}
+
 @media (max-width: 520px) {
   .play-frame[data-game-id="tictactoe"] .tictactoe-cell {
     font-size: 3.2rem;
+  }
+
+  .play-frame[data-game-id="draughts"] .draughts-board {
+    width: min(100%, 432px);
   }
 }

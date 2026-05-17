@@ -4,15 +4,27 @@ import { loadState, saveState, removeState } from "../../utils/storage.js";
 const PLAYER_NAMES = ["红", "蓝", "黄", "绿"];
 const START = [0, 13, 26, 39];
 const FINISH = 57;
+const TRACK_COORDS = [
+  [6, 13], [6, 12], [6, 11], [6, 10], [6, 9], [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8], [0, 7], [0, 6],
+  [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 5], [6, 4], [6, 3], [6, 2], [6, 1], [6, 0], [7, 0], [8, 0],
+  [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [9, 6], [10, 6], [11, 6], [12, 6], [13, 6], [14, 6], [14, 7], [14, 8],
+  [13, 8], [12, 8], [11, 8], [10, 8], [9, 8], [8, 9], [8, 10], [8, 11], [8, 12], [8, 13], [8, 14], [7, 14], [6, 14]
+];
 
-const PATH = Array.from({ length: 52 }, (_, index) => {
-  const angle = -Math.PI / 2 + (index / 52) * Math.PI * 2;
-  return {
-    index,
-    left: 50 + Math.cos(angle) * 42,
-    top: 50 + Math.sin(angle) * 42
-  };
-});
+const PATH = TRACK_COORDS.map(([col, row], index) => ({
+  index,
+  left: ((col + 0.5) / 15) * 100,
+  top: ((row + 0.5) / 15) * 100
+}));
+
+const DICE_PIPS = {
+  1: [5],
+  2: [1, 9],
+  3: [1, 5, 9],
+  4: [1, 3, 7, 9],
+  5: [1, 3, 5, 7, 9],
+  6: [1, 3, 4, 6, 7, 9]
+};
 
 function initialState() {
   return {
@@ -47,11 +59,25 @@ function positionForPiece(player, steps) {
   if (steps < 52) return PATH[globalIndex(player, steps)];
 
   const entry = PATH[START[player]];
-  const t = (steps - 51) / 7;
+  const t = (steps - 51) / 6;
   return {
     left: entry.left + (50 - entry.left) * t,
     top: entry.top + (50 - entry.top) * t
   };
+}
+
+function trackOwner(index) {
+  return Math.floor(index / 13);
+}
+
+function renderDice(value) {
+  if (!value) return `<div class="dice is-empty" aria-label="骰子"><span>?</span></div>`;
+  const pips = new Set(DICE_PIPS[value] || []);
+  return `
+    <div class="dice is-rolled" aria-label="骰子 ${value}">
+      ${Array.from({ length: 9 }, (_, index) => `<span class="dice-pip ${pips.has(index + 1) ? "is-on" : ""}"></span>`).join("")}
+    </div>
+  `;
 }
 
 function movablePieces(state, player = state.turn) {
@@ -289,15 +315,17 @@ export function mountFlyingChess(root, context) {
           <strong>${state.message}</strong>
           <p class="game-note">${context.labels.mode} · ${context.labels.difficulty}${aiThinking ? " · AI 行动中" : ""}</p>
         </div>
-        <div class="dice" aria-label="骰子">${state.dice || "·"}</div>
+        ${renderDice(state.dice)}
       </section>
 
       <section class="board-wrap">
         <div class="flying-board">
-          ${PATH.map((point) => `<span class="flying-cell" style="left:${point.left}%; top:${point.top}%">${point.index + 1}</span>`).join("")}
+          <div class="flying-cross" aria-hidden="true"></div>
+          <div class="flying-center" aria-hidden="true"><span>终</span></div>
+          ${PATH.map((point) => `<span class="flying-cell track-${trackOwner(point.index)} ${START.includes(point.index) ? "is-start" : ""}" style="left:${point.left}%; top:${point.top}%"></span>`).join("")}
           ${[0, 1, 2, 3].flatMap((player) => [52, 53, 54, 55, 56, 57].map((step) => {
             const point = positionForPiece(player, step);
-            return `<span class="flying-cell flying-home-cell" style="left:${point.left}%; top:${point.top}%"></span>`;
+            return `<span class="flying-cell flying-home-cell track-${player}" style="left:${point.left}%; top:${point.top}%"></span>`;
           })).join("")}
           ${[0, 1, 2, 3].map((player) => `
             <div class="flying-base" data-player="${player}">

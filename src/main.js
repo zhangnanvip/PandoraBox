@@ -1445,7 +1445,6 @@ function renderGameCard(game) {
           <div class="game-meta">
             <span class="tag-chip">${game.tag}</span>
             <span>${category.shortTitle}</span>
-            ${game.capabilities?.fullscreen ? "<span>全屏</span>" : ""}
             ${game.capabilities?.sessionSave ? "<span>可续玩</span>" : ""}
           </div>
         </div>
