@@ -10,6 +10,7 @@ const CONFIG = {
   hard: { tick: 0.105, target: 24, obstacles: 4 },
   devil: { tick: 0.078, target: 30, obstacles: 6 }
 };
+const MAX_LEVEL = 5;
 const DIRS = {
   up: { x: 0, y: -1 },
   down: { x: 0, y: 1 },
@@ -50,29 +51,68 @@ function makeObstacles(count, snake) {
   return obstacles;
 }
 
+function levelTuning(config, level) {
+  return {
+    tick: Math.max(0.056, config.tick - (level - 1) * 0.008),
+    target: Math.max(4, Math.round(config.target * 0.28) + level),
+    obstacles: config.obstacles + level - 1
+  };
+}
+
 function initialState(config) {
+  const levelConfig = levelTuning(config, 1);
   const snake = [
     { x: 8, y: 10 },
     { x: 7, y: 10 },
     { x: 6, y: 10 }
   ];
-  const obstacles = makeObstacles(config.obstacles, snake);
+  const obstacles = makeObstacles(levelConfig.obstacles, snake);
   return {
+    level: 1,
+    maxLevel: MAX_LEVEL,
+    levelConfig,
     snake,
     obstacles,
     food: randomFood(snake, obstacles),
     dir: "right",
     nextDir: "right",
+    eaten: 0,
     score: 0,
     slow: 0,
     shield: 0,
     time: 0,
     over: false,
     won: false,
-    message: "吃到能量豆，越长越快",
+    message: `第 1 关：吃到 ${levelConfig.target} 个能量豆`,
     effects: [],
     shake: 0
   };
+}
+
+function resetSnakeForLevel(state, config, context) {
+  const snake = [
+    { x: 8, y: 10 },
+    { x: 7, y: 10 },
+    { x: 6, y: 10 }
+  ];
+  state.levelConfig = levelTuning(config, state.level);
+  state.snake = snake;
+  state.obstacles = makeObstacles(state.levelConfig.obstacles, snake);
+  state.food = randomFood(state.snake, state.obstacles);
+  state.dir = "right";
+  state.nextDir = "right";
+  state.eaten = 0;
+  state.slow = 0;
+  state.shield = 0;
+  state.message = `第 ${state.level} 关：吃到 ${state.levelConfig.target} 个能量豆`;
+  addBurst(state.effects, W / 2, W / 2, { count: 28, color: classicArcade.green, secondary: classicArcade.yellow, speed: 86, radius: 22 });
+  state.shake = Math.max(state.shake, 2.8);
+  context.playSound?.("start");
+}
+
+function advanceLevel(state, config, context) {
+  state.level += 1;
+  resetSnakeForLevel(state, config, context);
 }
 
 function canTurn(current, next) {
@@ -83,7 +123,7 @@ function finish(state, won, context) {
   if (state.over) return;
   state.over = true;
   state.won = won;
-  state.message = won ? "完成目标长度" : "撞上了";
+  state.message = won ? "完成全部任务" : "撞上了";
   context.reportResult?.({
     outcome: won ? "win" : "loss",
     detail: state.message,
@@ -118,6 +158,7 @@ function step(state, config, context) {
   state.snake.unshift(head);
   if (head.x === state.food.x && head.y === state.food.y) {
     state.score += state.food.type === "bonus" ? 35 : 10;
+    state.eaten += 1;
     const foodCenter = cellCenter(head);
     addBurst(state.effects, foodCenter.x, foodCenter.y, { count: 14, color: classicArcade.green, secondary: classicArcade.yellow, speed: 72, radius: 9 });
     if (state.food.type === "slow") {
@@ -127,11 +168,14 @@ function step(state, config, context) {
       state.shield = 1;
       state.message = "护盾能量：可破障一次";
     } else {
-      state.message = `长度 ${state.snake.length}/${config.target}`;
+      state.message = `第 ${state.level} 关任务 ${state.eaten}/${state.levelConfig.target}`;
     }
     state.food = randomFood(state.snake, state.obstacles);
     context.playSound?.("score");
-    if (state.snake.length >= config.target) finish(state, true, context);
+    if (state.eaten >= state.levelConfig.target) {
+      if (state.level >= state.maxLevel) finish(state, true, context);
+      else advanceLevel(state, config, context);
+    }
   } else {
     state.snake.pop();
   }
@@ -173,11 +217,12 @@ export function mountSnake(root, context) {
     <section class="game-panel game-status">
       <div>
         <strong data-status>${state.message}</strong>
-        <p class="game-note">${context.labels.difficulty} · 目标长度 ${config.target}</p>
+        <p class="game-note" data-note>${context.labels.difficulty} · 5 关任务 · 能量豆挑战</p>
       </div>
       <div class="mini-stats">
+        <span data-level>关卡 1/5</span>
         <span data-score>分数 0</span>
-        <span data-length>长度 3</span>
+        <span data-length>任务 0/${state.levelConfig.target}</span>
         <span data-power>道具 无</span>
       </div>
     </section>
@@ -195,6 +240,8 @@ export function mountSnake(root, context) {
   const canvas = root.querySelector("canvas");
   const ctx = canvas.getContext("2d");
   const status = root.querySelector("[data-status]");
+  const note = root.querySelector("[data-note]");
+  const level = root.querySelector("[data-level]");
   const score = root.querySelector("[data-score]");
   const length = root.querySelector("[data-length]");
   const power = root.querySelector("[data-power]");
@@ -211,6 +258,13 @@ export function mountSnake(root, context) {
 
   function loop(now) {
     if (disposed) return;
+    if (context.isPaused?.()) {
+      last = now;
+      draw(state, ctx);
+      status.textContent = state.message;
+      raf = requestAnimationFrame(loop);
+      return;
+    }
     const dt = Math.min(0.08, (now - last) / 1000);
     last = now;
     state.time += dt;
@@ -218,15 +272,17 @@ export function mountSnake(root, context) {
     state.shake = Math.max(0, state.shake - dt * 18);
     state.slow = Math.max(0, state.slow - dt);
     acc += dt;
-    const tick = config.tick * (state.slow > 0 ? 1.38 : 1);
+    const tick = state.levelConfig.tick * (state.slow > 0 ? 1.38 : 1);
     while (acc >= tick) {
       acc -= tick;
       step(state, config, context);
     }
     draw(state, ctx);
     status.textContent = state.message;
+    note.textContent = `${context.labels.difficulty} · 第 ${state.level}/${state.maxLevel} 关 · 障碍 ${state.levelConfig.obstacles}`;
+    level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
     score.textContent = `分数 ${state.score}`;
-    length.textContent = `长度 ${state.snake.length}`;
+    length.textContent = `任务 ${state.eaten}/${state.levelConfig.target}`;
     power.textContent = [state.slow > 0 ? `慢速 ${Math.ceil(state.slow)}` : "", state.shield > 0 ? "护盾 1" : ""].filter(Boolean).join(" · ") || "道具 无";
     raf = requestAnimationFrame(loop);
   }

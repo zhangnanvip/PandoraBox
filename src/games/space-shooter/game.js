@@ -9,6 +9,7 @@ const CONFIG = {
   hard: { lives: 3, waves: 38, enemyEvery: 0.66, enemySpeed: 88, bulletSpeed: 136 },
   devil: { lives: 2, waves: 46, enemyEvery: 0.5, enemySpeed: 104, bulletSpeed: 158 }
 };
+const MAX_LEVEL = 5;
 
 function overlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -18,25 +19,63 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function initialState(config) {
+function levelTuning(config, level) {
   return {
+    waves: Math.max(5, Math.round(config.waves * 0.22) + (level - 1) * 2),
+    enemyEvery: Math.max(0.36, config.enemyEvery - (level - 1) * 0.08),
+    enemySpeed: config.enemySpeed + (level - 1) * 8,
+    bulletSpeed: config.bulletSpeed + (level - 1) * 9,
+    bossHp: 26 + level * 5 + Math.max(0, 4 - config.lives) * 4
+  };
+}
+
+function initialState(config) {
+  const levelConfig = levelTuning(config, 1);
+  return {
+    level: 1,
+    maxLevel: MAX_LEVEL,
+    levelConfig,
     player: { x: W / 2, y: H - 45, lives: config.lives, reload: 0, invuln: 1 },
     enemies: [],
+    boss: null,
+    bossSpawned: false,
     bullets: [],
     enemyBullets: [],
     powerups: [],
     buffs: { weapon: 0, shield: 0 },
     spawned: 0,
     killed: 0,
+    levelKills: 0,
     score: 0,
     spawnTimer: 0.5,
     time: 0,
     over: false,
     won: false,
-    message: "穿过弹幕",
+    message: "第 1 关：穿过弹幕",
     effects: [],
     shake: 0
   };
+}
+
+function advanceLevel(state, config, context) {
+  state.level += 1;
+  state.levelConfig = levelTuning(config, state.level);
+  state.enemies = [];
+  state.boss = null;
+  state.bossSpawned = false;
+  state.bullets = [];
+  state.enemyBullets = [];
+  state.powerups = [];
+  state.spawned = 0;
+  state.levelKills = 0;
+  state.spawnTimer = 0.8;
+  state.player.x = W / 2;
+  state.player.y = H - 45;
+  state.player.invuln = 1.3;
+  state.message = state.level === MAX_LEVEL ? "第 5 关：穿越 Boss 空域" : `第 ${state.level} 关：敌机加速`;
+  addBurst(state.effects, W / 2, H / 2, { count: 30, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 92, radius: 24 });
+  state.shake = Math.max(state.shake, 3.6);
+  context.playSound?.("start");
 }
 
 function spawnPowerup(state, x, y) {
@@ -68,7 +107,7 @@ function finish(state, won, context) {
   if (state.over) return;
   state.over = true;
   state.won = won;
-  state.message = won ? "突破空域" : "战机坠落";
+  state.message = won ? "突破全部空域" : "战机坠落";
   context.reportResult?.({
     outcome: won ? "win" : "loss",
     detail: state.message,
@@ -78,15 +117,36 @@ function finish(state, won, context) {
 }
 
 function spawnEnemy(state, config) {
-  if (state.spawned >= config.waves) return;
+  const levelConfig = state.levelConfig;
+  if (state.spawned >= levelConfig.waves) return;
   state.enemies.push({
     x: 24 + Math.random() * (W - 48),
     y: -18,
     vx: (Math.random() - 0.5) * 42,
-    hp: state.spawned % 7 === 6 ? 2 : 1,
+    hp: (state.spawned + state.level) % 7 === 0 ? 2 : 1,
     fire: 0.55 + Math.random() * 0.75
   });
   state.spawned += 1;
+}
+
+function spawnBoss(state) {
+  if (state.bossSpawned) return;
+  state.bossSpawned = true;
+  state.boss = {
+    x: W / 2,
+    y: 54,
+    vx: 58,
+    hp: state.levelConfig.bossHp,
+    maxHp: state.levelConfig.bossHp,
+    fire: 0.65
+  };
+  state.message = "Boss 出现：核心战舰";
+  addBurst(state.effects, W / 2, 58, { count: 34, color: classicArcade.red, secondary: classicArcade.magenta, speed: 88, radius: 28 });
+  state.shake = Math.max(state.shake, 5);
+}
+
+function bossRect(boss) {
+  return { x: boss.x - 36, y: boss.y - 18, w: 72, h: 38 };
 }
 
 function update(state, config, controls, dt, context) {
@@ -120,17 +180,41 @@ function update(state, config, controls, dt, context) {
   state.spawnTimer -= dt;
   if (state.spawnTimer <= 0) {
     spawnEnemy(state, config);
-    state.spawnTimer = config.enemyEvery;
+    state.spawnTimer = state.levelConfig.enemyEvery;
   }
 
   for (const enemy of state.enemies) {
-    enemy.y += config.enemySpeed * dt;
+    enemy.y += state.levelConfig.enemySpeed * dt;
     enemy.x += enemy.vx * dt;
     if (enemy.x < 16 || enemy.x > W - 16) enemy.vx *= -1;
     enemy.fire -= dt;
     if (enemy.fire <= 0) {
-      state.enemyBullets.push({ x: enemy.x, y: enemy.y + 14, vy: config.bulletSpeed });
+      state.enemyBullets.push({ x: enemy.x, y: enemy.y + 14, vy: state.levelConfig.bulletSpeed });
       enemy.fire = 0.9 + Math.random() * 0.85;
+    }
+  }
+  if (state.spawned >= state.levelConfig.waves && !state.enemies.length && state.level === state.maxLevel && !state.bossSpawned) {
+    spawnBoss(state);
+  }
+  if (state.boss) {
+    const boss = state.boss;
+    boss.x += boss.vx * dt;
+    if (boss.x < 44 || boss.x > W - 44) {
+      boss.x = clamp(boss.x, 44, W - 44);
+      boss.vx *= -1;
+    }
+    boss.y = 54 + Math.sin(state.time * 1.5) * 8;
+    boss.fire -= dt;
+    if (boss.fire <= 0) {
+      [-0.55, 0, 0.55].forEach((angle) => {
+        state.enemyBullets.push({
+          x: boss.x,
+          y: boss.y + 22,
+          vx: Math.sin(angle) * 74,
+          vy: state.levelConfig.bulletSpeed * (0.92 + Math.abs(angle) * 0.18)
+        });
+      });
+      boss.fire = 0.58;
     }
   }
   state.enemies = state.enemies.filter((enemy) => enemy.y < H + 24 && enemy.hp > 0);
@@ -139,6 +223,7 @@ function update(state, config, controls, dt, context) {
     bullet.y += bullet.vy * dt;
   });
   state.enemyBullets.forEach((bullet) => {
+    bullet.x += (bullet.vx || 0) * dt;
     bullet.y += bullet.vy * dt;
   });
   state.powerups.forEach((item) => {
@@ -159,11 +244,25 @@ function update(state, config, controls, dt, context) {
       if (hit.hp <= 0) {
         addBurst(state.effects, hit.x, hit.y, { count: 18, color: classicArcade.red, secondary: classicArcade.yellow, speed: 94, radius: 11 });
         state.killed += 1;
+        state.levelKills += 1;
         state.score += 80;
-        state.message = `击落敌机 ${state.killed}/${config.waves}`;
+        state.message = `第 ${state.level} 关击落 ${state.levelKills}/${state.levelConfig.waves}`;
         state.shake = Math.max(state.shake, 3.4);
         context.playSound?.("score");
-        if (Math.random() < 0.24 || state.killed === 3) spawnPowerup(state, hit.x, hit.y);
+        if (Math.random() < 0.24 || state.levelKills === 3) spawnPowerup(state, hit.x, hit.y);
+      }
+    }
+    if (bullet.y > -90 && state.boss && overlap({ x: bullet.x - 3, y: bullet.y - 8, w: 6, h: 12 }, bossRect(state.boss))) {
+      state.boss.hp -= 1;
+      bullet.y = -99;
+      addBurst(state.effects, bullet.x, bullet.y, { count: 7, color: classicArcade.cyan, secondary: classicArcade.white, speed: 48, life: 0.18, radius: 4 });
+      if (state.boss.hp <= 0) {
+        addBurst(state.effects, state.boss.x, state.boss.y, { count: 42, color: classicArcade.red, secondary: classicArcade.yellow, speed: 118, radius: 28 });
+        state.score += 1000;
+        state.message = "核心战舰击破";
+        state.shake = Math.max(state.shake, 8);
+        state.boss = null;
+        context.playSound?.("win");
       }
     }
   }
@@ -178,7 +277,8 @@ function update(state, config, controls, dt, context) {
 
   const hitByBullet = state.enemyBullets.some((bullet) => overlap(playerRect, { x: bullet.x - 4, y: bullet.y - 4, w: 8, h: 8 }));
   const hitByEnemy = state.enemies.some((enemy) => overlap(playerRect, { x: enemy.x - 13, y: enemy.y - 11, w: 26, h: 22 }));
-  if ((hitByBullet || hitByEnemy) && player.invuln <= 0) {
+  const hitByBoss = state.boss ? overlap(playerRect, bossRect(state.boss)) : false;
+  if ((hitByBullet || hitByEnemy || hitByBoss) && player.invuln <= 0) {
     if (state.buffs.shield > 0) {
       state.buffs.shield = 0;
       player.invuln = 1.4;
@@ -197,7 +297,10 @@ function update(state, config, controls, dt, context) {
   }
 
   if (player.lives <= 0) finish(state, false, context);
-  if (state.spawned >= config.waves && !state.enemies.length) finish(state, true, context);
+  if (state.spawned >= state.levelConfig.waves && !state.enemies.length && !state.boss) {
+    if (state.level >= state.maxLevel && state.bossSpawned) finish(state, true, context);
+    else if (state.level < state.maxLevel) advanceLevel(state, config, context);
+  }
 }
 
 function draw(state, ctx) {
@@ -210,6 +313,29 @@ function draw(state, ctx) {
 
   for (const enemy of state.enemies) {
     drawEnemyShip(ctx, enemy);
+  }
+  if (state.boss) {
+    const boss = state.boss;
+    ctx.save();
+    ctx.translate(boss.x, boss.y);
+    ctx.fillStyle = classicArcade.red;
+    ctx.beginPath();
+    ctx.moveTo(0, 24);
+    ctx.lineTo(-42, -4);
+    ctx.lineTo(-24, -22);
+    ctx.lineTo(24, -22);
+    ctx.lineTo(42, -4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = classicArcade.magenta;
+    ctx.fillRect(-24, -6, 48, 13);
+    ctx.fillStyle = classicArcade.yellow;
+    ctx.fillRect(-7, -14, 14, 14);
+    ctx.restore();
+    ctx.fillStyle = "rgba(255,255,255,.28)";
+    ctx.fillRect(48, 10, W - 96, 5);
+    ctx.fillStyle = classicArcade.red;
+    ctx.fillRect(48, 10, (W - 96) * Math.max(0, boss.hp / boss.maxHp), 5);
   }
   state.powerups.forEach((item) => drawPowerup(ctx, item));
   ctx.fillStyle = classicArcade.cyan;
@@ -236,12 +362,13 @@ export function mountSpaceShooter(root, context) {
     <section class="game-panel game-status">
       <div>
         <strong data-status>${state.message}</strong>
-        <p class="game-note">${context.labels.difficulty} · ${config.waves} 波敌机 · 自动射击</p>
+        <p class="game-note" data-note>${context.labels.difficulty} · 5 关空域 · 终关 Boss</p>
       </div>
       <div class="mini-stats">
+        <span data-level>关卡 1/5</span>
         <span data-lives>生命 ${state.player.lives}</span>
         <span data-score>分数 0</span>
-        <span data-kills>击落 0</span>
+        <span data-kills>击落 0/${state.levelConfig.waves}</span>
       </div>
     </section>
     <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
@@ -258,6 +385,8 @@ export function mountSpaceShooter(root, context) {
   const canvas = root.querySelector("canvas");
   const ctx = canvas.getContext("2d");
   const status = root.querySelector("[data-status]");
+  const note = root.querySelector("[data-note]");
+  const level = root.querySelector("[data-level]");
   const lives = root.querySelector("[data-lives]");
   const score = root.querySelector("[data-score]");
   const kills = root.querySelector("[data-kills]");
@@ -273,14 +402,23 @@ export function mountSpaceShooter(root, context) {
 
   function loop(now) {
     if (disposed) return;
+    if (context.isPaused?.()) {
+      last = now;
+      draw(state, ctx);
+      status.textContent = state.message;
+      raf = requestAnimationFrame(loop);
+      return;
+    }
     const dt = Math.min(0.033, (now - last) / 1000);
     last = now;
     update(state, config, controls, dt, context);
     draw(state, ctx);
     status.textContent = state.message;
+    note.textContent = `${context.labels.difficulty} · 第 ${state.level}/${state.maxLevel} 关 · ${state.level === state.maxLevel ? "Boss 空域" : "敌机波次"}`;
+    level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
     lives.textContent = `生命 ${state.player.lives}`;
     score.textContent = `分数 ${state.score}`;
-    kills.textContent = `击落 ${state.killed}`;
+    kills.textContent = state.boss ? `Boss ${Math.max(0, state.boss.hp)}` : `击落 ${state.levelKills}/${state.levelConfig.waves}`;
     const buffs = [
       state.buffs.weapon > 0 ? `火力 ${Math.ceil(state.buffs.weapon)}` : "",
       state.buffs.shield > 0 ? `护盾 ${Math.ceil(state.buffs.shield)}` : ""

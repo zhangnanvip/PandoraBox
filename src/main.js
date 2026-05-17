@@ -133,6 +133,7 @@ function icon(name) {
     rules: '<path d="M6 4.5h9.2a2.8 2.8 0 0 1 2.8 2.8v12.2H8.8A2.8 2.8 0 0 1 6 16.7V4.5Z"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     play: '<path d="M8 5v14l11-7L8 5Z"/>',
+    pause: '<path d="M7 5h3v14H7V5Z"/><path d="M14 5h3v14h-3V5Z"/>',
     sound: '<path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9.5a4 4 0 0 1 0 5"/>',
     offline: '<path d="M6 19h12a4 4 0 0 0 .6-7.96A6.5 6.5 0 0 0 6 9.2 4.9 4.9 0 0 0 6 19Z"/><path d="m9 14 2.2 2.2L16 11"/>'
   };
@@ -602,6 +603,7 @@ function renderGame() {
           <h1>${game.title}</h1>
         </div>
         <div class="header-actions">
+          <button class="icon-button small" data-open-modal="pause" aria-label="暂停">${icon("pause")}</button>
           <button class="icon-button small" data-open-modal="rules" aria-label="规则">${icon("rules")}</button>
           <button class="icon-button small" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
         </div>
@@ -639,6 +641,7 @@ function renderGame() {
           visualStyle: visualStyleLabelFor(game)
         },
         playSound: (name) => playFeedbackSound(name),
+        isPaused: () => Boolean(state.modal && state.modal !== "result"),
         reportResult: (result) => handleGameResult(game, result)
       });
     })
@@ -710,6 +713,23 @@ function modalContent() {
         <ul class="modal-list">
           ${(game.rules || []).map((rule, index) => `<li><b>${index + 1}</b><span>${rule}</span></li>`).join("")}
         </ul>
+      `
+    };
+  }
+
+  if (state.modal === "pause") {
+    return {
+      title: `${game.title}已暂停`,
+      body: `
+        <div class="result-panel">
+          <strong>稍作停顿</strong>
+          <p>当前游戏会保持在原地，关闭暂停层后继续。</p>
+          <div class="settings-actions">
+            <button class="secondary-button" data-open-modal="rules">查看规则</button>
+            <button class="secondary-button" data-open-modal="settings">设置</button>
+            <button class="primary-button" data-resume-game>${icon("play")} 继续</button>
+          </div>
+        </div>
       `
     };
   }
@@ -845,6 +865,7 @@ function renderModal() {
     state.resultSummary = null;
     renderModal();
   });
+  app.querySelector("[data-resume-game]")?.addEventListener("click", closeModal);
   app.querySelector("[data-result-lobby]")?.addEventListener("click", () => {
     setState({ currentGame: "", modal: "", pendingGame: "", resultSummary: null });
   });

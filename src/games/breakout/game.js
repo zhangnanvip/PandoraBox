@@ -9,6 +9,7 @@ const CONFIG = {
   hard: { rows: 6, speed: 184, paddle: 66, lives: 3 },
   devil: { rows: 7, speed: 210, paddle: 58, lives: 2 }
 };
+const MAX_LEVEL = 5;
 
 function overlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -18,24 +19,39 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function makeBricks(rows) {
+function levelTuning(config, level) {
+  return {
+    rows: Math.min(7, Math.max(3, Math.round(config.rows * 0.62)) + level - 1),
+    speed: config.speed + (level - 1) * 14,
+    paddle: Math.max(48, config.paddle - (level - 1) * 4),
+    bossHp: 20 + level * 5 + Math.max(0, 4 - config.lives) * 4
+  };
+}
+
+function makeBricks(rows, level = 1) {
   const bricks = [];
   const cols = 8;
   const gap = 4;
   const bw = (W - 32 - gap * (cols - 1)) / cols;
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < cols; x += 1) {
-      bricks.push({ x: 16 + x * (bw + gap), y: 34 + y * 18, w: bw, h: 13, hp: y < 2 ? 1 : 2, row: y });
+      bricks.push({ x: 16 + x * (bw + gap), y: 34 + y * 18, w: bw, h: 13, hp: y + level < 4 ? 1 : 2, row: y });
     }
   }
   return bricks;
 }
 
 function initialState(config) {
+  const levelConfig = levelTuning(config, 1);
   return {
-    paddle: { x: W / 2, y: H - 34, w: config.paddle, baseW: config.paddle },
-    ball: { x: W / 2, y: H - 56, vx: config.speed * 0.56, vy: -config.speed },
-    bricks: makeBricks(config.rows),
+    level: 1,
+    maxLevel: MAX_LEVEL,
+    levelConfig,
+    paddle: { x: W / 2, y: H - 34, w: levelConfig.paddle, baseW: levelConfig.paddle },
+    ball: { x: W / 2, y: H - 56, vx: levelConfig.speed * 0.56, vy: -levelConfig.speed },
+    bricks: makeBricks(levelConfig.rows, 1),
+    boss: null,
+    bossSpawned: false,
     powerups: [],
     buffs: { expand: 0, slow: 0 },
     lives: config.lives,
@@ -43,7 +59,7 @@ function initialState(config) {
     time: 0,
     over: false,
     won: false,
-    message: "接住弹球",
+    message: "第 1 关：清空砖阵",
     effects: [],
     shake: 0
   };
@@ -76,15 +92,48 @@ function applyPowerup(state, item, context) {
   context.playSound?.("score");
 }
 
-function resetBall(state, config) {
-  state.ball = { x: state.paddle.x, y: H - 56, vx: config.speed * (Math.random() < 0.5 ? -0.52 : 0.52), vy: -config.speed };
+function resetBall(state) {
+  state.ball = { x: state.paddle.x, y: H - 56, vx: state.levelConfig.speed * (Math.random() < 0.5 ? -0.52 : 0.52), vy: -state.levelConfig.speed };
+}
+
+function spawnBoss(state) {
+  if (state.bossSpawned) return;
+  state.bossSpawned = true;
+  state.boss = {
+    x: W / 2,
+    y: 74,
+    w: 96,
+    h: 24,
+    vx: 44,
+    hp: state.levelConfig.bossHp,
+    maxHp: state.levelConfig.bossHp
+  };
+  state.message = "Boss 砖核心出现";
+  addBurst(state.effects, W / 2, 86, { count: 34, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 92, radius: 24 });
+  state.shake = Math.max(state.shake, 4.5);
+}
+
+function advanceLevel(state, config, context) {
+  state.level += 1;
+  state.levelConfig = levelTuning(config, state.level);
+  state.paddle = { x: W / 2, y: H - 34, w: state.levelConfig.paddle, baseW: state.levelConfig.paddle };
+  state.bricks = makeBricks(state.levelConfig.rows, state.level);
+  state.boss = null;
+  state.bossSpawned = false;
+  state.powerups = [];
+  state.buffs = { expand: 0, slow: 0 };
+  resetBall(state);
+  state.message = state.level === MAX_LEVEL ? "第 5 关：Boss 砖阵" : `第 ${state.level} 关：砖阵加固`;
+  addBurst(state.effects, W / 2, H / 2, { count: 28, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 84, radius: 22 });
+  state.shake = Math.max(state.shake, 2.8);
+  context.playSound?.("start");
 }
 
 function finish(state, won, context) {
   if (state.over) return;
   state.over = true;
   state.won = won;
-  state.message = won ? "砖阵清空" : "弹球落尽";
+  state.message = won ? "全部砖阵清空" : "弹球落尽";
   context.reportResult?.({
     outcome: won ? "win" : "loss",
     detail: state.message,
@@ -126,7 +175,7 @@ function update(state, config, controls, dt, context) {
   const paddleRect = { x: state.paddle.x - state.paddle.w / 2, y: state.paddle.y, w: state.paddle.w, h: 12 };
   if (ball.vy > 0 && overlap({ x: ball.x - 6, y: ball.y - 6, w: 12, h: 12 }, paddleRect)) {
     const offset = (ball.x - state.paddle.x) / (state.paddle.w / 2);
-    ball.vx = offset * config.speed * 0.9;
+    ball.vx = offset * state.levelConfig.speed * 0.9;
     ball.vy = -Math.abs(ball.vy);
     addBurst(state.effects, ball.x, state.paddle.y, { count: 8, color: classicArcade.cyan, secondary: classicArcade.white, speed: 48, life: 0.2, radius: 4 });
     context.playSound?.("move");
@@ -149,6 +198,34 @@ function update(state, config, controls, dt, context) {
     state.message = `剩余砖块 ${state.bricks.length}`;
   }
 
+  if (!hit && state.boss) {
+    const bossRect = { x: state.boss.x - state.boss.w / 2, y: state.boss.y, w: state.boss.w, h: state.boss.h };
+    if (overlap({ x: ball.x - 6, y: ball.y - 6, w: 12, h: 12 }, bossRect)) {
+      state.boss.hp -= 1;
+      ball.vy = Math.abs(ball.vy);
+      ball.vx += (ball.x - state.boss.x) * 0.9;
+      state.score += 40;
+      addBurst(state.effects, ball.x, ball.y, { count: 10, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 66, life: 0.24, radius: 7 });
+      state.shake = Math.max(state.shake, 3);
+      state.message = `Boss 核心 ${Math.max(0, state.boss.hp)}/${state.boss.maxHp}`;
+      context.playSound?.("score");
+      if (state.boss.hp <= 0) {
+        addBurst(state.effects, state.boss.x, state.boss.y, { count: 44, color: classicArcade.red, secondary: classicArcade.yellow, speed: 116, radius: 26 });
+        state.score += 900;
+        state.boss = null;
+        finish(state, true, context);
+      }
+    }
+  }
+
+  if (state.boss) {
+    state.boss.x += state.boss.vx * dt;
+    if (state.boss.x < state.boss.w / 2 + 12 || state.boss.x > W - state.boss.w / 2 - 12) {
+      state.boss.x = clamp(state.boss.x, state.boss.w / 2 + 12, W - state.boss.w / 2 - 12);
+      state.boss.vx *= -1;
+    }
+  }
+
   const paddleRectForPower = { x: state.paddle.x - state.paddle.w / 2, y: state.paddle.y - 8, w: state.paddle.w, h: 26 };
   state.powerups = state.powerups.filter((item) => {
     const collected = overlap(paddleRectForPower, { x: item.x - 10, y: item.y - 10, w: 20, h: 20 });
@@ -163,10 +240,13 @@ function update(state, config, controls, dt, context) {
       addBurst(state.effects, state.paddle.x, H - 18, { count: 16, color: classicArcade.red, secondary: classicArcade.yellow, speed: 84, radius: 10 });
       state.shake = Math.max(state.shake, 4.5);
       state.message = "漏球，重新发球";
-      resetBall(state, config);
+      resetBall(state);
     }
   }
-  if (!state.bricks.length) finish(state, true, context);
+  if (!state.bricks.length && !state.boss && !state.over) {
+    if (state.level < state.maxLevel) advanceLevel(state, config, context);
+    else if (!state.bossSpawned) spawnBoss(state);
+  }
 }
 
 function draw(state, ctx) {
@@ -178,11 +258,31 @@ function draw(state, ctx) {
   for (const brick of state.bricks) {
     drawBreakoutBrick(ctx, brick, brick.row);
   }
+  if (state.boss) {
+    const boss = state.boss;
+    drawPixelBoss(ctx, boss);
+  }
   state.powerups.forEach((item) => drawPowerup(ctx, item));
   drawPaddle(ctx, state.paddle);
   drawBall(ctx, state.ball);
   drawEffects(ctx, state.effects);
   ctx.restore();
+}
+
+function drawPixelBoss(ctx, boss) {
+  ctx.fillStyle = classicArcade.shadow;
+  ctx.fillRect(boss.x - boss.w / 2 + 3, boss.y + 3, boss.w, boss.h);
+  ctx.fillStyle = classicArcade.magenta;
+  ctx.fillRect(boss.x - boss.w / 2, boss.y, boss.w, boss.h);
+  ctx.strokeStyle = classicArcade.white;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(boss.x - boss.w / 2 + 1, boss.y + 1, boss.w - 2, boss.h - 2);
+  ctx.fillStyle = classicArcade.yellow;
+  ctx.fillRect(boss.x - 12, boss.y + 6, 24, 8);
+  ctx.fillStyle = "rgba(255,255,255,.28)";
+  ctx.fillRect(50, 14, W - 100, 5);
+  ctx.fillStyle = classicArcade.red;
+  ctx.fillRect(50, 14, (W - 100) * Math.max(0, boss.hp / boss.maxHp), 5);
 }
 
 export function mountBreakout(root, context) {
@@ -197,9 +297,10 @@ export function mountBreakout(root, context) {
     <section class="game-panel game-status">
       <div>
         <strong data-status>${state.message}</strong>
-        <p class="game-note">${context.labels.difficulty} · ${state.bricks.length} 块砖 · ${config.paddle}px 挡板</p>
+        <p class="game-note" data-note>${context.labels.difficulty} · 5 关砖阵 · 终关 Boss</p>
       </div>
       <div class="mini-stats">
+        <span data-level>关卡 1/5</span>
         <span data-lives>生命 ${state.lives}</span>
         <span data-score>分数 0</span>
         <span data-left>砖块 ${state.bricks.length}</span>
@@ -219,6 +320,8 @@ export function mountBreakout(root, context) {
   const canvas = root.querySelector("canvas");
   const ctx = canvas.getContext("2d");
   const status = root.querySelector("[data-status]");
+  const note = root.querySelector("[data-note]");
+  const level = root.querySelector("[data-level]");
   const lives = root.querySelector("[data-lives]");
   const score = root.querySelector("[data-score]");
   const left = root.querySelector("[data-left]");
@@ -233,14 +336,23 @@ export function mountBreakout(root, context) {
 
   function loop(now) {
     if (disposed) return;
+    if (context.isPaused?.()) {
+      last = now;
+      draw(state, ctx);
+      status.textContent = state.message;
+      raf = requestAnimationFrame(loop);
+      return;
+    }
     const dt = Math.min(0.033, (now - last) / 1000);
     last = now;
     update(state, config, controls, dt, context);
     draw(state, ctx);
     status.textContent = state.message;
+    note.textContent = `${context.labels.difficulty} · 第 ${state.level}/${state.maxLevel} 关 · ${state.boss ? "Boss 砖核心" : "砖阵"}`;
+    level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
     lives.textContent = `生命 ${state.lives}`;
     score.textContent = `分数 ${state.score}`;
-    left.textContent = `砖块 ${state.bricks.length}`;
+    left.textContent = state.boss ? `Boss ${Math.max(0, state.boss.hp)}` : `砖块 ${state.bricks.length}`;
     const buffs = [
       state.buffs.expand > 0 ? `扩板 ${Math.ceil(state.buffs.expand)}` : "",
       state.buffs.slow > 0 ? `慢速 ${Math.ceil(state.buffs.slow)}` : ""

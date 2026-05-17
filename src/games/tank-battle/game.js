@@ -17,6 +17,7 @@ const DIFFICULTY = {
   hard: { total: 9, active: 3, enemySpeed: 50, enemyFire: 1.05, playerLives: 3 },
   devil: { total: 12, active: 4, enemySpeed: 58, enemyFire: 0.78, playerLives: 2 }
 };
+const MAX_LEVEL = 5;
 const PLAYER_SPAWN = { x: W / 2 - 50, y: H - 44 };
 const POWERUP_SPAWNS = [
   { x: 75, y: 75 },
@@ -46,30 +47,54 @@ function wantedDirection(controls) {
   return ["up", "down", "left", "right"].find((dir) => controls[dir]);
 }
 
-function makeWalls() {
+function levelTuning(config, level) {
+  return {
+    total: Math.max(3, Math.round(config.total * 0.5) + (level - 1) * 2 + (level === MAX_LEVEL ? 3 : 0)),
+    active: Math.min(5, config.active + Math.floor((level - 1) / 2)),
+    enemySpeed: config.enemySpeed + (level - 1) * 4,
+    enemyFire: Math.max(0.48, config.enemyFire - (level - 1) * 0.12)
+  };
+}
+
+function makeWalls(level = 1) {
   const bricks = [
     [2, 2], [3, 2], [8, 2], [9, 2], [5, 4], [6, 4], [1, 6], [2, 6], [9, 6], [10, 6],
     [4, 8], [7, 8], [5, 10], [6, 10], [4, 11], [7, 11]
   ].map(([x, y]) => ({ x: x * TILE, y: y * TILE, w: TILE, h: TILE, type: "brick", hp: 1 }));
+  const levelBricks = [
+    [],
+    [[4, 2], [7, 2], [3, 7], [8, 7]],
+    [[1, 3], [10, 3], [5, 7], [6, 7], [2, 10], [9, 10]],
+    [[3, 3], [8, 3], [3, 9], [8, 9], [1, 11], [10, 11]],
+    [[4, 3], [7, 3], [2, 5], [9, 5], [3, 10], [8, 10]]
+  ][level - 1] || [];
+  bricks.push(...levelBricks.map(([x, y]) => ({ x: x * TILE, y: y * TILE, w: TILE, h: TILE, type: "brick", hp: 1 })));
   const steel = [[0, 4], [11, 4], [4, 5], [7, 5], [0, 9], [11, 9]]
     .map(([x, y]) => ({ x: x * TILE, y: y * TILE, w: TILE, h: TILE, type: "steel", hp: 99 }));
+  if (level >= 3) {
+    steel.push(...[[5, 2], [6, 2]].map(([x, y]) => ({ x: x * TILE, y: y * TILE, w: TILE, h: TILE, type: "steel", hp: 99 })));
+  }
   return [...bricks, ...steel];
 }
 
 function initialState(config) {
+  const levelConfig = levelTuning(config, 1);
   return {
+    level: 1,
+    maxLevel: MAX_LEVEL,
+    levelConfig,
     player: { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y, dir: "up", lives: config.playerLives, reload: 0, invuln: 1 },
     enemies: [],
     bullets: [],
-    walls: makeWalls(),
+    walls: makeWalls(1),
     powerups: [],
     buffs: { rapid: 0, shield: 0, freeze: 0 },
     base: { x: W / 2 - 16, y: H - 28, w: 32, h: 24, alive: true },
     score: 0,
     spawned: 0,
     destroyed: 0,
-    total: config.total,
-    message: "守住基地",
+    total: levelConfig.total,
+    message: "第 1 关：守住基地",
     over: false,
     won: false,
     time: 0,
@@ -77,6 +102,28 @@ function initialState(config) {
     effects: [],
     shake: 0
   };
+}
+
+function advanceLevel(state, config, context) {
+  state.level += 1;
+  state.levelConfig = levelTuning(config, state.level);
+  state.enemies = [];
+  state.bullets = [];
+  state.powerups = [];
+  state.walls = makeWalls(state.level);
+  state.base = { x: W / 2 - 16, y: H - 28, w: 32, h: 24, alive: true };
+  state.spawned = 0;
+  state.destroyed = 0;
+  state.total = state.levelConfig.total;
+  state.spawnTimer = 0.75;
+  state.player.x = PLAYER_SPAWN.x;
+  state.player.y = PLAYER_SPAWN.y;
+  state.player.dir = "up";
+  state.player.invuln = 1.2;
+  state.message = state.level === MAX_LEVEL ? "第 5 关：重装指挥坦克来袭" : `第 ${state.level} 关：敌军增援`;
+  addBurst(state.effects, W / 2, H / 2, { count: 28, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 92, radius: 22 });
+  state.shake = Math.max(state.shake, 3.5);
+  context.playSound?.("start");
 }
 
 function spawnPowerup(state, forcedType = "") {
@@ -106,7 +153,8 @@ function applyPowerup(state, item, context) {
   context.playSound?.("score");
 }
 
-function spawnEnemy(state, config) {
+function spawnEnemy(state) {
+  const config = state.levelConfig;
   if (state.spawned >= state.total || state.enemies.length >= config.active) return;
   const spawns = [
     { x: 28, y: 28 },
@@ -114,14 +162,17 @@ function spawnEnemy(state, config) {
     { x: W - 28, y: 28 }
   ];
   const spawn = spawns[state.spawned % spawns.length];
+  const isBoss = state.level === MAX_LEVEL && state.spawned === state.total - 1;
   state.enemies.push({
     x: spawn.x,
     y: spawn.y,
     dir: "down",
     reload: 0.8 + Math.random() * 0.6,
     turn: 0,
-    hp: state.spawned % 4 === 3 ? 2 : 1
+    hp: isBoss ? 9 + config.active : (state.spawned + state.level) % 4 === 0 ? 2 : 1,
+    boss: isBoss
   });
+  if (isBoss) state.message = "Boss 出现：重装指挥坦克";
   state.spawned += 1;
 }
 
@@ -223,7 +274,7 @@ function update(state, config, controls, dt, context) {
   if (state.over) return;
   state.spawnTimer -= dt;
   if (state.spawnTimer <= 0) {
-    spawnEnemy(state, config);
+    spawnEnemy(state);
     state.spawnTimer = 1.25;
   }
 
@@ -252,8 +303,10 @@ function update(state, config, controls, dt, context) {
       if (Math.random() < 0.25) enemy.dir = ["up", "down", "left", "right"][Math.floor(Math.random() * 4)];
       enemy.turn = 0.55 + Math.random() * 0.8;
     }
-    if (!moveTank(state, enemy, config.enemySpeed * (state.buffs.freeze > 0 ? 0.45 : 1), dt)) enemy.turn = 0;
-    if (state.buffs.freeze <= 0 && Math.random() < dt / config.enemyFire) fire(state, enemy, "enemy");
+    const levelConfig = state.levelConfig;
+    const speedBoost = enemy.boss ? 0.76 : 1;
+    if (!moveTank(state, enemy, levelConfig.enemySpeed * speedBoost * (state.buffs.freeze > 0 ? 0.45 : 1), dt)) enemy.turn = 0;
+    if (state.buffs.freeze <= 0 && Math.random() < dt / (enemy.boss ? levelConfig.enemyFire * 0.62 : levelConfig.enemyFire)) fire(state, enemy, "enemy");
   }
 
   state.bullets = state.bullets.filter((bullet) => {
@@ -278,11 +331,11 @@ function update(state, config, controls, dt, context) {
           addBurst(state.effects, hit.x, hit.y, { count: 20, color: classicArcade.red, secondary: classicArcade.yellow, speed: 92, radius: 12 });
           state.enemies = state.enemies.filter((enemy) => enemy !== hit);
           state.destroyed += 1;
-          state.score += 100;
-          state.message = `击毁敌坦 ${state.destroyed}/${state.total}`;
+          state.score += hit.boss ? 600 : 100;
+          state.message = hit.boss ? "Boss 已击破" : `击毁敌坦 ${state.destroyed}/${state.total}`;
           state.shake = Math.max(state.shake, 4);
           context.playSound?.("score");
-          if (Math.random() < 0.36 || state.destroyed === 2) spawnPowerup(state);
+          if (!hit.boss && (Math.random() < 0.36 || state.destroyed === 2)) spawnPowerup(state);
         }
         return false;
       }
@@ -294,7 +347,10 @@ function update(state, config, controls, dt, context) {
   });
 
   if (state.player.lives <= 0) finish(state, false, context);
-  if (state.destroyed >= state.total && !state.enemies.length) finish(state, true, context);
+  if (state.destroyed >= state.total && !state.enemies.length) {
+    if (state.level >= state.maxLevel) finish(state, true, context);
+    else advanceLevel(state, config, context);
+  }
 }
 
 function draw(state, ctx) {
@@ -328,7 +384,16 @@ function draw(state, ctx) {
     ctx.lineWidth = 2;
     ctx.strokeRect(state.player.x - 16, state.player.y - 16, 32, 32);
   }
-  state.enemies.forEach((enemy) => drawTankSprite(ctx, enemy, "enemy"));
+  state.enemies.forEach((enemy) => {
+    drawTankSprite(ctx, enemy, "enemy");
+    if (enemy.boss) {
+      ctx.strokeStyle = classicArcade.red;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(enemy.x - 18, enemy.y - 18, 36, 36);
+      ctx.fillStyle = classicArcade.red;
+      ctx.fillRect(enemy.x - 16, enemy.y - 24, Math.max(3, enemy.hp * 2), 4);
+    }
+  });
   state.powerups.forEach((item) => drawPowerup(ctx, item));
 
   for (const bullet of state.bullets) {
@@ -353,9 +418,10 @@ export function mountTankBattle(root, context) {
     <section class="game-panel game-status">
       <div>
         <strong data-status>${state.message}</strong>
-        <p class="game-note">${context.labels.difficulty} · ${config.total} 辆敌坦 · 基地防守</p>
+        <p class="game-note" data-note>${context.labels.difficulty} · 5 关防守 · 第 5 关 Boss</p>
       </div>
       <div class="mini-stats">
+        <span data-level>关卡 1/5</span>
         <span data-lives>生命 ${state.player.lives}</span>
         <span data-score>分数 0</span>
         <span data-left>敌军 ${config.total}</span>
@@ -376,6 +442,8 @@ export function mountTankBattle(root, context) {
   const canvas = root.querySelector("canvas");
   const ctx = canvas.getContext("2d");
   const status = root.querySelector("[data-status]");
+  const note = root.querySelector("[data-note]");
+  const level = root.querySelector("[data-level]");
   const lives = root.querySelector("[data-lives]");
   const score = root.querySelector("[data-score]");
   const left = root.querySelector("[data-left]");
@@ -386,6 +454,8 @@ export function mountTankBattle(root, context) {
 
   function refreshHud() {
     status.textContent = state.message;
+    note.textContent = `${context.labels.difficulty} · 第 ${state.level}/${state.maxLevel} 关 · ${state.level === state.maxLevel ? "Boss 防守" : "波次防守"}`;
+    level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
     lives.textContent = `生命 ${state.player.lives}`;
     score.textContent = `分数 ${state.score}`;
     left.textContent = `敌军 ${Math.max(0, state.total - state.destroyed)}`;
@@ -399,6 +469,13 @@ export function mountTankBattle(root, context) {
 
   function loop(now) {
     if (disposed) return;
+    if (context.isPaused?.()) {
+      last = now;
+      draw(state, ctx);
+      refreshHud();
+      raf = requestAnimationFrame(loop);
+      return;
+    }
     const dt = Math.min(0.033, (now - last) / 1000);
     last = now;
     update(state, config, controls, dt, context);
