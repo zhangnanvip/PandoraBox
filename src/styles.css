@@ -110,11 +110,13 @@ select:focus-visible {
   height: 52px;
   flex: 0 0 auto;
   border: 0;
-  border-radius: 8px;
-  background: url("../public/skins/guofeng-ink/ornaments/red-seal.svg") center / contain no-repeat;
+  border-radius: 14px;
+  background: url("../public/brand/pandora-sci-fi-mark.svg") center / cover no-repeat;
   color: var(--cinnabar);
   color: transparent;
-  box-shadow: 0 10px 24px rgba(88, 53, 18, 0.15);
+  box-shadow:
+    0 10px 24px rgba(18, 84, 96, 0.22),
+    0 0 0 1px rgba(83, 255, 240, 0.24);
 }
 
 .app-topbar h1 {

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Pandora sci-fi box">
+  <defs>
+    <linearGradient id="shell" x1="18" y1="10" x2="110" y2="118" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d7fff5"/>
+      <stop offset=".28" stop-color="#6df6e6"/>
+      <stop offset=".62" stop-color="#145b68"/>
+      <stop offset="1" stop-color="#0b1826"/>
+    </linearGradient>
+    <linearGradient id="boxTop" x1="35" y1="23" x2="92" y2="70" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f7fff7"/>
+      <stop offset=".42" stop-color="#72ffe9"/>
+      <stop offset="1" stop-color="#167286"/>
+    </linearGradient>
+    <linearGradient id="boxLeft" x1="28" y1="50" x2="65" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#33d7c8"/>
+      <stop offset="1" stop-color="#0f4055"/>
+    </linearGradient>
+    <linearGradient id="boxRight" x1="64" y1="48" x2="101" y2="103" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#78ffdc"/>
+      <stop offset="1" stop-color="#122a42"/>
+    </linearGradient>
+    <radialGradient id="core" cx="0" cy="0" r="1" gradientTransform="matrix(0 47 -47 0 64 55)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#faffc9"/>
+      <stop offset=".34" stop-color="#53fff0" stop-opacity=".88"/>
+      <stop offset="1" stop-color="#53fff0" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.8" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.18 0 0 0 0 1 0 0 0 0 0.9 0 0 0 .72 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="5" y="5" width="118" height="118" rx="27" fill="#0b1826"/>
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="url(#shell)" opacity=".95"/>
+  <path d="M21 31h16M91 31h16M21 97h16M91 97h16M31 21v16M97 21v16M31 91v16M97 91v16" fill="none" stroke="#d8fff7" stroke-width="3" stroke-linecap="round" opacity=".72"/>
+  <circle cx="64" cy="57" r="47" fill="url(#core)"/>
+  <path d="M64 23 96 40 64 57 32 40 64 23Z" fill="url(#boxTop)" stroke="#ddfff5" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 40 64 57v39L32 78V40Z" fill="url(#boxLeft)" stroke="#d7fff5" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M96 40 64 57v39l32-18V40Z" fill="url(#boxRight)" stroke="#d7fff5" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M64 57v39M32 40l32 18 32-18" fill="none" stroke="#eafff8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+  <path d="M45 48 64 38l19 10M45 69l19 10 19-10" fill="none" stroke="#092132" stroke-width="3" stroke-linecap="round" opacity=".34"/>
+  <g filter="url(#glow)">
+    <path d="M64 31v18M55 40h18" fill="none" stroke="#fbffd2" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="64" cy="57" r="8" fill="#faffc9"/>
+    <path d="M47 88c10 8 24 8 34 0" fill="none" stroke="#53fff0" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <path d="M16 64c7-24 24-41 48-48M112 64c-7 24-24 41-48 48" fill="none" stroke="#c9fff4" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+</svg>
