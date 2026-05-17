@@ -35,8 +35,10 @@ function normalizeSource(source) {
     name: String(source.name),
     type: source.type === "builtin" ? "builtin" : "url",
     enabled: source.enabled === true,
+    discoverable: source.discoverable === true,
     url: source.url || "",
-    trust: source.trust || "manual-review"
+    trust: source.trust || "manual-review",
+    catalog: null
   };
 }
 
@@ -60,11 +62,55 @@ export function normalizePluginSourceConfig(config) {
   };
 }
 
+function canDiscoverSource(source, config) {
+  if (source.type !== "url" || !source.url) return false;
+  if (source.enabled) return true;
+  return source.discoverable === true && config.allowRemote !== true;
+}
+
+function normalizeDiscoveredCatalog(catalog) {
+  if (!catalog || typeof catalog !== "object") {
+    return { loaded: false, games: 0, title: "", error: "插件目录格式无效" };
+  }
+  return {
+    loaded: true,
+    games: asArray(catalog.games).length,
+    title: catalog.name || catalog.sourceId || "插件目录",
+    error: ""
+  };
+}
+
+async function discoverSourceCatalog(source, config, fetcher) {
+  if (!canDiscoverSource(source, config)) return source;
+  try {
+    const response = await fetcher(new URL(source.url, PLUGIN_SOURCE_CONFIG_URL), { cache: "no-cache" });
+    if (!response.ok) throw new Error(`目录读取失败：${response.status}`);
+    return {
+      ...source,
+      catalog: normalizeDiscoveredCatalog(await response.json())
+    };
+  } catch (error) {
+    return {
+      ...source,
+      catalog: {
+        loaded: false,
+        games: 0,
+        title: "",
+        error: error?.message || "目录读取失败"
+      }
+    };
+  }
+}
+
 export async function loadPluginSourceState(fetcher = fetch) {
   try {
     const response = await fetcher(PLUGIN_SOURCE_CONFIG_URL, { cache: "no-cache" });
     if (!response.ok) throw new Error(`插件源配置读取失败：${response.status}`);
-    return normalizePluginSourceConfig(await response.json());
+    const config = normalizePluginSourceConfig(await response.json());
+    return {
+      ...config,
+      sources: await Promise.all(config.sources.map((source) => discoverSourceCatalog(source, config, fetcher)))
+    };
   } catch (error) {
     return {
       ...DEFAULT_PLUGIN_SOURCE_STATE,
@@ -79,6 +125,7 @@ export function summarizePluginSources(pluginSources = DEFAULT_PLUGIN_SOURCE_STA
   return {
     total: sources.length,
     enabled: sources.filter((source) => source.enabled).length,
+    discoveredGames: sources.reduce((sum, source) => sum + (source.catalog?.games || 0), 0),
     remoteEnabled: pluginSources.allowRemote && sources.some((source) => source.type === "url" && source.enabled),
     remoteAvailable: sources.some((source) => source.type === "url"),
     loaded: pluginSources.loaded === true,

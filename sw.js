@@ -1,6 +1,6 @@
 import { precacheAssets } from "./src/games/catalog.js";
 
-const CACHE_NAME = "pandora-box-v33";
+const CACHE_NAME = "pandora-box-v34";
 const SCOPE_URL = new URL(self.registration.scope);
 
 const CORE_SHELL = [
@@ -8,6 +8,9 @@ const CORE_SHELL = [
   "./index.html",
   "./manifest.webmanifest",
   "./public/plugin-sources.json",
+  "./public/plugins/local/catalog.json",
+  "./public/plugins/local/sample-dodge/icon.svg",
+  "./public/plugins/local/sample-dodge/game.js",
   "./public/icon.svg",
   "./public/icon-180.png",
   "./public/icon-512.png",

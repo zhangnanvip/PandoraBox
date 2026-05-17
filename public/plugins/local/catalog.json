@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "sourceId": "local-extension",
+  "name": "本地扩展示例包",
+  "description": "用于验证 PandoraBox 外部游戏插件包格式的本地示例。默认不会加载执行。",
+  "games": [
+    {
+      "id": "sample-dodge",
+      "pluginId": "pandora.external.sample-dodge",
+      "pluginApiVersion": 1,
+      "version": "0.1.0",
+      "status": "preview",
+      "source": "url",
+      "entry": "./sample-dodge/game.js",
+      "title": "示例躲避",
+      "subtitle": "插件包模板，不默认安装",
+      "tag": "插件示例",
+      "category": "arcade",
+      "secondaryCategories": ["quick"],
+      "complexity": "简单",
+      "modeSupport": ["solo"],
+      "difficultySupport": ["easy", "medium", "hard"],
+      "progressType": "score",
+      "visualStyles": [{ "value": "classic-arcade", "label": "经典街机" }],
+      "defaultVisualStyle": "classic-arcade",
+      "accent": "sky",
+      "icon": "./sample-dodge/icon.svg",
+      "assets": ["./sample-dodge/icon.svg"],
+      "capabilities": {
+        "offline": true,
+        "fullscreen": true,
+        "sessionSave": false,
+        "touchControls": true,
+        "keyboardControls": true,
+        "staged": false,
+        "boss": false
+      },
+      "rules": [
+        "这是外部插件包格式示例，默认只用于校验，不会出现在大厅。",
+        "插件需要导出 mount(root, context) 方法。",
+        "entry、icon、assets 均相对当前 catalog.json 解析。"
+      ]
+    }
+  ]
+}

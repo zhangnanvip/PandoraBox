@@ -788,7 +788,11 @@ function renderPluginSourceList() {
         <div class="plugin-source-row ${source.enabled ? "is-enabled" : ""}">
           <div>
             <strong>${source.name}</strong>
-            <span>${source.type === "builtin" ? "随应用离线打包" : source.url || "扩展源预留"}</span>
+            <span>
+              ${source.type === "builtin" ? "随应用离线打包" : source.url || "扩展源预留"}
+              ${source.catalog?.loaded ? ` · 可发现 ${source.catalog.games} 个游戏` : ""}
+              ${source.catalog?.error ? ` · ${source.catalog.error}` : ""}
+            </span>
           </div>
           <b>${source.enabled ? "启用" : "禁用"}</b>
         </div>
@@ -1137,6 +1141,8 @@ function modalContent() {
     };
   }
 
+  const pluginSourceSummary = summarizePluginSources(state.pluginSources);
+
   return {
     title: "设置",
     body: `
@@ -1164,7 +1170,8 @@ function modalContent() {
             <span>成就 ${unlockedAchievementCount()}/${ACHIEVEMENTS.length}</span>
             <span>插件 ${pluginCatalog.length}</span>
             <span>预缓存 ${precacheAssets.length}</span>
-            <span>插件源 ${summarizePluginSources(state.pluginSources).enabled}/${summarizePluginSources(state.pluginSources).total}</span>
+            <span>插件源 ${pluginSourceSummary.enabled}/${pluginSourceSummary.total}</span>
+            <span>可发现 ${pluginSourceSummary.discoveredGames}</span>
           </div>
         </div>
         <div>

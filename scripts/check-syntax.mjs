@@ -16,7 +16,9 @@ async function collect(dir) {
 const files = [
   "sw.js",
   "scripts/dev-server.mjs",
-  ...await collect("src")
+  "scripts/check-plugins.mjs",
+  ...await collect("src"),
+  ...await collect("public/plugins")
 ];
 
 let failed = false;
