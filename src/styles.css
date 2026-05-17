@@ -49,6 +49,15 @@ body {
   color: var(--ink);
 }
 
+:root[data-play-mode="immersive"],
+:root[data-play-mode="immersive"] body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #101629;
+}
+
 button,
 select {
   font: inherit;
@@ -1543,47 +1552,102 @@ input[type="range"] {
   position: fixed;
   inset: 0;
   width: 100%;
-  height: 100svh;
+  height: 100dvh;
+  min-height: 100dvh;
   overflow: hidden;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 8px;
+  display: block;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(66, 242, 255, 0.16), transparent 34%),
+    #101629;
   overscroll-behavior: none;
   touch-action: none;
 }
 
 .arcade-play-frame .play-header,
 .arcade-play-frame .game-root {
-  width: min(100%, 860px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 .arcade-play-frame .play-header {
-  padding: 0;
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  width: auto;
+  z-index: 14;
+  grid-template-columns: auto 1fr auto;
+  pointer-events: none;
+}
+
+.arcade-play-frame .play-header > * {
+  pointer-events: auto;
+}
+
+.arcade-play-frame .play-header > div:nth-child(2) {
+  display: none;
+}
+
+.arcade-play-frame .play-header .icon-button {
+  width: 38px;
+  height: 38px;
+  border-color: rgba(248, 251, 255, 0.18);
+  background: rgba(11, 16, 32, 0.72);
+  color: #f8fbff;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
 }
 
 .arcade-play-frame .game-root {
-  min-height: 0;
+  position: relative;
+  height: 100%;
+  min-height: 100%;
   overflow: hidden;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 8px;
+  display: block;
+  background: #101629;
 }
 
 .arcade-play-frame .game-status {
-  padding: 10px 12px;
+  position: absolute;
+  top: max(54px, calc(env(safe-area-inset-top) + 50px));
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  z-index: 12;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  max-width: min(520px, calc(100vw - 16px));
+  margin: 0 auto;
+  padding: 8px 10px;
+  border-color: rgba(248, 251, 255, 0.14);
+  background: rgba(11, 16, 32, 0.62);
+  color: #f8fbff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
 }
 
 .arcade-play-frame .game-status .game-note {
+  color: rgba(248, 251, 255, 0.72);
   font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .arcade-play-frame .game-status .mini-stats {
-  gap: 6px;
+  gap: 5px;
 }
 
 .arcade-play-frame .game-status .mini-stats span {
-  padding: 5px 8px;
+  min-height: 24px;
+  padding: 3px 7px;
+  border: 1px solid rgba(248, 251, 255, 0.12);
+  background: rgba(248, 251, 255, 0.08);
+  color: rgba(248, 251, 255, 0.82);
+  font-size: 0.68rem;
 }
 
 .arcade-shell {
@@ -1593,10 +1657,9 @@ input[type="range"] {
 }
 
 .arcade-play-frame .arcade-shell {
-  min-height: 0;
-  grid-template-rows: minmax(0, 1fr) auto;
-  align-content: stretch;
-  gap: 8px;
+  position: absolute;
+  inset: 0;
+  display: block;
   touch-action: none;
 }
 
@@ -1614,9 +1677,16 @@ input[type="range"] {
 }
 
 .arcade-play-frame .arcade-stage {
-  width: min(100%, 560px);
-  max-height: 100%;
-  padding: 8px;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #101629;
+  box-shadow: none;
 }
 
 .arcade-shell[data-visual-style="classic-arcade"] .arcade-stage {
@@ -1640,13 +1710,15 @@ input[type="range"] {
 }
 
 .arcade-play-frame .arcade-canvas {
-  width: auto;
+  width: min(100vw, 100dvh);
   max-width: 100%;
-  max-height: min(52svh, 520px);
+  max-height: calc(100dvh - 164px - env(safe-area-inset-bottom));
+  border-radius: 0;
 }
 
 .arcade-play-frame .arcade-canvas.tall {
-  max-height: min(56svh, 560px);
+  width: min(100vw, calc((100dvh - 132px - env(safe-area-inset-bottom)) * 0.75));
+  max-height: calc(100dvh - 132px - env(safe-area-inset-bottom));
 }
 
 .arcade-shell[data-visual-style="classic-arcade"] .arcade-canvas {
@@ -1672,7 +1744,21 @@ input[type="range"] {
 }
 
 .arcade-play-frame .arcade-controls {
-  width: min(100%, 560px);
+  position: absolute;
+  left: max(10px, env(safe-area-inset-left));
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 13;
+  width: auto;
+  pointer-events: none;
+}
+
+.arcade-play-frame .arcade-controls > * {
+  pointer-events: auto;
+}
+
+.arcade-play-frame .arcade-control-stack {
+  align-self: end;
 }
 
 .arcade-control-stack {
@@ -2599,35 +2685,32 @@ input[type="range"] {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .arcade-controls {
-    grid-template-columns: 1fr auto;
-  }
-
   .arcade-play-frame {
-    padding: max(8px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
-  }
-
-  .arcade-play-frame .play-header h1 {
-    font-size: 1.12rem;
-  }
-
-  .arcade-play-frame .play-header .eyebrow {
-    display: none;
+    padding: 0;
   }
 
   .arcade-play-frame .game-status {
     grid-template-columns: 1fr;
   }
 
+  .arcade-play-frame .game-status strong {
+    margin-bottom: 1px;
+    font-size: 0.86rem;
+  }
+
+  .arcade-play-frame .game-status .mini-stats span:nth-child(n + 5) {
+    display: none;
+  }
+
   .arcade-joystick {
-    width: 118px;
-    height: 118px;
+    width: 112px;
+    height: 112px;
   }
 
   .arcade-joystick-stick {
-    width: 44px;
-    height: 44px;
-    margin: -22px 0 0 -22px;
+    width: 42px;
+    height: 42px;
+    margin: -21px 0 0 -21px;
   }
 
   .arcade-dpad {
@@ -2636,8 +2719,8 @@ input[type="range"] {
   }
 
   .arcade-fire {
-    width: 74px;
-    min-height: 74px;
+    width: 70px;
+    min-height: 70px;
   }
 
   .toolbar .secondary-button,

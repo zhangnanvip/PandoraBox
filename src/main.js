@@ -1590,6 +1590,12 @@ function renderModal() {
 function render() {
   document.documentElement.dataset.theme = state.theme;
   document.documentElement.dataset.skin = state.theme;
+  const activeGame = state.currentGame ? findAvailableGame(state.currentGame) : null;
+  if (activeGame?.capabilities?.fullscreen) {
+    document.documentElement.dataset.playMode = "immersive";
+  } else {
+    delete document.documentElement.dataset.playMode;
+  }
   if (state.currentGame) {
     if (renderedGameId !== state.currentGame || !cleanupGame) {
       gameLoadToken += 1;
