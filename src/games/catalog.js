@@ -373,7 +373,7 @@ const registrations = [
     {
       id: "tower-defense",
       title: "机关塔防",
-      subtitle: "布置弩塔、炮塔与冰塔守住核心",
+      subtitle: "布置弩塔、炮塔、冰塔与电塔守住核心",
       tag: "波次防守",
       category: "strategy",
       secondaryCategories: ["arcade"],

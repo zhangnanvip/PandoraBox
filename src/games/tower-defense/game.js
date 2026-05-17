@@ -17,7 +17,8 @@ const DIFFICULTY = {
 const TOWER_TYPES = {
   arrow: { label: "弩塔", cost: 60, damage: 17, range: 74, cooldown: 0.52, speed: 255, color: classicArcade.cyan },
   cannon: { label: "炮塔", cost: 92, damage: 31, range: 65, cooldown: 1.05, speed: 210, splash: 30, color: classicArcade.orange },
-  frost: { label: "冰塔", cost: 76, damage: 9, range: 68, cooldown: 0.86, speed: 225, slow: 0.48, slowTime: 1.45, color: classicArcade.blue }
+  frost: { label: "冰塔", cost: 76, damage: 9, range: 68, cooldown: 0.86, speed: 225, slow: 0.48, slowTime: 1.45, color: classicArcade.blue },
+  spark: { label: "电塔", cost: 108, damage: 14, range: 86, cooldown: 0.74, speed: 290, chain: 2, color: classicArcade.yellow }
 };
 
 const PATH_CELLS = [
@@ -52,13 +53,23 @@ function towerStats(tower) {
     range: base.range + boost * 10,
     cooldown: Math.max(0.22, base.cooldown * (1 - boost * 0.12)),
     splash: base.splash ? base.splash + boost * 5 : 0,
-    slowTime: base.slowTime ? base.slowTime + boost * 0.22 : 0
+    slowTime: base.slowTime ? base.slowTime + boost * 0.22 : 0,
+    chain: base.chain ? base.chain + (tower.level >= 3 ? 1 : 0) : 0
   };
 }
 
 function upgradeCost(tower) {
   const base = TOWER_TYPES[tower.type] || TOWER_TYPES.arrow;
   return Math.round(base.cost * (0.72 + tower.level * 0.38));
+}
+
+function towerInvestment(tower) {
+  const base = TOWER_TYPES[tower.type] || TOWER_TYPES.arrow;
+  let value = base.cost;
+  for (let level = 1; level < tower.level; level += 1) {
+    value += Math.round(base.cost * (0.72 + level * 0.38));
+  }
+  return value;
 }
 
 function waveNumber(state) {
@@ -75,6 +86,12 @@ function waveConfig(config, level, wave) {
     interval: Math.max(0.36, 0.72 - level * 0.04),
     totalWave
   };
+}
+
+function wavePreview(config, level, wave) {
+  const next = waveConfig(config, level, wave);
+  const boss = level === MAX_LEVEL && wave === WAVES_PER_LEVEL ? " · Boss" : "";
+  return `${next.count}${boss} 敌 · HP ${next.hp}`;
 }
 
 function createWave(config, level, wave, nextId) {
@@ -246,6 +263,22 @@ function upgradeSelectedTower(state) {
   addBurst(state.effects, tower.x, tower.y, { color: classicArcade.yellow, secondary: classicArcade.cyan, count: 12, speed: 58 });
 }
 
+function sellSelectedTower(state) {
+  const index = state.towers.findIndex((item) => item.id === state.selectedTower);
+  if (index < 0) {
+    state.message = "先点击一座塔";
+    return;
+  }
+  const tower = state.towers[index];
+  const refund = Math.max(20, Math.round(towerInvestment(tower) * 0.62));
+  const label = TOWER_TYPES[tower.type]?.label || "防御塔";
+  state.gold += refund;
+  state.towers.splice(index, 1);
+  state.selectedTower = null;
+  state.message = `出售${label}，回收 ${refund} 金币`;
+  addBurst(state.effects, tower.x, tower.y, { color: classicArcade.green, secondary: classicArcade.white, count: 10, speed: 52 });
+}
+
 function spawnEnemy(state, template) {
   const start = WAYPOINTS[0];
   state.enemies.push({
@@ -377,6 +410,7 @@ function updateTowers(state, dt) {
       splash: stats.splash || 0,
       slow: stats.slow || 1,
       slowTime: stats.slowTime || 0,
+      chain: stats.chain || 0,
       color: stats.color
     });
   }
@@ -401,6 +435,20 @@ function updateShots(state, dt) {
           if (Math.hypot(enemy.x - target.x, enemy.y - target.y) > shot.splash) continue;
           const killed = damageEnemy(state, enemy, shot.damage * (enemy === target ? 1 : 0.62), shot);
           if (killed) state.enemies.splice(i, 1);
+        }
+      } else if (shot.chain) {
+        const chainTargets = state.enemies
+          .filter((enemy) => enemy !== target && Math.hypot(enemy.x - target.x, enemy.y - target.y) <= 56)
+          .sort((a, b) => Math.hypot(a.x - target.x, a.y - target.y) - Math.hypot(b.x - target.x, b.y - target.y))
+          .slice(0, shot.chain);
+        const hits = [
+          { enemy: target, damage: shot.damage },
+          ...chainTargets.map((enemy, index) => ({ enemy, damage: shot.damage * (0.58 - index * 0.12) }))
+        ];
+        for (const hit of hits) {
+          if (!state.enemies.includes(hit.enemy)) continue;
+          const killed = damageEnemy(state, hit.enemy, hit.damage, shot);
+          if (killed) state.enemies.splice(state.enemies.indexOf(hit.enemy), 1);
         }
       } else {
         const killed = damageEnemy(state, target, shot.damage, shot);
@@ -490,6 +538,16 @@ function drawTower(ctx, tower, selected = false) {
   } else if (tower.type === "frost") {
     ctx.beginPath();
     ctx.arc(tower.x, tower.y - 2, 6, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (tower.type === "spark") {
+    ctx.beginPath();
+    ctx.moveTo(tower.x, tower.y - 11);
+    ctx.lineTo(tower.x + 7, tower.y - 2);
+    ctx.lineTo(tower.x + 1, tower.y - 1);
+    ctx.lineTo(tower.x + 7, tower.y + 9);
+    ctx.lineTo(tower.x - 7, tower.y - 4);
+    ctx.lineTo(tower.x - 1, tower.y - 4);
+    ctx.closePath();
     ctx.fill();
   } else {
     ctx.fillRect(tower.x - 2, tower.y - 23, 4, 17);
@@ -585,8 +643,10 @@ export function mountTowerDefense(root, context) {
           <button data-tower="arrow">弩塔</button>
           <button data-tower="cannon">炮塔</button>
           <button data-tower="frost">冰塔</button>
+          <button data-tower="spark">电塔</button>
           <button data-action="upgrade">升级</button>
           <button data-action="wave">出怪</button>
+          <button data-action="sell">出售</button>
           <button data-action="restart">重开</button>
         </div>
       </div>
@@ -606,7 +666,12 @@ export function mountTowerDefense(root, context) {
 
   function refreshHud() {
     status.textContent = state.message;
-    note.textContent = `${context.labels.difficulty} · ${TOWER_TYPES[state.selectedType].label} ${TOWER_TYPES[state.selectedType].cost} 金币`;
+    const selectedTower = state.towers.find((tower) => tower.id === state.selectedTower);
+    const selectedText = selectedTower ? `选中 ${TOWER_TYPES[selectedTower.type].label} Lv.${selectedTower.level}` : `${TOWER_TYPES[state.selectedType].label} ${TOWER_TYPES[state.selectedType].cost} 金币`;
+    const waveText = state.waveActive
+      ? `场上 ${state.enemies.length + state.queue.length} 敌`
+      : `下一波 ${wavePreview(config, state.level, state.wave)}`;
+    note.textContent = `${context.labels.difficulty} · ${selectedText} · ${waveText}`;
     level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
     wave.textContent = `波次 ${waveNumber(state)}/${MAX_LEVEL * WAVES_PER_LEVEL}`;
     lives.textContent = `核心 ${Math.max(0, state.lives)}`;
@@ -658,7 +723,7 @@ export function mountTowerDefense(root, context) {
   }
 
   function onKey(event) {
-    const towerKeys = { Digit1: "arrow", Digit2: "cannon", Digit3: "frost" };
+    const towerKeys = { Digit1: "arrow", Digit2: "cannon", Digit3: "frost", Digit4: "spark" };
     if (towerKeys[event.code]) {
       event.preventDefault();
       state.selectedType = towerKeys[event.code];
@@ -669,6 +734,9 @@ export function mountTowerDefense(root, context) {
     } else if (event.code === "KeyU") {
       event.preventDefault();
       upgradeSelectedTower(state);
+    } else if (event.code === "KeyX") {
+      event.preventDefault();
+      sellSelectedTower(state);
     } else if (event.code === "KeyR") {
       event.preventDefault();
       restart();
@@ -683,6 +751,7 @@ export function mountTowerDefense(root, context) {
   });
   root.querySelector("[data-action='upgrade']").addEventListener("click", () => upgradeSelectedTower(state));
   root.querySelector("[data-action='wave']").addEventListener("click", () => startWave(state, config));
+  root.querySelector("[data-action='sell']").addEventListener("click", () => sellSelectedTower(state));
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   canvas.addEventListener("pointerdown", onPointerDown);
   window.addEventListener("keydown", onKey);

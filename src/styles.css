@@ -1346,6 +1346,10 @@ select {
   color: var(--jade);
 }
 
+.restart-top-button {
+  color: var(--cinnabar);
+}
+
 .icon-svg {
   width: 1.12em;
   height: 1.12em;
@@ -2086,7 +2090,7 @@ input[type="range"] {
 
 .tower-controls {
   display: grid;
-  grid-template-columns: repeat(6, minmax(52px, 1fr));
+  grid-template-columns: repeat(4, minmax(58px, 1fr));
   gap: 6px;
   width: min(94vw, 560px);
 }
@@ -2106,6 +2110,10 @@ input[type="range"] {
   border-color: rgba(93, 255, 139, 0.74);
   background: #173425;
   color: #5dff8b;
+}
+
+.game-root [data-action="restart"] {
+  display: none !important;
 }
 
 .board-wrap {
@@ -2222,9 +2230,7 @@ input[type="range"] {
 
 .xiangqi-board {
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  grid-template-rows: repeat(10, 1fr);
+  display: block;
   width: min(94vw, 520px);
   max-width: 100%;
   aspect-ratio: 9 / 10;
@@ -2246,21 +2252,28 @@ input[type="range"] {
 
 .xiangqi-lines line {
   stroke: rgba(70, 46, 22, 0.62);
-  stroke-width: 0.035;
+  stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
 
 .xiangqi-lines .palace-line {
   stroke: rgba(112, 47, 32, 0.72);
-  stroke-width: 0.045;
+  stroke-width: 2.2;
 }
 
 .xiangqi-cell {
-  position: relative;
+  position: absolute;
   z-index: 3;
+  width: min(10.2%, 54px);
+  height: min(9.18%, 54px);
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
   border: 0;
+  border-radius: 50%;
   background: transparent;
   padding: 0;
+  touch-action: none;
 }
 
 .xiangqi-river {
@@ -2277,7 +2290,7 @@ input[type="range"] {
 
 .piece {
   position: absolute;
-  inset: 7%;
+  inset: 6%;
   display: grid;
   place-items: center;
   border-radius: 50%;

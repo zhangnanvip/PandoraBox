@@ -380,6 +380,13 @@ function renderBoardLines() {
   `;
 }
 
+function renderCellStyle(index) {
+  const [x, y] = xy(index);
+  const left = 5.5556 + x * 11.1111;
+  const top = 5 + y * 10;
+  return `left:${left.toFixed(4)}%;top:${top.toFixed(4)}%;`;
+}
+
 export function mountXiangqi(root, context) {
   const storageKey = `xiangqi:${context.mode}`;
   let state = loadState(storageKey, initialState());
@@ -517,7 +524,7 @@ export function mountXiangqi(root, context) {
           ${renderBoardLines()}
           <div class="xiangqi-river">楚河　汉界</div>
           ${state.board.map((piece, index) => `
-            <button class="xiangqi-cell ${state.selected === index ? "selected" : ""}" data-cell="${index}" aria-label="${piece ? LABELS[piece] : "空位"}">
+            <button class="xiangqi-cell ${state.selected === index ? "selected" : ""}" data-cell="${index}" style="${renderCellStyle(index)}" aria-label="${piece ? LABELS[piece] : "空位"}">
               ${renderPiece(piece)}
               ${state.moves.includes(index) ? "<span class=\"move-dot\"></span>" : ""}
             </button>

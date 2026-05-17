@@ -596,6 +596,7 @@ function icon(name) {
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     play: '<path d="M8 5v14l11-7L8 5Z"/>',
     pause: '<path d="M7 5h3v14H7V5Z"/><path d="M14 5h3v14h-3V5Z"/>',
+    restart: '<path d="M3 12a9 9 0 1 0 2.64-6.36"/><path d="M3 5v6h6"/>',
     history: '<path d="M12 8v5l3 2"/><path d="M3.05 11a9 9 0 1 1 2.64 6.36"/><path d="M3 17v-6h6"/>',
     star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>',
     trophy: '<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 3"/><path d="M17 6h3a3 3 0 0 1-3 3"/><path d="M9 17h6"/>',
@@ -1548,6 +1549,7 @@ function renderGame() {
           <h1>${game.title}</h1>
         </div>
         <div class="header-actions">
+          <button class="icon-button small restart-top-button" data-restart-current-game aria-label="重开">${icon("restart")}</button>
           <button class="icon-button small" data-open-modal="pause" aria-label="暂停">${icon("pause")}</button>
           <button class="icon-button small" data-open-modal="rules" aria-label="规则">${icon("rules")}</button>
           <button class="icon-button small" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
@@ -1616,6 +1618,12 @@ function renderGame() {
 function bindShellActions() {
   app.querySelectorAll("[data-open-modal]").forEach((button) => {
     button.addEventListener("click", () => openModal(button.dataset.openModal));
+  });
+  app.querySelector("[data-restart-current-game]")?.addEventListener("click", () => {
+    const gameRoot = app.querySelector("#game-root");
+    const event = new CustomEvent("pandora:restart-game", { cancelable: true });
+    gameRoot?.dispatchEvent(event);
+    if (!event.defaultPrevented) gameRoot?.querySelector("[data-action='restart']")?.click();
   });
   app.querySelector("[data-install-app]")?.addEventListener("click", async () => {
     if (!installPrompt) return;
