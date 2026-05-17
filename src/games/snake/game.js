@@ -1,4 +1,4 @@
-import { bindActionKeys, bindSwipeDirection, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { bindActionKeys, bindSwipeDirection } from "../arcade/controls.js";
 import { gridCellInBounds, gridKey, sameGridCell } from "../arcade/collision.js";
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { feedbackTimeScale, triggerHitStop, updateFeedback } from "../arcade/feedback.js";
@@ -10,13 +10,8 @@ import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } 
 const SIZE = 18;
 const CELL = 20;
 const W = SIZE * CELL;
-const CONFIG = {
-  easy: { tick: 0.17, target: 12, obstacles: 0 },
-  medium: { tick: 0.135, target: 18, obstacles: 2 },
-  hard: { tick: 0.105, target: 24, obstacles: 4 },
-  devil: { tick: 0.078, target: 30, obstacles: 6 }
-};
-const MAX_LEVEL = 5;
+const CONFIG = { tick: 0.14, target: 14, obstacles: 1 };
+const MAX_LEVEL = 30;
 const DIRS = {
   up: { x: 0, y: -1 },
   down: { x: 0, y: 1 },
@@ -54,10 +49,11 @@ function makeObstacles(count, snake) {
 }
 
 function levelTuning(config, level) {
+  const chapter = Math.floor((level - 1) / 6);
   return {
-    tick: Math.max(0.056, config.tick - (level - 1) * 0.008),
-    target: Math.max(4, Math.round(config.target * 0.28) + level),
-    obstacles: config.obstacles + level - 1
+    tick: Math.max(0.062, config.tick - (level - 1) * 0.0036 - chapter * 0.004),
+    target: Math.min(34, Math.max(5, Math.round(config.target * 0.36) + level + chapter * 2)),
+    obstacles: Math.min(22, config.obstacles + Math.floor((level - 1) * 0.72) + chapter)
   };
 }
 
@@ -263,19 +259,18 @@ function draw(state, ctx) {
 }
 
 export function mountSnake(root, context) {
-  const config = CONFIG[context.difficulty] || CONFIG.medium;
+  const config = CONFIG;
   let state = restoreState(config, context.savedState);
   let acc = 0;
-  const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0 };
 
   root.innerHTML = `
     <section class="game-panel game-status">
       <div>
         <strong data-status>${state.message}</strong>
-        <p class="game-note" data-note>${context.labels.difficulty} · 5 关任务 · 能量豆挑战</p>
+        <p class="game-note" data-note>单人闯关 · ${MAX_LEVEL} 关任务 · 滑动转向</p>
       </div>
       <div class="mini-stats">
-        <span data-level>关卡 1/5</span>
+        <span data-level>关卡 1/${MAX_LEVEL}</span>
         <span data-score>分数 0</span>
         <span data-length>任务 0/${state.levelConfig.target}</span>
         <span data-power>道具 无</span>
@@ -283,12 +278,6 @@ export function mountSnake(root, context) {
     </section>
     <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas" width="${W}" height="${W}" aria-label="贪吃蛇"></canvas></div>
-      <div class="arcade-controls">
-        ${joystickMarkup("贪吃蛇方向")}
-        <div class="arcade-control-stack">
-          <button class="arcade-fire compact" data-action="restart">重开</button>
-        </div>
-      </div>
     </section>
   `;
 
@@ -314,7 +303,7 @@ export function mountSnake(root, context) {
 
   function refreshHud() {
     status.textContent = state.message;
-    note.textContent = `${context.labels.difficulty} · 第 ${stageMeta(state)} 关 · 障碍 ${state.levelConfig.obstacles}`;
+    note.textContent = `第 ${stageMeta(state)} 关 · 障碍 ${state.levelConfig.obstacles}`;
     level.textContent = stageLabel(state);
     score.textContent = `分数 ${state.score}`;
     length.textContent = `任务 ${state.eaten}/${state.levelConfig.target}`;
@@ -358,17 +347,14 @@ export function mountSnake(root, context) {
     ArrowRight: "right",
     KeyD: "right"
   }, setDir);
-  const cleanupJoystick = bindVirtualJoystick(root, controls, { onDirection: setDir });
-  const cleanupSwipe = bindSwipeDirection(canvas, setDir);
+  const cleanupSwipe = bindSwipeDirection(canvas, setDir, { preventDefault: true });
   const cleanupShellRestart = bindShellRestart(root, context, restart);
-  root.querySelector("[data-action='restart']").addEventListener("click", restart);
   loop.start();
 
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     loop.stop();
     cleanupKeys();
-    cleanupJoystick();
     cleanupSwipe();
     cleanupShellRestart();
   };

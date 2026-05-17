@@ -1,4 +1,4 @@
-import { HORIZONTAL_KEY_MAP, bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { HORIZONTAL_KEY_MAP, bindDigitalKeys } from "../arcade/controls.js";
 import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collision.js";
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { drawFlashHalo, feedbackTimeScale, triggerFlash, triggerHitStop, updateFeedback } from "../arcade/feedback.js";
@@ -11,20 +11,21 @@ import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } 
 
 const W = 360;
 const H = 360;
-const CONFIG = {
-  easy: { rows: 4, speed: 142, paddle: 86, lives: 4 },
-  medium: { rows: 5, speed: 162, paddle: 76, lives: 3 },
-  hard: { rows: 6, speed: 184, paddle: 66, lives: 3 },
-  devil: { rows: 7, speed: 210, paddle: 58, lives: 2 }
-};
-const MAX_LEVEL = 5;
+const CONFIG = { rows: 5, speed: 158, paddle: 78, lives: 3 };
+const MAX_LEVEL = 30;
+const BOSS_INTERVAL = 5;
+
+function isBossLevel(level) {
+  return level % BOSS_INTERVAL === 0 || level >= MAX_LEVEL;
+}
 
 function levelTuning(config, level) {
+  const chapter = Math.floor((level - 1) / BOSS_INTERVAL);
   return {
-    rows: Math.min(7, Math.max(3, Math.round(config.rows * 0.62)) + level - 1),
-    speed: config.speed + (level - 1) * 14,
-    paddle: Math.max(48, config.paddle - (level - 1) * 4),
-    bossHp: 20 + level * 5 + Math.max(0, 4 - config.lives) * 4
+    rows: Math.min(8, Math.max(4, Math.round(config.rows * 0.72)) + Math.floor((level - 1) / 2)),
+    speed: config.speed + (level - 1) * 5 + chapter * 4,
+    paddle: Math.max(48, config.paddle - Math.floor((level - 1) / 3) * 2),
+    bossHp: 24 + level * 4 + chapter * 12
   };
 }
 
@@ -35,7 +36,8 @@ function makeBricks(rows, level = 1) {
   const bw = (W - 32 - gap * (cols - 1)) / cols;
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < cols; x += 1) {
-      bricks.push({ x: 16 + x * (bw + gap), y: 34 + y * 18, w: bw, h: 13, hp: y + level < 4 ? 1 : 2, row: y });
+      const hp = y + Math.floor(level / 4) < 4 ? 1 : level >= 18 && y % 3 === 0 ? 3 : 2;
+      bricks.push({ x: 16 + x * (bw + gap), y: 34 + y * 18, w: bw, h: 13, hp, row: y });
     }
   }
   return bricks;
@@ -172,9 +174,9 @@ function advanceLevel(state, config, context) {
   state.powerups = [];
   state.buffs = { expand: 0, slow: 0 };
   resetBall(state);
-  const bossStage = isFinalStage(state);
+  const bossStage = isBossLevel(state.level);
   announceStageStart(state, context, {
-    message: bossStage ? `第 ${state.maxLevel} 关：Boss 砖阵` : `第 ${state.level} 关：砖阵加固`,
+    message: bossStage ? `第 ${state.level} 关：Boss 砖阵` : `第 ${state.level} 关：砖阵加固`,
     transition: {
       title: `第 ${stageMeta(state)} 关`,
       subtitle: bossStage ? "Boss 砖阵" : "砖阵加固"
@@ -275,7 +277,8 @@ function update(state, config, controls, dt, context, rawDt = dt) {
         addFloatingText(state.effects, state.boss.x, state.boss.y - 18, "+900", { color: classicArcade.yellow, size: 16 });
         state.score += 900;
         state.boss = null;
-        finish(state, true, context);
+        if (isFinalStage(state)) finish(state, true, context);
+        else advanceLevel(state, config, context);
       }
     }
   }
@@ -308,8 +311,9 @@ function update(state, config, controls, dt, context, rawDt = dt) {
     }
   }
   if (!state.bricks.length && !state.boss && !state.over) {
-    if (!isFinalStage(state)) advanceLevel(state, config, context);
-    else if (!state.bossSpawned) spawnBoss(state, context);
+    if (isBossLevel(state.level) && !state.bossSpawned) spawnBoss(state, context);
+    else if (!isFinalStage(state)) advanceLevel(state, config, context);
+    else finish(state, true, context);
   }
 }
 
@@ -353,7 +357,7 @@ function drawPixelBoss(ctx, boss) {
 }
 
 export function mountBreakout(root, context) {
-  const config = CONFIG[context.difficulty] || CONFIG.medium;
+  const config = CONFIG;
   let state = restoreState(config, context.savedState);
   const controls = { left: false, right: false, up: false, down: false, axisX: 0, axisY: 0, pointerX: NaN, dragOffsetX: NaN };
 
@@ -361,10 +365,10 @@ export function mountBreakout(root, context) {
     <section class="game-panel game-status">
       <div>
         <strong data-status>${state.message}</strong>
-        <p class="game-note" data-note>${context.labels.difficulty} · 5 关砖阵 · 终关 Boss</p>
+        <p class="game-note" data-note>单人闯关 · ${MAX_LEVEL} 关砖阵 · 每 ${BOSS_INTERVAL} 关 Boss</p>
       </div>
       <div class="mini-stats">
-        <span data-level>关卡 1/5</span>
+        <span data-level>关卡 1/${MAX_LEVEL}</span>
         <span data-lives>生命 ${state.lives}</span>
         <span data-score>分数 0</span>
         <span data-left>砖块 ${state.bricks.length}</span>
@@ -373,12 +377,6 @@ export function mountBreakout(root, context) {
     </section>
     <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas" width="${W}" height="${H}" aria-label="打砖块"></canvas></div>
-      <div class="arcade-controls">
-        ${joystickMarkup("挡板移动")}
-        <div class="arcade-control-stack">
-          <button class="arcade-fire compact" data-action="restart">重开</button>
-        </div>
-      </div>
     </section>
   `;
   const canvas = root.querySelector("canvas");
@@ -401,7 +399,7 @@ export function mountBreakout(root, context) {
 
   function refreshHud() {
     status.textContent = state.message;
-    note.textContent = `${context.labels.difficulty} · 第 ${stageMeta(state)} 关 · ${state.boss ? "Boss 砖核心" : "砖阵"}`;
+    note.textContent = `第 ${stageMeta(state)} 关 · ${state.boss ? "Boss 砖核心" : isBossLevel(state.level) ? "Boss 砖阵" : "砖阵"}`;
     level.textContent = stageLabel(state);
     lives.textContent = `生命 ${state.lives}`;
     score.textContent = `分数 ${state.score}`;
@@ -426,15 +424,15 @@ export function mountBreakout(root, context) {
     }
   });
 
-  const cleanupJoystick = bindVirtualJoystick(root, controls);
   const cleanupKeys = bindDigitalKeys(controls, HORIZONTAL_KEY_MAP, {
     onChange: () => {
       controls.pointerX = NaN;
     }
   });
   const cleanupShellRestart = bindShellRestart(root, context, restart);
-  root.querySelector("[data-action='restart']").addEventListener("click", restart);
   const onPointerDown = (event) => {
+    event.preventDefault();
+    canvas.setPointerCapture?.(event.pointerId);
     const rect = canvas.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * W;
     controls.dragOffsetX = state.paddle.x - x;
@@ -442,11 +440,13 @@ export function mountBreakout(root, context) {
   };
   const onPointerMove = (event) => {
     if (!Number.isFinite(controls.dragOffsetX)) return;
+    event.preventDefault();
     const rect = canvas.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * W;
     controls.pointerX = clamp(x + controls.dragOffsetX, state.paddle.w / 2, W - state.paddle.w / 2);
   };
-  const onPointerEnd = () => {
+  const onPointerEnd = (event) => {
+    canvas.releasePointerCapture?.(event.pointerId);
     controls.dragOffsetX = NaN;
   };
   canvas.addEventListener("pointerdown", onPointerDown);
@@ -458,7 +458,6 @@ export function mountBreakout(root, context) {
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     loop.stop();
-    cleanupJoystick();
     cleanupKeys();
     cleanupShellRestart();
     canvas.removeEventListener("pointerdown", onPointerDown);

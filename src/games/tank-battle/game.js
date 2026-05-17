@@ -19,12 +19,7 @@ const DIRS = {
   right: { x: 1, y: 0 }
 };
 
-const DIFFICULTY = {
-  easy: { total: 5, active: 2, enemySpeed: 34, enemyFire: 1.8, playerLives: 4 },
-  medium: { total: 7, active: 3, enemySpeed: 42, enemyFire: 1.35, playerLives: 3 },
-  hard: { total: 9, active: 3, enemySpeed: 50, enemyFire: 1.05, playerLives: 3 },
-  devil: { total: 12, active: 4, enemySpeed: 58, enemyFire: 0.78, playerLives: 2 }
-};
+const CONFIG = { total: 7, active: 3, enemySpeed: 42, enemyFire: 1.35, playerLives: 3 };
 const LEVEL_PROFILES = [
   { cols: 12, rows: 12, title: "训练防线", feature: "砖墙阵地" },
   { cols: 12, rows: 12, title: "草丛伏击", feature: "草地遮蔽" },
@@ -32,12 +27,29 @@ const LEVEL_PROFILES = [
   { cols: 14, rows: 14, title: "河湾渡口", feature: "河流 · 船只补给" },
   { cols: 14, rows: 15, title: "雷区封锁", feature: "草地 · 泥沼 · 地雷" },
   { cols: 15, rows: 15, title: "湿地迷宫", feature: "大地图 · 河流 · 草地" },
-  { cols: 16, rows: 16, title: "最终指挥部", feature: "Boss · 全地形" }
+  { cols: 16, rows: 16, title: "重装指挥部", feature: "Boss · 全地形" }
 ];
-const MAX_LEVEL = LEVEL_PROFILES.length;
+const MAX_LEVEL = 24;
+const BOSS_INTERVAL = 6;
 
 function levelProfile(level) {
-  return LEVEL_PROFILES[clamp(level, 1, MAX_LEVEL) - 1] || LEVEL_PROFILES[0];
+  if (level <= LEVEL_PROFILES.length) return LEVEL_PROFILES[clamp(level, 1, LEVEL_PROFILES.length) - 1] || LEVEL_PROFILES[0];
+  const chapter = Math.floor((level - 1) / BOSS_INTERVAL);
+  const size = Math.min(20, 16 + Math.floor((level - LEVEL_PROFILES.length) / 4));
+  const featureCycle = [
+    "大地图 · 草地伏击",
+    "河流纵深 · 船只补给",
+    "泥沼推进 · 雷区封锁",
+    "全地形混战",
+    "精英装甲群",
+    "Boss · 全地形"
+  ];
+  return {
+    cols: size,
+    rows: Math.min(20, size + (level % 3 === 0 ? 1 : 0)),
+    title: `第 ${chapter + 1} 战区`,
+    feature: featureCycle[(level - 1) % featureCycle.length]
+  };
 }
 
 function mapForLevel(level) {
@@ -70,11 +82,13 @@ function wantedDirection(controls) {
 }
 
 function levelTuning(config, level) {
+  const bossStage = level % BOSS_INTERVAL === 0 || level >= MAX_LEVEL;
   return {
-    total: Math.max(3, Math.round(config.total * 0.5) + (level - 1) * 2 + (level === MAX_LEVEL ? 3 : 0)),
-    active: Math.min(5, config.active + Math.floor((level - 1) / 2)),
-    enemySpeed: config.enemySpeed + (level - 1) * 4,
-    enemyFire: Math.max(0.48, config.enemyFire - (level - 1) * 0.12)
+    total: Math.max(5, config.total + Math.floor((level - 1) * 1.45) + (bossStage ? 3 : 0)),
+    active: Math.min(7, config.active + Math.floor((level - 1) / 5)),
+    enemySpeed: config.enemySpeed + (level - 1) * 2.6,
+    enemyFire: Math.max(0.44, config.enemyFire - (level - 1) * 0.035),
+    bossStage
   };
 }
 
@@ -288,9 +302,9 @@ function advanceLevel(state, config, context) {
   state.player.dir = "up";
   state.player.invuln = 1.2;
   state.boatTimer = 0;
-  const bossStage = isFinalStage(state);
+  const bossStage = state.levelConfig.bossStage;
   announceStageStart(state, context, {
-    message: bossStage ? `第 ${state.maxLevel} 关：重装指挥坦克来袭` : `第 ${state.level} 关：${state.map.title}`,
+    message: bossStage ? `第 ${state.level} 关：重装指挥坦克来袭` : `第 ${state.level} 关：${state.map.title}`,
     transition: {
       title: `第 ${stageMeta(state)} 关`,
       subtitle: bossStage ? "重装指挥坦克" : state.map.feature
@@ -370,7 +384,7 @@ function spawnEnemy(state, context) {
     { x: map.w * 0.75, y: 58 }
   ];
   const spawn = spawns[state.spawned % spawns.length];
-  const isBoss = isFinalStage(state) && state.spawned === state.total - 1;
+  const isBoss = state.levelConfig.bossStage && state.spawned === state.total - 1;
   const enemy = {
     x: spawn.x,
     y: spawn.y,
@@ -809,7 +823,7 @@ function draw(state, ctx) {
 }
 
 export function mountTankBattle(root, context) {
-  const config = DIFFICULTY[context.difficulty] || DIFFICULTY.medium;
+  const config = CONFIG;
   let state = restoreState(config, context.savedState);
   const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0, fire: false };
 
@@ -817,7 +831,7 @@ export function mountTankBattle(root, context) {
     <section class="game-panel game-status">
       <div>
         <strong data-status>${state.message}</strong>
-        <p class="game-note" data-note>${context.labels.difficulty} · ${MAX_LEVEL} 关防守 · 后期大地图</p>
+        <p class="game-note" data-note>单人闯关 · ${MAX_LEVEL} 关防守 · 每 ${BOSS_INTERVAL} 关 Boss</p>
       </div>
       <div class="mini-stats">
         <span data-level>关卡 1/${MAX_LEVEL}</span>
@@ -831,7 +845,6 @@ export function mountTankBattle(root, context) {
       <div class="arcade-controls">
         ${joystickMarkup("坦克移动")}
         <div class="arcade-control-stack">
-          <button class="arcade-fire compact" data-action="restart">重开</button>
           <button class="arcade-fire" data-control="fire">开火</button>
         </div>
       </div>
@@ -853,7 +866,7 @@ export function mountTankBattle(root, context) {
 
   function refreshHud() {
     status.textContent = state.message;
-    note.textContent = `${context.labels.difficulty} · ${state.map.cols}x${state.map.rows} 地图 · ${state.map.feature}`;
+    note.textContent = `第 ${stageMeta(state)} 关 · ${state.map.cols}x${state.map.rows} 地图 · ${state.map.feature}`;
     level.textContent = stageLabel(state);
     lives.textContent = `生命 ${state.player.lives}`;
     score.textContent = `分数 ${state.score}`;
@@ -890,7 +903,6 @@ export function mountTankBattle(root, context) {
   const cleanupFire = bindHold(root, "[data-control='fire']", (pressed) => { controls.fire = pressed; });
   const cleanupKeys = bindDigitalKeys(controls, { ...DIRECTION_KEY_MAP, Space: "fire" });
   const cleanupShellRestart = bindShellRestart(root, context, restart);
-  root.querySelector("[data-action='restart']").addEventListener("click", restart);
   loop.start();
 
   return () => {
