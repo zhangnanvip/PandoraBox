@@ -12,8 +12,8 @@
 
 ## 第一阶段
 
-- 先把坦克大战和机关塔防作为试点接入 `bindShellRestart`。
-- 下一步迁移五个 Canvas 游戏的 RAF 主循环到 `createArcadeLoop`，统一暂停、时间步长、定时存档。
+- 已把坦克大战和机关塔防作为试点接入 `bindShellRestart`。
+- 已迁移五个 Canvas 游戏的 RAF 主循环到 `createArcadeLoop`，统一暂停、时间步长、定时存档。
 - 保留每个游戏自己的 `initialState`、`update`、`draw`、`serializeState`、`sessionMeta`，避免玩法被过度抽象。
 
 ## 第二阶段

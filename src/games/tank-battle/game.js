@@ -1,5 +1,5 @@
 import { bindHold, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
-import { bindShellRestart } from "../arcade/engine.js";
+import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { addBurst, classicArcade, drawArcadeBackdrop, drawBase, drawEffects, drawPowerup, drawTankSprite, drawTankWall, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
 const W = 360;
@@ -773,10 +773,6 @@ export function mountTankBattle(root, context) {
   const config = DIFFICULTY[context.difficulty] || DIFFICULTY.medium;
   let state = restoreState(config, context.savedState);
   const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0, fire: false };
-  let raf = 0;
-  let last = performance.now();
-  let saveTimer = 0;
-  let disposed = false;
 
   root.innerHTML = `
     <section class="game-panel game-status">
@@ -832,33 +828,22 @@ export function mountTankBattle(root, context) {
     power.textContent = buffs.length ? buffs.join(" · ") : "道具 无";
   }
 
-  function loop(now) {
-    if (disposed) return;
-    if (context.isPaused?.()) {
-      last = now;
+  const loop = createArcadeLoop({
+    context,
+    update: (dt) => update(state, config, controls, dt, context),
+    draw: () => {
       draw(state, ctx);
       refreshHud();
-      raf = requestAnimationFrame(loop);
-      return;
+    },
+    save: () => {
+      if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     }
-    const dt = Math.min(0.033, (now - last) / 1000);
-    last = now;
-    update(state, config, controls, dt, context);
-    draw(state, ctx);
-    refreshHud();
-    saveTimer += dt;
-    if (!state.over && saveTimer >= 1) {
-      saveTimer = 0;
-      context.saveSession?.(serializeState(state), sessionMeta(state));
-    }
-    raf = requestAnimationFrame(loop);
-  }
+  });
 
   function restart() {
     state = initialState(config);
-    saveTimer = 0;
     context.clearSession?.();
-    last = performance.now();
+    loop.resetClock();
   }
 
   function onKey(event, pressed) {
@@ -887,12 +872,11 @@ export function mountTankBattle(root, context) {
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
-  raf = requestAnimationFrame(loop);
+  loop.start();
 
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
-    disposed = true;
-    cancelAnimationFrame(raf);
+    loop.stop();
     cleanupJoystick();
     cleanupFire();
     cleanupShellRestart();

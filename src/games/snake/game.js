@@ -1,5 +1,6 @@
 import { bindVirtualJoystick, directionFromSwipe, joystickMarkup } from "../arcade/controls.js";
 import { addBurst, classicArcade, drawEffects, drawFood, drawPixelRect, drawPowerup, drawSnakeArena, drawSnakeSegment, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
 const SIZE = 18;
 const CELL = 20;
@@ -251,11 +252,7 @@ function draw(state, ctx) {
 export function mountSnake(root, context) {
   const config = CONFIG[context.difficulty] || CONFIG.medium;
   let state = restoreState(config, context.savedState);
-  let raf = 0;
-  let last = performance.now();
   let acc = 0;
-  let saveTimer = 0;
-  let disposed = false;
   const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0 };
   let pointerStart = null;
 
@@ -299,46 +296,42 @@ export function mountSnake(root, context) {
   function restart() {
     state = initialState(config);
     acc = 0;
-    saveTimer = 0;
     context.clearSession?.();
-    last = performance.now();
+    loop.resetClock();
   }
 
-  function loop(now) {
-    if (disposed) return;
-    if (context.isPaused?.()) {
-      last = now;
-      draw(state, ctx);
-      status.textContent = state.message;
-      raf = requestAnimationFrame(loop);
-      return;
-    }
-    const dt = Math.min(0.08, (now - last) / 1000);
-    last = now;
-    state.time += dt;
-    updateEffects(state.effects, dt);
-    state.shake = Math.max(0, state.shake - dt * 18);
-    state.slow = Math.max(0, state.slow - dt);
-    acc += dt;
-    const tick = state.levelConfig.tick * (state.slow > 0 ? 1.38 : 1);
-    while (acc >= tick) {
-      acc -= tick;
-      step(state, config, context);
-    }
-    draw(state, ctx);
+  function refreshHud() {
     status.textContent = state.message;
     note.textContent = `${context.labels.difficulty} · 第 ${state.level}/${state.maxLevel} 关 · 障碍 ${state.levelConfig.obstacles}`;
     level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
     score.textContent = `分数 ${state.score}`;
     length.textContent = `任务 ${state.eaten}/${state.levelConfig.target}`;
     power.textContent = [state.slow > 0 ? `慢速 ${Math.ceil(state.slow)}` : "", state.shield > 0 ? "护盾 1" : ""].filter(Boolean).join(" · ") || "道具 无";
-    saveTimer += dt;
-    if (!state.over && saveTimer >= 1) {
-      saveTimer = 0;
-      context.saveSession?.(serializeState(state), sessionMeta(state));
-    }
-    raf = requestAnimationFrame(loop);
   }
+
+  const loop = createArcadeLoop({
+    context,
+    maxDelta: 0.08,
+    update: (dt) => {
+      state.time += dt;
+      updateEffects(state.effects, dt);
+      state.shake = Math.max(0, state.shake - dt * 18);
+      state.slow = Math.max(0, state.slow - dt);
+      acc += dt;
+      const tick = state.levelConfig.tick * (state.slow > 0 ? 1.38 : 1);
+      while (acc >= tick) {
+        acc -= tick;
+        step(state, config, context);
+      }
+    },
+    draw: () => {
+      draw(state, ctx);
+      refreshHud();
+    },
+    save: () => {
+      if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
+    }
+  });
 
   const onKey = (event) => {
     const map = { ArrowUp: "up", KeyW: "up", ArrowDown: "down", KeyS: "down", ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right" };
@@ -360,18 +353,19 @@ export function mountSnake(root, context) {
   const onPointerCancel = () => {
     pointerStart = null;
   };
+  const cleanupShellRestart = bindShellRestart(root, context, restart);
   canvas.addEventListener("pointerdown", onPointerDown);
   canvas.addEventListener("pointerup", onPointerUp);
   canvas.addEventListener("pointercancel", onPointerCancel);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   window.addEventListener("keydown", onKey);
-  raf = requestAnimationFrame(loop);
+  loop.start();
 
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
-    disposed = true;
-    cancelAnimationFrame(raf);
+    loop.stop();
     cleanupJoystick();
+    cleanupShellRestart();
     canvas.removeEventListener("pointerdown", onPointerDown);
     canvas.removeEventListener("pointerup", onPointerUp);
     canvas.removeEventListener("pointercancel", onPointerCancel);

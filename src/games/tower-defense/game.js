@@ -1,5 +1,5 @@
 import { addBurst, classicArcade, drawArcadeBackdrop, drawEffects, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
-import { bindShellRestart } from "../arcade/engine.js";
+import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
 const W = 360;
 const H = 360;
@@ -618,10 +618,6 @@ function draw(state, ctx) {
 export function mountTowerDefense(root, context) {
   const config = DIFFICULTY[context.difficulty] || DIFFICULTY.medium;
   let state = restoreState(config, context.savedState);
-  let raf = 0;
-  let last = performance.now();
-  let saveTimer = 0;
-  let disposed = false;
 
   root.innerHTML = `
     <section class="game-panel game-status">
@@ -689,33 +685,22 @@ export function mountTowerDefense(root, context) {
     };
   }
 
-  function loop(now) {
-    if (disposed) return;
-    if (context.isPaused?.()) {
-      last = now;
+  const loop = createArcadeLoop({
+    context,
+    update: (dt) => update(state, config, dt, context),
+    draw: () => {
       draw(state, ctx);
       refreshHud();
-      raf = requestAnimationFrame(loop);
-      return;
+    },
+    save: () => {
+      if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     }
-    const dt = Math.min(0.033, (now - last) / 1000);
-    last = now;
-    update(state, config, dt, context);
-    draw(state, ctx);
-    refreshHud();
-    saveTimer += dt;
-    if (!state.over && saveTimer >= 1) {
-      saveTimer = 0;
-      context.saveSession?.(serializeState(state), sessionMeta(state));
-    }
-    raf = requestAnimationFrame(loop);
-  }
+  });
 
   function restart() {
     state = initialState(config);
-    saveTimer = 0;
     context.clearSession?.();
-    last = performance.now();
+    loop.resetClock();
   }
 
   function onPointerDown(event) {
@@ -757,12 +742,11 @@ export function mountTowerDefense(root, context) {
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   canvas.addEventListener("pointerdown", onPointerDown);
   window.addEventListener("keydown", onKey);
-  raf = requestAnimationFrame(loop);
+  loop.start();
 
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
-    disposed = true;
-    cancelAnimationFrame(raf);
+    loop.stop();
     cleanupShellRestart();
     canvas.removeEventListener("pointerdown", onPointerDown);
     window.removeEventListener("keydown", onKey);

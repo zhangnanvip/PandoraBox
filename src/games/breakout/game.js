@@ -1,5 +1,6 @@
 import { bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { addBurst, classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawEffects, drawPaddle, drawPowerup, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
 const W = 360;
 const H = 360;
@@ -330,10 +331,6 @@ export function mountBreakout(root, context) {
   const config = CONFIG[context.difficulty] || CONFIG.medium;
   let state = restoreState(config, context.savedState);
   const controls = { left: false, right: false, up: false, down: false, axisX: 0, axisY: 0, pointerX: NaN, dragOffsetX: NaN };
-  let raf = 0;
-  let last = performance.now();
-  let saveTimer = 0;
-  let disposed = false;
 
   root.innerHTML = `
     <section class="game-panel game-status">
@@ -371,26 +368,13 @@ export function mountBreakout(root, context) {
 
   function restart() {
     state = initialState(config);
-    saveTimer = 0;
     context.clearSession?.();
     controls.pointerX = NaN;
     controls.dragOffsetX = NaN;
-    last = performance.now();
+    loop.resetClock();
   }
 
-  function loop(now) {
-    if (disposed) return;
-    if (context.isPaused?.()) {
-      last = now;
-      draw(state, ctx);
-      status.textContent = state.message;
-      raf = requestAnimationFrame(loop);
-      return;
-    }
-    const dt = Math.min(0.033, (now - last) / 1000);
-    last = now;
-    update(state, config, controls, dt, context);
-    draw(state, ctx);
+  function refreshHud() {
     status.textContent = state.message;
     note.textContent = `${context.labels.difficulty} · 第 ${state.level}/${state.maxLevel} 关 · ${state.boss ? "Boss 砖核心" : "砖阵"}`;
     level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
@@ -402,13 +386,19 @@ export function mountBreakout(root, context) {
       state.buffs.slow > 0 ? `慢速 ${Math.ceil(state.buffs.slow)}` : ""
     ].filter(Boolean);
     power.textContent = buffs.length ? buffs.join(" · ") : "道具 无";
-    saveTimer += dt;
-    if (!state.over && saveTimer >= 1) {
-      saveTimer = 0;
-      context.saveSession?.(serializeState(state), sessionMeta(state));
-    }
-    raf = requestAnimationFrame(loop);
   }
+
+  const loop = createArcadeLoop({
+    context,
+    update: (dt) => update(state, config, controls, dt, context),
+    draw: () => {
+      draw(state, ctx);
+      refreshHud();
+    },
+    save: () => {
+      if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
+    }
+  });
 
   const onKeyDown = (event) => setKey(event, true);
   const onKeyUp = (event) => setKey(event, false);
@@ -420,6 +410,7 @@ export function mountBreakout(root, context) {
     event.preventDefault();
   }
   const cleanupJoystick = bindVirtualJoystick(root, controls);
+  const cleanupShellRestart = bindShellRestart(root, context, restart);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   const onPointerDown = (event) => {
     const rect = canvas.getBoundingClientRect();
@@ -442,13 +433,13 @@ export function mountBreakout(root, context) {
   canvas.addEventListener("pointercancel", onPointerEnd);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
-  raf = requestAnimationFrame(loop);
+  loop.start();
 
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
-    disposed = true;
-    cancelAnimationFrame(raf);
+    loop.stop();
     cleanupJoystick();
+    cleanupShellRestart();
     canvas.removeEventListener("pointerdown", onPointerDown);
     canvas.removeEventListener("pointermove", onPointerMove);
     canvas.removeEventListener("pointerup", onPointerEnd);

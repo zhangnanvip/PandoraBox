@@ -1,5 +1,6 @@
 import { bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { addBurst, classicArcade, drawEffects, drawEnemyShip, drawPlayerShip, drawPowerup, drawStarfield, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
 const W = 300;
 const H = 400;
@@ -395,10 +396,6 @@ export function mountSpaceShooter(root, context) {
   const config = CONFIG[context.difficulty] || CONFIG.medium;
   let state = restoreState(config, context.savedState);
   const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0, pointer: null, pointerOffset: null };
-  let raf = 0;
-  let last = performance.now();
-  let saveTimer = 0;
-  let disposed = false;
 
   root.innerHTML = `
     <section class="game-panel game-status">
@@ -442,19 +439,7 @@ export function mountSpaceShooter(root, context) {
     return { x: ((event.clientX - rect.left) / rect.width) * W, y: ((event.clientY - rect.top) / rect.height) * H };
   }
 
-  function loop(now) {
-    if (disposed) return;
-    if (context.isPaused?.()) {
-      last = now;
-      draw(state, ctx);
-      status.textContent = state.message;
-      raf = requestAnimationFrame(loop);
-      return;
-    }
-    const dt = Math.min(0.033, (now - last) / 1000);
-    last = now;
-    update(state, config, controls, dt, context);
-    draw(state, ctx);
+  function refreshHud() {
     status.textContent = state.message;
     note.textContent = `${context.labels.difficulty} · 第 ${state.level}/${state.maxLevel} 关 · ${state.level === state.maxLevel ? "Boss 空域" : "敌机波次"}`;
     level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
@@ -466,21 +451,26 @@ export function mountSpaceShooter(root, context) {
       state.buffs.shield > 0 ? `护盾 ${Math.ceil(state.buffs.shield)}` : ""
     ].filter(Boolean);
     power.textContent = buffs.length ? buffs.join(" · ") : "道具 无";
-    saveTimer += dt;
-    if (!state.over && saveTimer >= 1) {
-      saveTimer = 0;
-      context.saveSession?.(serializeState(state), sessionMeta(state));
-    }
-    raf = requestAnimationFrame(loop);
   }
+
+  const loop = createArcadeLoop({
+    context,
+    update: (dt) => update(state, config, controls, dt, context),
+    draw: () => {
+      draw(state, ctx);
+      refreshHud();
+    },
+    save: () => {
+      if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
+    }
+  });
 
   function restart() {
     state = initialState(config);
-    saveTimer = 0;
     context.clearSession?.();
     controls.pointer = null;
     controls.pointerOffset = null;
-    last = performance.now();
+    loop.resetClock();
   }
 
   const onPointerDown = (event) => {
@@ -512,6 +502,7 @@ export function mountSpaceShooter(root, context) {
     controls[key] = pressed;
   }
   const cleanupJoystick = bindVirtualJoystick(root, controls);
+  const cleanupShellRestart = bindShellRestart(root, context, restart);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   root.querySelector("[data-action='clear-pointer']").addEventListener("click", () => { controls.pointer = null; controls.pointerOffset = null; });
   canvas.addEventListener("pointerdown", onPointerDown);
@@ -520,13 +511,17 @@ export function mountSpaceShooter(root, context) {
   canvas.addEventListener("pointercancel", onPointerLeave);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
-  raf = requestAnimationFrame(loop);
+  loop.start();
 
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
-    disposed = true;
-    cancelAnimationFrame(raf);
+    loop.stop();
     cleanupJoystick();
+    cleanupShellRestart();
+    canvas.removeEventListener("pointerdown", onPointerDown);
+    canvas.removeEventListener("pointermove", onPointerMove);
+    canvas.removeEventListener("pointerup", onPointerLeave);
+    canvas.removeEventListener("pointercancel", onPointerLeave);
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
   };
