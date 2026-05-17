@@ -2079,6 +2079,34 @@ input[type="range"] {
   width: min(94vw, 520px);
 }
 
+.tower-defense-controls {
+  grid-template-columns: 1fr;
+}
+
+.tower-controls {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(52px, 1fr));
+  gap: 6px;
+  width: min(94vw, 560px);
+}
+
+.tower-controls button {
+  min-height: 44px;
+  border: 1px solid rgba(66, 242, 255, 0.34);
+  border-radius: var(--radius);
+  background: #121a31;
+  color: #f8fbff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  box-shadow: 0 7px 0 #070b15, inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.tower-controls button.is-active {
+  border-color: rgba(93, 255, 139, 0.74);
+  background: #173425;
+  color: #5dff8b;
+}
+
 .board-wrap {
   display: grid;
   place-items: center;

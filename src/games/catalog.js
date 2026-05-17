@@ -6,6 +6,7 @@ export const categories = [
   { id: "race", title: "跳跃竞速", shortTitle: "竞速" },
   { id: "puzzle", title: "益智解谜", shortTitle: "解谜" },
   { id: "number", title: "数字休闲", shortTitle: "数字" },
+  { id: "strategy", title: "策略战术", shortTitle: "策略" },
   { id: "arcade", title: "动作街机", shortTitle: "街机" },
   { id: "quick", title: "快速对弈", shortTitle: "快局" }
 ];
@@ -29,6 +30,7 @@ const GAME_ENTRIES = {
   sudoku: "./src/games/sudoku/game.js",
   klotski: "./src/games/klotski/game.js",
   "2048": "./src/games/number-2048/game.js",
+  "tower-defense": "./src/games/tower-defense/game.js",
   "tank-battle": "./src/games/tank-battle/game.js",
   "space-shooter": "./src/games/space-shooter/game.js",
   snake: "./src/games/snake/game.js",
@@ -372,6 +374,34 @@ const registrations = [
       ]
     },
     () => import("./number-2048/game.js").then((module) => module.mount2048)
+  ),
+  defineLocalGame(
+    {
+      id: "tower-defense",
+      title: "机关塔防",
+      subtitle: "布置弩塔、炮塔与冰塔守住核心",
+      tag: "波次防守",
+      category: "strategy",
+      secondaryCategories: ["arcade"],
+      complexity: "困难",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("tower-defense", "arcade", { boss: true }),
+      ...gameVisualStyle("classicArcade"),
+      accent: "jade",
+      icon: "./public/games/arcade/icons/tower-defense.svg",
+      assets: ["./public/games/arcade/icons/tower-defense.svg"],
+      rules: [
+        "点击空地建塔，道路上不能建造；弩塔射速快，炮塔可范围爆炸，冰塔会减速敌人。",
+        "使用底部按钮选择塔型、升级已选塔，点击出怪开始当前波次。",
+        "游戏采用 5 关 15 波防守，清完一波获得金币奖励，终关会出现 Boss。",
+        "敌人穿过终点会扣除核心生命；核心归零则失败。",
+        "难度会影响初始金币、核心生命、敌人生命、速度和数量。",
+        "移动端全屏游玩，桌面端可用 1/2/3 选塔、空格出怪、U 升级、R 重开。"
+      ]
+    },
+    () => import("./tower-defense/game.js").then((module) => module.mountTowerDefense)
   ),
   defineLocalGame(
     {
