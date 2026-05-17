@@ -1429,7 +1429,7 @@ function renderGameSections() {
     <section class="game-section" aria-label="${section.title}">
       <div class="game-section-head">
         <h2>${section.title}</h2>
-        <span>${section.games.length} 局</span>
+        <span>${section.games.length} 款</span>
       </div>
       <div class="game-grid">
         ${section.games.map(renderGameCard).join("")}
@@ -1461,7 +1461,7 @@ function renderLobby() {
         </div>
         <div class="lobby-status">
           <span>${icon("offline")}可离线</span>
-          <span>${availableGames().length} 局游戏</span>
+          <span>${availableGames().length} 款游戏</span>
           <span>${interfaceThemes[state.theme]?.name || "国风界面"}</span>
         </div>
       </section>
