@@ -104,6 +104,46 @@ function initialState(config) {
   };
 }
 
+function clonePlain(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function serializeState(state) {
+  const snapshot = clonePlain(state);
+  delete snapshot.levelConfig;
+  snapshot.effects = [];
+  snapshot.shake = 0;
+  snapshot.over = false;
+  snapshot.won = false;
+  snapshot.version = 1;
+  return snapshot;
+}
+
+function restoreState(config, savedState) {
+  if (!savedState || savedState.version !== 1 || savedState.over) return initialState(config);
+  const fallback = initialState(config);
+  const snapshot = clonePlain(savedState);
+  const level = clamp(Number(snapshot.level) || 1, 1, MAX_LEVEL);
+  return {
+    ...fallback,
+    ...snapshot,
+    level,
+    maxLevel: MAX_LEVEL,
+    levelConfig: levelTuning(config, level),
+    effects: [],
+    shake: 0,
+    over: false,
+    won: false
+  };
+}
+
+function sessionMeta(state) {
+  return {
+    level: `${state.level}/${state.maxLevel}`,
+    score: state.score
+  };
+}
+
 function advanceLevel(state, config, context) {
   state.level += 1;
   state.levelConfig = levelTuning(config, state.level);
@@ -256,6 +296,7 @@ function finish(state, won, context) {
   state.over = true;
   state.won = won;
   state.message = won ? "基地守住，敌军清空" : "基地失守";
+  context.clearSession?.();
   context.reportResult?.({
     outcome: won ? "win" : "loss",
     detail: state.message,
@@ -408,10 +449,11 @@ function draw(state, ctx) {
 
 export function mountTankBattle(root, context) {
   const config = DIFFICULTY[context.difficulty] || DIFFICULTY.medium;
-  let state = initialState(config);
+  let state = restoreState(config, context.savedState);
   const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0, fire: false };
   let raf = 0;
   let last = performance.now();
+  let saveTimer = 0;
   let disposed = false;
 
   root.innerHTML = `
@@ -481,11 +523,18 @@ export function mountTankBattle(root, context) {
     update(state, config, controls, dt, context);
     draw(state, ctx);
     refreshHud();
+    saveTimer += dt;
+    if (!state.over && saveTimer >= 1) {
+      saveTimer = 0;
+      context.saveSession?.(serializeState(state), sessionMeta(state));
+    }
     raf = requestAnimationFrame(loop);
   }
 
   function restart() {
     state = initialState(config);
+    saveTimer = 0;
+    context.clearSession?.();
     last = performance.now();
   }
 

@@ -14,6 +14,7 @@ const preferences = loadState("preferences", {
   gameOptions: {}
 });
 const savedProgress = loadState("progress", {});
+const savedSessions = loadState("sessions", {});
 const preferredTheme = preferences.theme || preferences.skin || "guofeng";
 
 const state = {
@@ -28,7 +29,9 @@ const state = {
   pendingGame: "",
   activeCategory: "all",
   progress: savedProgress && typeof savedProgress === "object" ? savedProgress : {},
-  resultSummary: null
+  sessions: savedSessions && typeof savedSessions === "object" ? savedSessions : {},
+  resultSummary: null,
+  resumeSession: false
 };
 
 let cleanupGame = null;
@@ -72,6 +75,10 @@ function persistProgress() {
   saveState("progress", state.progress);
 }
 
+function persistSessions() {
+  saveState("sessions", state.sessions);
+}
+
 function setState(patch) {
   Object.assign(state, patch);
   persistPreferences();
@@ -105,7 +112,60 @@ function collectSetupValuesFromModal(game) {
   };
 }
 
-function startPendingGame(optionsOverride = null) {
+function stableStringify(value) {
+  if (!value || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+}
+
+function sessionOptionsFor(options = {}) {
+  const { visualStyle, ...gameplayOptions } = options;
+  return gameplayOptions;
+}
+
+function sessionKeyFor(game, options = selectedGameOptions(game)) {
+  return `${game.id}:${stableStringify(sessionOptionsFor(options))}`;
+}
+
+function sessionFor(game, options = selectedGameOptions(game)) {
+  return state.sessions[sessionKeyFor(game, options)] || null;
+}
+
+function saveGameSession(game, options, snapshot, meta = {}) {
+  if (!snapshot || typeof snapshot !== "object") return;
+  const key = sessionKeyFor(game, options);
+  state.sessions = {
+    ...state.sessions,
+    [key]: {
+      gameId: game.id,
+      options: sessionOptionsFor(options),
+      snapshot,
+      meta,
+      updatedAt: new Date().toISOString()
+    }
+  };
+  persistSessions();
+}
+
+function clearGameSession(game, options = selectedGameOptions(game)) {
+  const key = sessionKeyFor(game, options);
+  if (!state.sessions[key]) return;
+  const { [key]: _removed, ...rest } = state.sessions;
+  state.sessions = rest;
+  persistSessions();
+}
+
+function sessionSummary(session) {
+  if (!session) return "";
+  const meta = session.meta || {};
+  return [
+    meta.level ? `关卡 ${meta.level}` : "",
+    Number.isFinite(meta.score) ? `分数 ${meta.score}` : "",
+    session.updatedAt ? `保存 ${formatTime(session.updatedAt)}` : ""
+  ].filter(Boolean).join(" · ");
+}
+
+function startPendingGame(optionsOverride = null, resume = false) {
   if (!state.pendingGame) return;
   const game = findGame(state.pendingGame);
   const mode = selectedModeFor(game);
@@ -115,14 +175,18 @@ function startPendingGame(optionsOverride = null) {
     ...state.gameOptions,
     [game.id]: options
   };
-  recordGameStart(game, mode, difficulty);
+  if (!resume) {
+    clearGameSession(game, options);
+    recordGameStart(game, mode, difficulty);
+  }
   playFeedbackSound("start");
   setState({
     currentGame: game.id,
     mode,
     difficulty,
     modal: "",
-    pendingGame: ""
+    pendingGame: "",
+    resumeSession: resume
   });
 }
 
@@ -203,6 +267,24 @@ function renderVisualStyleField(game) {
     value: selectedVisualStyleFor(game),
     options: styles
   });
+}
+
+function renderStartActions(game) {
+  const session = sessionFor(game);
+  if (!session) {
+    return `<button class="primary-button wide-button" data-start-game>${icon("play")} 开始</button>`;
+  }
+
+  return `
+    <div class="resume-card">
+      <div>
+        <span class="modal-label">未完成进度</span>
+        <strong>${sessionSummary(session) || "已有可继续的进度"}</strong>
+      </div>
+      <button class="primary-button" data-resume-start>${icon("play")} 继续</button>
+      <button class="secondary-button" data-start-game>新开一局</button>
+    </div>
+  `;
 }
 
 function progressFor(gameId) {
@@ -593,6 +675,7 @@ function renderGame() {
   const mode = selectedModeFor(game);
   const difficulty = selectedDifficultyFor(game);
   const options = selectedGameOptions(game);
+  const resumedSession = state.resumeSession ? sessionFor(game, options) : null;
   const frameClass = game.category === "arcade" ? " arcade-play-frame" : "";
   app.innerHTML = `
     <main class="app-frame play-frame${frameClass}">
@@ -642,7 +725,13 @@ function renderGame() {
         },
         playSound: (name) => playFeedbackSound(name),
         isPaused: () => Boolean(state.modal && state.modal !== "result"),
-        reportResult: (result) => handleGameResult(game, result)
+        savedState: resumedSession?.snapshot || null,
+        saveSession: (snapshot, meta) => saveGameSession(game, options, snapshot, meta),
+        clearSession: () => clearGameSession(game, options),
+        reportResult: (result) => {
+          clearGameSession(game, options);
+          handleGameResult(game, result);
+        }
       });
     })
     .catch((error) => {
@@ -695,7 +784,7 @@ function modalContent() {
           ${renderDifficultyField(game)}
           ${renderSetupFields(game)}
           ${renderVisualStyleField(game)}
-          <button class="primary-button wide-button" data-start-game>${icon("play")} 开始</button>
+          ${renderStartActions(game)}
         </div>
       `
     };
@@ -859,6 +948,9 @@ function renderModal() {
   });
   app.querySelector("[data-start-game]")?.addEventListener("click", () => {
     startPendingGame(collectSetupValuesFromModal(game));
+  });
+  app.querySelector("[data-resume-start]")?.addEventListener("click", () => {
+    startPendingGame(collectSetupValuesFromModal(game), true);
   });
   app.querySelector("[data-result-close]")?.addEventListener("click", () => {
     state.modal = "";

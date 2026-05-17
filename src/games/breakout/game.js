@@ -65,6 +65,46 @@ function initialState(config) {
   };
 }
 
+function clonePlain(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function serializeState(state) {
+  const snapshot = clonePlain(state);
+  delete snapshot.levelConfig;
+  snapshot.effects = [];
+  snapshot.shake = 0;
+  snapshot.over = false;
+  snapshot.won = false;
+  snapshot.version = 1;
+  return snapshot;
+}
+
+function restoreState(config, savedState) {
+  if (!savedState || savedState.version !== 1 || savedState.over) return initialState(config);
+  const fallback = initialState(config);
+  const snapshot = clonePlain(savedState);
+  const level = clamp(Number(snapshot.level) || 1, 1, MAX_LEVEL);
+  return {
+    ...fallback,
+    ...snapshot,
+    level,
+    maxLevel: MAX_LEVEL,
+    levelConfig: levelTuning(config, level),
+    effects: [],
+    shake: 0,
+    over: false,
+    won: false
+  };
+}
+
+function sessionMeta(state) {
+  return {
+    level: `${state.level}/${state.maxLevel}`,
+    score: state.score
+  };
+}
+
 function spawnPowerup(state, brick) {
   if (Math.random() > 0.32 && state.bricks.length % 7 !== 0) return;
   const types = ["expand", "slow", "life"];
@@ -134,6 +174,7 @@ function finish(state, won, context) {
   state.over = true;
   state.won = won;
   state.message = won ? "全部砖阵清空" : "弹球落尽";
+  context.clearSession?.();
   context.reportResult?.({
     outcome: won ? "win" : "loss",
     detail: state.message,
@@ -287,10 +328,11 @@ function drawPixelBoss(ctx, boss) {
 
 export function mountBreakout(root, context) {
   const config = CONFIG[context.difficulty] || CONFIG.medium;
-  let state = initialState(config);
+  let state = restoreState(config, context.savedState);
   const controls = { left: false, right: false, up: false, down: false, axisX: 0, axisY: 0, pointerX: NaN, dragOffsetX: NaN };
   let raf = 0;
   let last = performance.now();
+  let saveTimer = 0;
   let disposed = false;
 
   root.innerHTML = `
@@ -329,6 +371,8 @@ export function mountBreakout(root, context) {
 
   function restart() {
     state = initialState(config);
+    saveTimer = 0;
+    context.clearSession?.();
     controls.pointerX = NaN;
     controls.dragOffsetX = NaN;
     last = performance.now();
@@ -358,6 +402,11 @@ export function mountBreakout(root, context) {
       state.buffs.slow > 0 ? `慢速 ${Math.ceil(state.buffs.slow)}` : ""
     ].filter(Boolean);
     power.textContent = buffs.length ? buffs.join(" · ") : "道具 无";
+    saveTimer += dt;
+    if (!state.over && saveTimer >= 1) {
+      saveTimer = 0;
+      context.saveSession?.(serializeState(state), sessionMeta(state));
+    }
     raf = requestAnimationFrame(loop);
   }
 

@@ -22,6 +22,10 @@ function keyOf(cell) {
   return `${cell.x},${cell.y}`;
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
 function randomFood(snake, obstacles = []) {
   const occupied = new Set([...snake.map(keyOf), ...obstacles.map(keyOf)]);
   let food = { x: 9, y: 9 };
@@ -89,6 +93,46 @@ function initialState(config) {
   };
 }
 
+function clonePlain(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function serializeState(state) {
+  const snapshot = clonePlain(state);
+  delete snapshot.levelConfig;
+  snapshot.effects = [];
+  snapshot.shake = 0;
+  snapshot.over = false;
+  snapshot.won = false;
+  snapshot.version = 1;
+  return snapshot;
+}
+
+function restoreState(config, savedState) {
+  if (!savedState || savedState.version !== 1 || savedState.over) return initialState(config);
+  const fallback = initialState(config);
+  const snapshot = clonePlain(savedState);
+  const level = clamp(Number(snapshot.level) || 1, 1, MAX_LEVEL);
+  return {
+    ...fallback,
+    ...snapshot,
+    level,
+    maxLevel: MAX_LEVEL,
+    levelConfig: levelTuning(config, level),
+    effects: [],
+    shake: 0,
+    over: false,
+    won: false
+  };
+}
+
+function sessionMeta(state) {
+  return {
+    level: `${state.level}/${state.maxLevel}`,
+    score: state.score
+  };
+}
+
 function resetSnakeForLevel(state, config, context) {
   const snake = [
     { x: 8, y: 10 },
@@ -124,6 +168,7 @@ function finish(state, won, context) {
   state.over = true;
   state.won = won;
   state.message = won ? "完成全部任务" : "撞上了";
+  context.clearSession?.();
   context.reportResult?.({
     outcome: won ? "win" : "loss",
     detail: state.message,
@@ -205,10 +250,11 @@ function draw(state, ctx) {
 
 export function mountSnake(root, context) {
   const config = CONFIG[context.difficulty] || CONFIG.medium;
-  let state = initialState(config);
+  let state = restoreState(config, context.savedState);
   let raf = 0;
   let last = performance.now();
   let acc = 0;
+  let saveTimer = 0;
   let disposed = false;
   const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0 };
   let pointerStart = null;
@@ -253,6 +299,8 @@ export function mountSnake(root, context) {
   function restart() {
     state = initialState(config);
     acc = 0;
+    saveTimer = 0;
+    context.clearSession?.();
     last = performance.now();
   }
 
@@ -284,6 +332,11 @@ export function mountSnake(root, context) {
     score.textContent = `分数 ${state.score}`;
     length.textContent = `任务 ${state.eaten}/${state.levelConfig.target}`;
     power.textContent = [state.slow > 0 ? `慢速 ${Math.ceil(state.slow)}` : "", state.shield > 0 ? "护盾 1" : ""].filter(Boolean).join(" · ") || "道具 无";
+    saveTimer += dt;
+    if (!state.over && saveTimer >= 1) {
+      saveTimer = 0;
+      context.saveSession?.(serializeState(state), sessionMeta(state));
+    }
     raf = requestAnimationFrame(loop);
   }
 
