@@ -392,6 +392,39 @@ function recentGames(limit = 4) {
     .slice(0, limit);
 }
 
+function recentActivities(limit = 2) {
+  const itemsByGame = new Map();
+  for (const { game, progress } of recentGames(availableGames().length)) {
+    itemsByGame.set(game.id, {
+      game,
+      progress,
+      sessionItem: null,
+      timestamp: progress.lastPlayed || ""
+    });
+  }
+
+  for (const sessionItem of sessionsList()) {
+    const existing = itemsByGame.get(sessionItem.game.id) || {
+      game: sessionItem.game,
+      progress: progressFor(sessionItem.game.id),
+      sessionItem: null,
+      timestamp: ""
+    };
+    const lastPlayed = new Date(existing.timestamp || 0).getTime();
+    const savedAt = new Date(sessionItem.session.updatedAt || 0).getTime();
+    itemsByGame.set(sessionItem.game.id, {
+      ...existing,
+      sessionItem,
+      timestamp: savedAt > lastPlayed ? sessionItem.session.updatedAt : existing.timestamp
+    });
+  }
+
+  return [...itemsByGame.values()]
+    .filter((item) => item.timestamp)
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .slice(0, limit);
+}
+
 function totalStats() {
   const progressItems = Object.values(state.progress);
   const allGames = availableGames();
@@ -464,6 +497,17 @@ function resumeSessionByKey(key) {
     ...(session.options || {})
   };
   launchGame(game, options, true);
+}
+
+function restartRecentGame(gameId, sessionKey = "") {
+  const game = availableGames().find((item) => item.id === gameId);
+  if (!game) return;
+  const session = sessionKey ? state.sessions[sessionKey] : null;
+  const options = {
+    ...selectedGameOptions(game),
+    ...(session?.options || {})
+  };
+  launchGame(game, options, false);
 }
 
 function icon(name) {
@@ -872,25 +916,29 @@ function renderCategoryTabs() {
   `).join("");
 }
 
-function renderSessionShortcut({ key, session, game }) {
+function renderRecentShortcut({ game, progress, sessionItem }) {
+  const hasSession = Boolean(sessionItem);
+  const detail = hasSession
+    ? sessionSummary(sessionItem.session) || "已有未完成进度"
+    : `最近 ${formatTime(progress.lastPlayed)}`;
   return `
-    <article class="shortcut-card accent-${game.accent}">
-      <div>
-        <span class="game-tag">继续游戏</span>
+    <article class="recent-activity accent-${game.accent}">
+      <div class="recent-activity-copy">
+        <span class="game-tag">${hasSession ? "可续玩" : "最近"}</span>
         <h3>${game.title}</h3>
-        <p>${sessionSummary(session) || "已有未完成进度"}</p>
+        <p>${detail}</p>
       </div>
-      <button class="primary-button" data-resume-session="${escapeAttr(key)}">${icon("play")} 继续</button>
+      <div class="recent-actions">
+        ${hasSession ? `<button class="primary-button mini-action" type="button" data-resume-session="${escapeAttr(sessionItem.key)}" aria-label="续玩${game.title}">${icon("play")} 续玩</button>` : ""}
+        <button
+          class="secondary-button mini-action"
+          type="button"
+          data-restart-game="${escapeAttr(game.id)}"
+          data-restart-session="${hasSession ? escapeAttr(sessionItem.key) : ""}"
+          aria-label="${hasSession ? "重开" : "再来一局"}${game.title}"
+        >${hasSession ? "重开" : "再来"}</button>
+      </div>
     </article>
-  `;
-}
-
-function renderRecentShortcut({ game, progress }) {
-  return `
-    <button class="recent-chip" data-prepare-game="${game.id}">
-      <span>${game.title}</span>
-      <small>${formatTime(progress.lastPlayed)}</small>
-    </button>
   `;
 }
 
@@ -1097,33 +1145,20 @@ function renderPluginSourceList() {
 }
 
 function renderLobbyDashboard() {
-  const sessions = sessionsList().slice(0, 1);
-  const recent = recentGames(1);
+  const recent = recentActivities(2);
   const stats = totalStats();
   const favoriteGames = state.favorites.slice(0, 1);
   return `
     <section class="lobby-dashboard" aria-label="游戏进度概览">
-      <div class="dashboard-panel dashboard-primary compact-dashboard">
-        <div class="dashboard-head">
-          <div>
-            <span class="game-tag">续玩</span>
-            <h2>未完成</h2>
-          </div>
-          <span>${stats.sessions} 个存档</span>
-        </div>
-        <div class="shortcut-list">
-          ${sessions.length ? sessions.map(renderSessionShortcut).join("") : "<p class=\"empty-note\">暂无未完成游戏。</p>"}
-        </div>
-      </div>
-      <div class="dashboard-panel compact-dashboard">
+      <div class="dashboard-panel dashboard-primary compact-dashboard recent-dashboard">
         <div class="dashboard-head">
           <div>
             <span class="game-tag">最近</span>
-            <h2>刚玩过</h2>
+            <h2>续玩 / 重开</h2>
           </div>
-          <span>${stats.started} 次开局</span>
+          <span>${stats.sessions} 存档 · ${stats.started} 开局</span>
         </div>
-        <div class="recent-list">
+        <div class="recent-list recent-activity-list">
           ${recent.length ? recent.map(renderRecentShortcut).join("") : "<p class=\"empty-note\">开始一局后会出现在这里。</p>"}
         </div>
       </div>
@@ -1241,6 +1276,9 @@ function renderLobby() {
   });
   app.querySelectorAll("[data-resume-session]").forEach((button) => {
     button.addEventListener("click", () => resumeSessionByKey(button.dataset.resumeSession));
+  });
+  app.querySelectorAll("[data-restart-game]").forEach((button) => {
+    button.addEventListener("click", () => restartRecentGame(button.dataset.restartGame, button.dataset.restartSession));
   });
   app.querySelectorAll("[data-toggle-favorite]").forEach((button) => {
     button.addEventListener("click", () => toggleFavorite(button.dataset.toggleFavorite));
@@ -1396,15 +1434,17 @@ function modalContent() {
   }
 
   if (state.modal === "pause") {
+    const canSaveSession = Boolean(game.capabilities?.sessionSave);
     return {
       title: `${game.title}已暂停`,
       body: `
         <div class="result-panel">
           <strong>稍作停顿</strong>
-          <p>当前游戏会保持在原地，关闭暂停层后继续。</p>
+          <p>${canSaveSession ? "回到大厅会保存当前进度，之后可在最近对局里续玩或重开。" : "当前游戏会保持在原地，关闭暂停层后继续。"}</p>
           <div class="settings-actions">
             <button class="secondary-button" data-open-modal="rules">查看规则</button>
             <button class="secondary-button" data-open-modal="settings">设置</button>
+            ${canSaveSession ? "<button class=\"secondary-button\" data-pause-lobby>保存回大厅</button>" : ""}
             <button class="primary-button" data-resume-game>${icon("play")} 继续</button>
           </div>
         </div>
@@ -1577,6 +1617,9 @@ function renderModal() {
     renderModal();
   });
   app.querySelector("[data-resume-game]")?.addEventListener("click", closeModal);
+  app.querySelector("[data-pause-lobby]")?.addEventListener("click", () => {
+    setState({ currentGame: "", modal: "", pendingGame: "", resultSummary: null });
+  });
   app.querySelector("[data-result-lobby]")?.addEventListener("click", () => {
     setState({ currentGame: "", modal: "", pendingGame: "", resultSummary: null });
   });

@@ -172,11 +172,10 @@ select:focus-visible {
 
 .lobby-dashboard {
   display: grid;
-  grid-template-columns: repeat(3, minmax(90px, 1fr));
+  grid-template-columns: minmax(0, 1.7fr) minmax(112px, 0.8fr);
   align-items: start;
   gap: 8px;
   margin-top: 10px;
-  overflow-x: auto;
   padding-bottom: 2px;
 }
 
@@ -284,6 +283,72 @@ select:focus-visible {
 
 .recent-list {
   grid-template-columns: 1fr;
+}
+
+.recent-dashboard {
+  min-width: 0;
+}
+
+.recent-activity-list {
+  gap: 6px;
+}
+
+.recent-activity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  min-height: 54px;
+  padding: 7px;
+  border: 1px solid rgba(31, 95, 74, 0.18);
+  border-radius: var(--radius);
+  background: rgba(255, 250, 240, 0.72);
+}
+
+.recent-activity-copy {
+  min-width: 0;
+}
+
+.recent-activity h3,
+.recent-activity p {
+  margin-bottom: 0;
+}
+
+.recent-activity h3 {
+  overflow: hidden;
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-activity p {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+.mini-action {
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.mini-action .icon-svg {
+  width: 13px;
+  height: 13px;
 }
 
 .recent-chip {
@@ -2594,11 +2659,10 @@ input[type="range"] {
   }
 
   .lobby-dashboard {
-    grid-template-columns: repeat(3, minmax(146px, 1fr));
+    grid-template-columns: minmax(0, 1.72fr) minmax(112px, 0.82fr);
   }
 
   .shortcut-card,
-  .recent-list,
   .achievement-row,
   .plugin-source-row {
     grid-template-columns: 1fr;
