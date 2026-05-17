@@ -194,7 +194,7 @@ export function mountTicTacToe(root, context) {
   function render() {
     const thinking = context.mode === "ai" && state.turn === AI && !state.winner;
     root.innerHTML = `
-      <section class="game-panel game-status">
+      <section class="game-panel game-status tictactoe-status">
         <div>
           <strong>${state.message}</strong>
           <p class="game-note">${context.labels.mode} · ${context.labels.difficulty}${thinking ? " · AI 思考中" : ""}</p>
@@ -205,10 +205,10 @@ export function mountTicTacToe(root, context) {
         </div>
       </section>
 
-      <section class="board-wrap">
-        <div class="tictactoe-board">
+      <section class="board-wrap tictactoe-wrap">
+        <div class="tictactoe-board" aria-label="井字棋棋盘">
           ${state.board.map((cell, index) => `
-            <button class="tictactoe-cell ${state.line.includes(index) ? "is-win" : ""}" data-cell="${index}" aria-label="第 ${index + 1} 格">
+            <button type="button" class="tictactoe-cell ${state.line.includes(index) ? "is-win" : ""}" data-cell="${index}" aria-label="第 ${index + 1} 格">
               ${cell}
             </button>
           `).join("")}
@@ -222,7 +222,8 @@ export function mountTicTacToe(root, context) {
     `;
 
     root.querySelectorAll("[data-cell]").forEach((button) => {
-      button.addEventListener("click", () => {
+      button.addEventListener("click", (event) => {
+        event.currentTarget.blur();
         if (context.mode === "ai" && state.turn === AI) return;
         play(Number(button.dataset.cell));
       });

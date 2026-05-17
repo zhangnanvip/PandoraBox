@@ -2204,28 +2204,55 @@ input[type="range"] {
   font-weight: 800;
 }
 
+.tictactoe-status {
+  min-height: 108px;
+}
+
+.tictactoe-status .game-note {
+  max-width: 100%;
+  min-height: 1.55em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tictactoe-wrap {
+  overscroll-behavior: contain;
+}
+
 .tictactoe-board {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  width: min(88vw, 420px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  width: min(84vw, 380px);
   aspect-ratio: 1;
   border: 2px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--surface-2);
   box-shadow: var(--shadow);
+  contain: layout paint;
   overflow: hidden;
+  touch-action: manipulation;
 }
 
 .tictactoe-cell {
+  -webkit-appearance: none;
+  appearance: none;
   display: grid;
   place-items: center;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1;
   border: 0;
   border-right: 1px solid var(--line-strong);
   border-bottom: 1px solid var(--line-strong);
   background: transparent;
   color: var(--jade);
-  font-size: clamp(2.4rem, 18vw, 5.2rem);
+  font-size: clamp(2.2rem, 15vw, 4.7rem);
   font-weight: 900;
+  line-height: 1;
+  overflow: hidden;
+  touch-action: manipulation;
   cursor: pointer;
 }
 
