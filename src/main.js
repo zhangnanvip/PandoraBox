@@ -510,6 +510,23 @@ function restartRecentGame(gameId, sessionKey = "") {
   launchGame(game, options, false);
 }
 
+function bindRecentActivityActions(root = app) {
+  root.querySelectorAll("[data-resume-session]").forEach((button) => {
+    button.addEventListener("click", () => resumeSessionByKey(button.dataset.resumeSession));
+  });
+  root.querySelectorAll("[data-restart-game]").forEach((button) => {
+    button.addEventListener("click", () => restartRecentGame(button.dataset.restartGame, button.dataset.restartSession));
+  });
+}
+
+function openHistoryPage() {
+  setState({ view: "history", modal: "" });
+}
+
+function openAchievementsPage() {
+  setState({ view: "achievements", modal: "" });
+}
+
 function icon(name) {
   const paths = {
     settings: '<path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.04.04a2.16 2.16 0 0 1-3.06 3.06l-.04-.04a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.08 1.64V21.4a2.16 2.16 0 0 1-4.32 0v-.08a1.8 1.8 0 0 0-1.08-1.64 1.8 1.8 0 0 0-1.98.36l-.04.04a2.16 2.16 0 0 1-3.06-3.06l.04-.04A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.64-1.08H2.88a2.16 2.16 0 0 1 0-4.32h.08A1.8 1.8 0 0 0 4.6 8.52a1.8 1.8 0 0 0-.36-1.98l-.04-.04A2.16 2.16 0 0 1 7.26 3.44l.04.04a1.8 1.8 0 0 0 1.98.36A1.8 1.8 0 0 0 10.36 2.2V2.12a2.16 2.16 0 0 1 4.32 0v.08a1.8 1.8 0 0 0 1.08 1.64 1.8 1.8 0 0 0 1.98-.36l.04-.04a2.16 2.16 0 0 1 3.06 3.06l-.04.04a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.64 1.08h.08a2.16 2.16 0 0 1 0 4.32h-.08A1.8 1.8 0 0 0 19.4 15Z"/>',
@@ -518,6 +535,7 @@ function icon(name) {
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     play: '<path d="M8 5v14l11-7L8 5Z"/>',
     pause: '<path d="M7 5h3v14H7V5Z"/><path d="M14 5h3v14h-3V5Z"/>',
+    history: '<path d="M12 8v5l3 2"/><path d="M3.05 11a9 9 0 1 1 2.64 6.36"/><path d="M3 17v-6h6"/>',
     star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>',
     trophy: '<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 3"/><path d="M17 6h3a3 3 0 0 1-3 3"/><path d="M9 17h6"/>',
     sound: '<path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9.5a4 4 0 0 1 0 5"/>',
@@ -1021,6 +1039,86 @@ function renderAchievementPage() {
   renderModal();
 }
 
+function renderHistoryItem({ game, progress, sessionItem }) {
+  const category = findCategory(game.category);
+  const hasSession = Boolean(sessionItem);
+  const summary = hasSession
+    ? sessionSummary(sessionItem.session) || "已有未完成进度"
+    : `最近 ${formatTime(progress.lastPlayed)}`;
+  const resultText = progress.lastResult ? `上次 ${outcomeLabel(progress.lastResult)}` : "暂无结算";
+  return `
+    <article class="history-row accent-${game.accent}">
+      <div class="game-card-icon history-icon" aria-hidden="true">
+        ${boardPreview(game)}
+      </div>
+      <div class="history-copy">
+        <div class="history-title-line">
+          <span class="game-tag">${hasSession ? "可续玩" : "最近"}</span>
+          <span>${category.shortTitle}</span>
+        </div>
+        <h2>${game.title}</h2>
+        <p>${summary}</p>
+        <div class="quick-stats history-stats">
+          <span>开局 ${progress.started || 0}</span>
+          <span>完成 ${progress.completed || 0}</span>
+          <span>${resultText}</span>
+        </div>
+      </div>
+      <div class="history-actions">
+        ${hasSession ? `<button class="primary-button mini-action" type="button" data-resume-session="${escapeAttr(sessionItem.key)}" aria-label="续玩${game.title}">${icon("play")} 续玩</button>` : ""}
+        <button
+          class="secondary-button mini-action"
+          type="button"
+          data-restart-game="${escapeAttr(game.id)}"
+          data-restart-session="${hasSession ? escapeAttr(sessionItem.key) : ""}"
+          aria-label="${hasSession ? "重开" : "再来一局"}${game.title}"
+        >${hasSession ? "重开" : "再来"}</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderHistoryPage() {
+  const activities = recentActivities(availableGames().length);
+  const stats = totalStats();
+  app.innerHTML = `
+    <main class="app-frame lobby-frame">
+      <header class="app-topbar">
+        <div class="brand-lockup">
+          <button class="icon-button top-icon" data-view-lobby aria-label="返回大厅">${icon("back")}</button>
+          <div>
+            <h1>最近对局</h1>
+          </div>
+        </div>
+        <button class="icon-button top-icon" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
+      </header>
+
+      <section class="history-page">
+        <div class="achievement-hero history-hero">
+          <div>
+            <span class="game-tag">对局历史</span>
+            <strong>${activities.length}</strong>
+            <p>最近玩过的游戏集中在这里，有未完成进度的可以直接续玩，也可以重开同配置。</p>
+          </div>
+          <div class="quick-stats">
+            <span>存档 ${stats.sessions}</span>
+            <span>开局 ${stats.started}</span>
+            <span>完成 ${stats.completed}</span>
+          </div>
+        </div>
+        <div class="history-list">
+          ${activities.length ? activities.map(renderHistoryItem).join("") : "<p class=\"empty-note\">开始一局后会生成最近记录。</p>"}
+        </div>
+      </section>
+    </main>
+  `;
+
+  app.querySelector("[data-view-lobby]")?.addEventListener("click", () => setState({ view: "lobby", modal: "" }));
+  bindRecentActivityActions();
+  bindShellActions();
+  renderModal();
+}
+
 function pluginSourceById(sourceId) {
   const sources = state.pluginSources.sources || DEFAULT_PLUGIN_SOURCE_STATE.sources;
   return sources.find((source) => source.id === sourceId) || null;
@@ -1156,7 +1254,10 @@ function renderLobbyDashboard() {
             <span class="game-tag">最近</span>
             <h2>续玩 / 重开</h2>
           </div>
-          <span>${stats.sessions} 存档 · ${stats.started} 开局</span>
+          <div class="dashboard-head-actions">
+            <span>${stats.sessions} 存档 · ${stats.started} 开局</span>
+            <button class="dashboard-link" type="button" data-open-history>全部</button>
+          </div>
         </div>
         <div class="recent-list recent-activity-list">
           ${recent.length ? recent.map(renderRecentShortcut).join("") : "<p class=\"empty-note\">开始一局后会出现在这里。</p>"}
@@ -1233,10 +1334,11 @@ function renderLobby() {
         <div class="brand-lockup">
           <span class="brand-mark" aria-hidden="true">弈</span>
           <div>
-            <h1>潘多拉魔盒游戏大厅</h1>
+            <h1>潘多拉魔盒</h1>
           </div>
         </div>
         <div class="header-actions">
+          <button class="icon-button top-icon" data-open-history aria-label="最近对局">${icon("history")}</button>
           <button class="icon-button top-icon" data-open-achievements aria-label="成就">${icon("trophy")}</button>
           <button class="icon-button top-icon" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
         </div>
@@ -1268,18 +1370,16 @@ function renderLobby() {
   app.querySelectorAll("[data-category]").forEach((button) => {
     button.addEventListener("click", () => setState({ activeCategory: button.dataset.category }));
   });
-  app.querySelector("[data-open-achievements]")?.addEventListener("click", () => setState({ view: "achievements", modal: "" }));
+  app.querySelectorAll("[data-open-history]").forEach((button) => {
+    button.addEventListener("click", openHistoryPage);
+  });
+  app.querySelector("[data-open-achievements]")?.addEventListener("click", openAchievementsPage);
   app.querySelectorAll("[data-prepare-game]").forEach((button) => {
     button.addEventListener("click", () => {
       openModal("start", { pendingGame: button.dataset.prepareGame });
     });
   });
-  app.querySelectorAll("[data-resume-session]").forEach((button) => {
-    button.addEventListener("click", () => resumeSessionByKey(button.dataset.resumeSession));
-  });
-  app.querySelectorAll("[data-restart-game]").forEach((button) => {
-    button.addEventListener("click", () => restartRecentGame(button.dataset.restartGame, button.dataset.restartSession));
-  });
+  bindRecentActivityActions();
   app.querySelectorAll("[data-toggle-favorite]").forEach((button) => {
     button.addEventListener("click", () => toggleFavorite(button.dataset.toggleFavorite));
   });
@@ -1530,6 +1630,7 @@ function modalContent() {
         </div>
         <div class="settings-actions">
           <button class="secondary-button" data-open-modal="offline">${icon("offline")} 离线状态</button>
+          <button class="secondary-button" data-open-history>${icon("history")} 最近对局</button>
           <button class="secondary-button" data-open-achievements>${icon("trophy")} 成就中心</button>
           <button class="secondary-button" data-install-app ${installPrompt ? "" : "disabled"}>安装到设备</button>
         </div>
@@ -1583,11 +1684,10 @@ function renderModal() {
     button.addEventListener("click", () => openModal(button.dataset.openModal));
   });
   app.querySelectorAll(".modal-panel [data-open-achievements]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.modal = "";
-      state.view = "achievements";
-      render();
-    });
+    button.addEventListener("click", openAchievementsPage);
+  });
+  app.querySelectorAll(".modal-panel [data-open-history]").forEach((button) => {
+    button.addEventListener("click", openHistoryPage);
   });
   app.querySelectorAll(".modal-panel [data-review-plugin-source]").forEach((button) => {
     button.addEventListener("click", () => openModal("plugin-source", { pendingPluginSource: button.dataset.reviewPluginSource }));
@@ -1659,6 +1759,7 @@ function render() {
   }
   renderedGameId = "";
   if (state.view === "achievements") renderAchievementPage();
+  else if (state.view === "history") renderHistoryPage();
   else renderLobby();
 }
 
