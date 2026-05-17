@@ -1264,6 +1264,18 @@ select {
   white-space: nowrap;
 }
 
+.plugin-source-actions {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.plugin-source-actions .secondary-button {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 0.76rem;
+}
+
 .achievement-row.is-unlocked,
 .plugin-source-row.is-enabled {
   border-color: rgba(31, 95, 74, 0.26);
@@ -1289,6 +1301,37 @@ select {
   margin-bottom: 0;
   color: var(--muted);
   line-height: 1.5;
+}
+
+.source-audit-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.source-audit-panel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.source-audit-meta {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.source-audit-meta strong {
+  color: var(--ink);
+}
+
+.source-audit-meta span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .toggle-row {
@@ -2310,6 +2353,10 @@ input[type="range"] {
   .achievement-row,
   .plugin-source-row {
     grid-template-columns: 1fr;
+  }
+
+  .plugin-source-actions {
+    justify-items: stretch;
   }
 
   .shortcut-card .primary-button {

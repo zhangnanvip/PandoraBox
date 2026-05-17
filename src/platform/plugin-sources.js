@@ -29,6 +29,18 @@ function asArray(value, fallback = []) {
   return Array.isArray(value) ? value.filter(Boolean) : fallback;
 }
 
+function escapeText(value, fallback = "") {
+  return String(value || fallback)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function safeSlug(value, fallback = "") {
+  const text = String(value || "");
+  return /^[a-z0-9][a-z0-9-]*$/.test(text) ? text : fallback;
+}
+
 function normalizeSource(source) {
   if (!source || typeof source !== "object") return null;
   if (!source.id || !source.name || !source.type) return null;
@@ -36,11 +48,29 @@ function normalizeSource(source) {
     id: String(source.id),
     name: String(source.name),
     type: source.type === "builtin" ? "builtin" : "url",
+    baseEnabled: source.enabled === true,
     enabled: source.enabled === true,
     discoverable: source.discoverable === true,
     url: source.url || "",
     trust: source.trust || "manual-review",
     catalog: null
+  };
+}
+
+function applySourceOverrides(config, sourceOverrides = {}) {
+  if (!sourceOverrides || typeof sourceOverrides !== "object") return config;
+
+  return {
+    ...config,
+    sources: config.sources.map((source) => {
+      const override = sourceOverrides[source.id];
+      if (!override || source.type === "builtin") return source;
+      return {
+        ...source,
+        enabled: override.enabled === true,
+        enabledByUser: override.enabled === true
+      };
+    })
   };
 }
 
@@ -64,21 +94,49 @@ export function normalizePluginSourceConfig(config) {
   };
 }
 
+function normalizeLoadOptions(input) {
+  if (typeof input === "function") {
+    return {
+      fetcher: input,
+      sourceOverrides: {}
+    };
+  }
+
+  return {
+    fetcher: input?.fetcher || fetch,
+    sourceOverrides: input?.sourceOverrides || {}
+  };
+}
+
 function canDiscoverSource(source, config) {
   if (source.type !== "url" || !source.url) return false;
   if (source.enabled) return true;
   return source.discoverable === true && config.allowRemote !== true;
 }
 
+function normalizeGamePreview(game) {
+  return {
+    id: safeSlug(game?.id, "unknown"),
+    title: escapeText(game?.title, game?.id || "未命名游戏"),
+    subtitle: escapeText(game?.subtitle, ""),
+    version: escapeText(game?.version, "0.1.0"),
+    status: escapeText(game?.status, "preview"),
+    category: safeSlug(game?.category, "quick")
+  };
+}
+
 function normalizeDiscoveredCatalog(catalog) {
   if (!catalog || typeof catalog !== "object") {
     return { loaded: false, games: 0, title: "", error: "插件目录格式无效" };
   }
+  const games = asArray(catalog.games);
   return {
     loaded: true,
-    games: asArray(catalog.games).length,
+    games: games.length,
     loadableGames: 0,
-    title: catalog.name || catalog.sourceId || "插件目录",
+    title: escapeText(catalog.name || catalog.sourceId || "插件目录"),
+    description: escapeText(catalog.description || ""),
+    gamePreviews: games.map(normalizeGamePreview),
     error: "",
     blocked: "",
     loadErrors: [],
@@ -97,6 +155,48 @@ function resolveManifestUrls(game, catalogUrl) {
     icon: resolvedAsset(game.icon, catalogUrl),
     assets: asArray(game.assets).map((asset) => resolvedAsset(asset, catalogUrl)),
     precacheAssets: asArray(game.precacheAssets).map((asset) => resolvedAsset(asset, catalogUrl))
+  };
+}
+
+function normalizeVisualStyles(styles) {
+  return asArray(styles)
+    .map((style) => ({
+      value: safeSlug(style?.value, ""),
+      label: escapeText(style?.label, "")
+    }))
+    .filter((style) => style.value && style.label);
+}
+
+function normalizeSetupFields(fields) {
+  return asArray(fields).map((field) => ({
+    ...field,
+    id: safeSlug(field?.id, ""),
+    label: escapeText(field?.label, ""),
+    defaultValue: escapeText(field?.defaultValue, ""),
+    options: asArray(field?.options)
+      .map((option) => ({
+        value: escapeText(option?.value, ""),
+        label: escapeText(option?.label, "")
+      }))
+      .filter((option) => option.value && option.label)
+  })).filter((field) => field.id && field.label && field.options.length);
+}
+
+function normalizeExternalManifest(game, catalogUrl) {
+  const manifest = resolveManifestUrls(game, catalogUrl);
+  return {
+    ...manifest,
+    title: escapeText(manifest.title, manifest.id),
+    subtitle: escapeText(manifest.subtitle, ""),
+    tag: escapeText(manifest.tag, "扩展游戏"),
+    category: safeSlug(manifest.category, "quick"),
+    secondaryCategories: asArray(manifest.secondaryCategories).map((item) => safeSlug(item, "")).filter(Boolean),
+    complexity: escapeText(manifest.complexity, "中等"),
+    accent: safeSlug(manifest.accent, "sky"),
+    rules: asArray(manifest.rules).map((rule) => escapeText(rule)),
+    visualStyles: normalizeVisualStyles(manifest.visualStyles),
+    defaultVisualStyle: safeSlug(manifest.defaultVisualStyle, ""),
+    setupFields: normalizeSetupFields(manifest.setupFields)
   };
 }
 
@@ -124,9 +224,9 @@ function normalizeLoadableCatalog(catalog, catalogUrl, source, config) {
   const loadErrors = [];
   const registrations = asArray(catalog.games).flatMap((game) => {
     try {
-      return [defineUrlGame(resolveManifestUrls(game, catalogUrl), catalogUrl.toString())];
+      return [defineUrlGame(normalizeExternalManifest(game, catalogUrl), catalogUrl.toString())];
     } catch (error) {
-      loadErrors.push(`${game?.id || "unknown"}：${error?.message || "Manifest 无效"}`);
+      loadErrors.push(escapeText(`${game?.id || "unknown"}：${error?.message || "Manifest 无效"}`));
       return [];
     }
   });
@@ -162,11 +262,12 @@ async function discoverSourceCatalog(source, config, fetcher) {
   }
 }
 
-export async function loadPluginSourceState(fetcher = fetch) {
+export async function loadPluginSourceState(options = {}) {
+  const { fetcher, sourceOverrides } = normalizeLoadOptions(options);
   try {
     const response = await fetcher(PLUGIN_SOURCE_CONFIG_URL, { cache: "no-cache" });
     if (!response.ok) throw new Error(`插件源配置读取失败：${response.status}`);
-    const config = normalizePluginSourceConfig(await response.json());
+    const config = applySourceOverrides(normalizePluginSourceConfig(await response.json()), sourceOverrides);
     return {
       ...config,
       sources: await Promise.all(config.sources.map((source) => discoverSourceCatalog(source, config, fetcher)))

@@ -13,7 +13,8 @@ const preferences = loadState("preferences", {
   theme: "guofeng",
   sound: true,
   volume: 70,
-  gameOptions: {}
+  gameOptions: {},
+  pluginSourceOverrides: {}
 });
 const savedProgress = loadState("progress", {});
 const savedSessions = loadState("sessions", {});
@@ -30,11 +31,13 @@ const state = {
   volume: Number.isFinite(preferences.volume) ? preferences.volume : 70,
   modal: "",
   pendingGame: "",
+  pendingPluginSource: "",
   activeCategory: "all",
   progress: savedProgress && typeof savedProgress === "object" ? savedProgress : {},
   sessions: savedSessions && typeof savedSessions === "object" ? savedSessions : {},
   favorites: Array.isArray(savedFavorites) ? savedFavorites.filter(Boolean) : [],
   pluginSources: DEFAULT_PLUGIN_SOURCE_STATE,
+  pluginSourceOverrides: preferences.pluginSourceOverrides && typeof preferences.pluginSourceOverrides === "object" ? preferences.pluginSourceOverrides : {},
   resultSummary: null,
   resumeSession: false
 };
@@ -162,7 +165,8 @@ function persistPreferences() {
     skin: state.theme,
     sound: state.sound,
     volume: state.volume,
-    gameOptions: state.gameOptions
+    gameOptions: state.gameOptions,
+    pluginSourceOverrides: state.pluginSourceOverrides
   });
   syncSoundPreferences();
 }
@@ -196,8 +200,30 @@ function openModal(name, patch = {}) {
 function closeModal() {
   state.modal = "";
   state.pendingGame = "";
+  state.pendingPluginSource = "";
   state.resultSummary = null;
   render();
+}
+
+async function refreshPluginSources() {
+  state.pluginSources = await loadPluginSourceState({
+    sourceOverrides: state.pluginSourceOverrides
+  });
+  if (state.currentGame && !availableGames().some((game) => game.id === state.currentGame)) {
+    state.currentGame = "";
+  }
+  render();
+}
+
+function setPluginSourceEnabled(sourceId, enabled) {
+  state.pluginSourceOverrides = {
+    ...state.pluginSourceOverrides,
+    [sourceId]: { enabled }
+  };
+  state.pendingPluginSource = sourceId;
+  state.modal = "plugin-source";
+  persistPreferences();
+  refreshPluginSources();
 }
 
 function collectSetupValuesFromModal(game) {
@@ -835,6 +861,81 @@ function renderAchievementList() {
   `;
 }
 
+function pluginSourceById(sourceId) {
+  const sources = state.pluginSources.sources || DEFAULT_PLUGIN_SOURCE_STATE.sources;
+  return sources.find((source) => source.id === sourceId) || null;
+}
+
+function renderPluginSourceGameList(source) {
+  const gamesPreview = source?.catalog?.gamePreviews || [];
+  if (!gamesPreview.length) return "<p class=\"empty-note\">这个扩展目录暂时没有可展示的游戏。</p>";
+
+  return `
+    <div class="achievement-list">
+      ${gamesPreview.map((game) => `
+        <div class="achievement-row">
+          <div>
+            <strong>${game.title}</strong>
+            <span>${game.subtitle || `${game.id} · ${game.version}`}</span>
+          </div>
+          <b>${game.status}</b>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderPluginSourceAudit(source) {
+  if (!source) {
+    return `
+      <div class="source-audit-panel">
+        <p>这个插件源已经不存在，可能是配置被更新了。</p>
+        <div class="settings-actions">
+          <button class="primary-button" data-open-modal="settings">返回设置</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const catalog = source.catalog || {};
+  const canToggle = source.type === "url" && catalog.loaded && !catalog.error;
+  const status = source.enabled ? "已启用" : "未启用";
+  const action = source.enabled
+    ? `<button class="danger-button" data-disable-plugin-source="${escapeAttr(source.id)}">停用扩展包</button>`
+    : `<button class="primary-button" data-enable-plugin-source="${escapeAttr(source.id)}" ${canToggle ? "" : "disabled"}>确认启用</button>`;
+
+  return `
+    <div class="source-audit-panel">
+      <p>启用后，这个目录内通过 Manifest 校验的游戏会加入大厅，并作为独立插件模块加载。远程源仍受应用的远程加载策略限制。</p>
+      <div class="progress-pills">
+        <span>${status}</span>
+        <span>${source.trust}</span>
+        <span>可发现 ${catalog.games || 0}</span>
+        <span>可接入 ${catalog.loadableGames || 0}</span>
+        ${source.enabledByUser ? "<span>本机启用</span>" : ""}
+      </div>
+      <div class="source-audit-meta">
+        <strong>${source.name}</strong>
+        <span>${source.url || "内置游戏包"}</span>
+        ${catalog.title ? `<span>${catalog.title}</span>` : ""}
+        ${catalog.description ? `<span>${catalog.description}</span>` : ""}
+        ${catalog.error ? `<span>${catalog.error}</span>` : ""}
+        ${catalog.blocked ? `<span>${catalog.blocked}</span>` : ""}
+      </div>
+      ${renderPluginSourceGameList(source)}
+      ${catalog.loadErrors?.length ? `
+        <ul class="modal-list">
+          ${catalog.loadErrors.map((error, index) => `<li><b>${index + 1}</b><span>${error}</span></li>`).join("")}
+        </ul>
+      ` : ""}
+      <div class="settings-actions">
+        <button class="secondary-button" data-open-modal="settings">返回设置</button>
+        ${action}
+      </div>
+    </div>
+  `;
+}
+
 function renderPluginSourceList() {
   const summary = summarizePluginSources(state.pluginSources);
   const sources = state.pluginSources.sources || DEFAULT_PLUGIN_SOURCE_STATE.sources;
@@ -853,7 +954,10 @@ function renderPluginSourceList() {
               ${source.catalog?.error ? ` · ${source.catalog.error}` : ""}
             </span>
           </div>
-          <b>${source.enabled ? "启用" : "禁用"}</b>
+          <div class="plugin-source-actions">
+            <b>${source.enabled ? "启用" : "禁用"}</b>
+            ${source.type === "url" ? `<button class="secondary-button" data-review-plugin-source="${escapeAttr(source.id)}">详情</button>` : ""}
+          </div>
         </div>
       `).join("")}
       <p class="empty-note">
@@ -1105,6 +1209,14 @@ function bindShellActions() {
 function modalContent() {
   const game = findAvailableGame(state.currentGame || state.pendingGame);
 
+  if (state.modal === "plugin-source") {
+    const source = pluginSourceById(state.pendingPluginSource);
+    return {
+      title: source ? `${source.name}审核` : "插件源审核",
+      body: renderPluginSourceAudit(source)
+    };
+  }
+
   if (state.modal === "start") {
     return {
       title: `${game.title}开局`,
@@ -1295,6 +1407,15 @@ function renderModal() {
   app.querySelectorAll(".modal-panel [data-open-modal]").forEach((button) => {
     button.addEventListener("click", () => openModal(button.dataset.openModal));
   });
+  app.querySelectorAll(".modal-panel [data-review-plugin-source]").forEach((button) => {
+    button.addEventListener("click", () => openModal("plugin-source", { pendingPluginSource: button.dataset.reviewPluginSource }));
+  });
+  app.querySelector("[data-enable-plugin-source]")?.addEventListener("click", (event) => {
+    setPluginSourceEnabled(event.currentTarget.dataset.enablePluginSource, true);
+  });
+  app.querySelector("[data-disable-plugin-source]")?.addEventListener("click", (event) => {
+    setPluginSourceEnabled(event.currentTarget.dataset.disablePluginSource, false);
+  });
   app.querySelector(".modal-panel [data-install-app]")?.addEventListener("click", async () => {
     if (!installPrompt) return;
     installPrompt.prompt();
@@ -1361,8 +1482,4 @@ app.addEventListener("click", (event) => {
 
 render();
 
-loadPluginSourceState().then((pluginSources) => {
-  state.pluginSources = pluginSources;
-  if (!state.currentGame) render();
-  else if (state.modal === "settings") renderModal();
-});
+refreshPluginSources();
