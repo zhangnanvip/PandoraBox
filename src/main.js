@@ -254,6 +254,26 @@ function closeModal() {
   else render();
 }
 
+function dispatchCurrentGameRestart() {
+  const gameRoot = app.querySelector("#game-root");
+  const event = new CustomEvent("pandora:restart-game", { cancelable: true });
+  gameRoot?.dispatchEvent(event);
+  if (event.defaultPrevented) return;
+  gameRoot?.querySelector("[data-action='restart']")?.dispatchEvent(new Event("click"));
+}
+
+function requestCurrentGameRestart() {
+  if (!state.currentGame) return;
+  openModal("restart");
+}
+
+function confirmCurrentGameRestart() {
+  state.modal = "";
+  state.resultSummary = null;
+  renderModal();
+  dispatchCurrentGameRestart();
+}
+
 async function refreshPluginSources(options = {}) {
   state.pluginSources = await loadPluginSourceState({
     sourceOverrides: state.pluginSourceOverrides
@@ -1588,6 +1608,16 @@ function renderGame() {
           mode: modeLabel[mode],
           visualStyle: visualStyleLabelFor(game)
         },
+        shell: {
+          onRestart(handler) {
+            const listener = (event) => {
+              event.preventDefault();
+              handler?.(event);
+            };
+            gameRoot.addEventListener("pandora:restart-game", listener);
+            return () => gameRoot.removeEventListener("pandora:restart-game", listener);
+          }
+        },
         playSound: (name) => playFeedbackSound(name),
         isPaused: () => Boolean(state.modal && state.modal !== "result"),
         savedState: canSaveSession ? resumedSession?.snapshot || null : null,
@@ -1619,12 +1649,7 @@ function bindShellActions() {
   app.querySelectorAll("[data-open-modal]").forEach((button) => {
     button.addEventListener("click", () => openModal(button.dataset.openModal));
   });
-  app.querySelector("[data-restart-current-game]")?.addEventListener("click", () => {
-    const gameRoot = app.querySelector("#game-root");
-    const event = new CustomEvent("pandora:restart-game", { cancelable: true });
-    gameRoot?.dispatchEvent(event);
-    if (!event.defaultPrevented) gameRoot?.querySelector("[data-action='restart']")?.click();
-  });
+  app.querySelector("[data-restart-current-game]")?.addEventListener("click", requestCurrentGameRestart);
   app.querySelector("[data-install-app]")?.addEventListener("click", async () => {
     if (!installPrompt) return;
     installPrompt.prompt();
@@ -1681,6 +1706,23 @@ function modalContent() {
         <ul class="modal-list">
           ${(game.rules || []).map((rule, index) => `<li><b>${index + 1}</b><span>${rule}</span></li>`).join("")}
         </ul>
+      `
+    };
+  }
+
+  if (state.modal === "restart") {
+    const canSaveSession = Boolean(game.capabilities?.sessionSave);
+    return {
+      title: `重开${game.title}`,
+      body: `
+        <div class="result-panel">
+          <strong>确认重开？</strong>
+          <p>${canSaveSession ? "当前未完成进度会被清除，并从本局初始状态重新开始。" : "当前棋局会回到初始状态，已有走法不会保留。"}</p>
+          <div class="settings-actions">
+            <button class="secondary-button" data-resume-game>取消</button>
+            <button class="danger-button" data-confirm-restart>确认重开</button>
+          </div>
+        </div>
       `
     };
   }
@@ -1873,6 +1915,7 @@ function renderModal() {
     renderModal();
   });
   app.querySelector("[data-resume-game]")?.addEventListener("click", closeModal);
+  app.querySelector("[data-confirm-restart]")?.addEventListener("click", confirmCurrentGameRestart);
   app.querySelector("[data-pause-lobby]")?.addEventListener("click", () => {
     setState({ currentGame: "", modal: "", pendingGame: "", resultSummary: null });
   });

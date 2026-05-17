@@ -1,4 +1,5 @@
 import { bindHold, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { bindShellRestart } from "../arcade/engine.js";
 import { addBurst, classicArcade, drawArcadeBackdrop, drawBase, drawEffects, drawPowerup, drawTankSprite, drawTankWall, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
 const W = 360;
@@ -882,6 +883,7 @@ export function mountTankBattle(root, context) {
 
   const cleanupJoystick = bindVirtualJoystick(root, controls);
   const cleanupFire = bindHold(root, "[data-control='fire']", (pressed) => { controls.fire = pressed; });
+  const cleanupShellRestart = bindShellRestart(root, context, restart);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
@@ -893,6 +895,7 @@ export function mountTankBattle(root, context) {
     cancelAnimationFrame(raf);
     cleanupJoystick();
     cleanupFire();
+    cleanupShellRestart();
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
   };

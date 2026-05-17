@@ -121,6 +121,7 @@ export function mount(root, context = {}) {
 - `context.difficulty`: `easy`、`medium`、`hard`、`devil`
 - `context.mode`: `solo`、`ai`、`local`
 - `context.playSound(name)`: 播放反馈音
+- `context.shell.onRestart(handler)`: 顶部“重开”确认后触发，返回清理函数；新游戏建议接这个外壳事件，不要在底部控制区再放重开按钮
 - `context.reportResult(result)`: 上报结算
 - `context.saveSession(snapshot, meta)`: 保存进度，需 manifest 声明 `sessionSave`
 - `context.clearSession()`: 清除进度

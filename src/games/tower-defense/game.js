@@ -1,4 +1,5 @@
 import { addBurst, classicArcade, drawArcadeBackdrop, drawEffects, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { bindShellRestart } from "../arcade/engine.js";
 
 const W = 360;
 const H = 360;
@@ -752,6 +753,7 @@ export function mountTowerDefense(root, context) {
   root.querySelector("[data-action='upgrade']").addEventListener("click", () => upgradeSelectedTower(state));
   root.querySelector("[data-action='wave']").addEventListener("click", () => startWave(state, config));
   root.querySelector("[data-action='sell']").addEventListener("click", () => sellSelectedTower(state));
+  const cleanupShellRestart = bindShellRestart(root, context, restart);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   canvas.addEventListener("pointerdown", onPointerDown);
   window.addEventListener("keydown", onKey);
@@ -761,6 +763,7 @@ export function mountTowerDefense(root, context) {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     disposed = true;
     cancelAnimationFrame(raf);
+    cleanupShellRestart();
     canvas.removeEventListener("pointerdown", onPointerDown);
     window.removeEventListener("keydown", onKey);
   };

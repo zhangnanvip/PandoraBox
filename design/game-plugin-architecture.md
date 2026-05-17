@@ -80,12 +80,17 @@ export function mount(root, context) {
     difficulty: "中等",
     visualStyle: "国风棋盘"
   },
+  shell: {
+    onRestart: (handler) => cleanup
+  },
   playSound: (name) => {},
   reportResult: (result) => {}
 }
 ```
 
 `options` 来自开局弹窗里的游戏自定义字段；`theme` 只表示当前界面主题；`visualStyle` 表示当前游戏内视觉样式。`playSound` 统一走平台音效和音量设置；`reportResult` 用来把胜负、完成、分数等结果写入大厅进度统计。
+
+`shell.onRestart` 是平台外壳事件：顶部统一“重开”按钮完成二次确认后触发。新游戏和后续通用引擎优先接这个事件，旧游戏仍可保留 `data-action="restart"` 作为兼容兜底。
 
 ## 后续远程插件扩展
 
