@@ -1457,12 +1457,12 @@ function renderLobby() {
 
       <section class="lobby-hero">
         <div>
-          <p class="intro">一方宣纸，棋局、解谜与街机同盒。</p>
+          <p class="intro">棋局、解谜、街机与策略，离线也能马上开局。</p>
         </div>
         <div class="lobby-status">
           <span>${icon("offline")}可离线</span>
           <span>${availableGames().length} 款游戏</span>
-          <span>${interfaceThemes[state.theme]?.name || "国风界面"}</span>
+          <span>移动适配</span>
         </div>
       </section>
 
