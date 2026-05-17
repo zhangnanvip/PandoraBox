@@ -418,7 +418,7 @@ const registrations = [
       secondaryCategories: ["quick"],
       complexity: "中等",
       modeSupport: ["solo"],
-      difficultySupport: ["easy", "medium", "hard", "devil"],
+      difficultySupport: ["medium"],
       progressType: "score",
       ...gamePluginMeta("tank-battle", "arcade", { boss: true }),
       ...gameVisualStyle("classicArcade"),
@@ -427,11 +427,11 @@ const registrations = [
       assets: ["./public/games/arcade/icons/tank-battle.svg"],
       rules: [
         "移动坦克躲避敌火，发射炮弹击破敌方坦克。",
-        "游戏采用 5 关防守模式，清空本关敌军后会保留分数和生命进入下一关。",
+        "游戏采用单一闯关模式，清空本关敌军后会保留分数和生命进入下一关。",
         "砖墙可被炮弹击毁，钢墙不可击毁。",
         "战场会掉落速射、护盾、维修和冻结补给，移动到补给上即可触发。",
-        "第 5 关会出现重装指挥坦克 Boss，基地被击中或生命耗尽则失败。",
-        "难度会影响敌人数量、速度、开火频率和追击强度。"
+        "后续关卡会逐步加入重装指挥坦克 Boss、复杂地形和更大的战场。",
+        "关卡会影响敌人数量、速度、开火频率和追击强度。"
       ]
     },
     () => import("./tank-battle/game.js").then((module) => module.mountTankBattle)
@@ -446,7 +446,7 @@ const registrations = [
       secondaryCategories: ["quick"],
       complexity: "中等",
       modeSupport: ["solo"],
-      difficultySupport: ["easy", "medium", "hard", "devil"],
+      difficultySupport: ["medium"],
       progressType: "score",
       ...gamePluginMeta("space-shooter", "arcade", { boss: true }),
       ...gameVisualStyle("classicArcade"),
@@ -454,12 +454,11 @@ const registrations = [
       icon: "./public/games/arcade/icons/space-shooter.svg",
       assets: ["./public/games/arcade/icons/space-shooter.svg"],
       rules: [
-        "拖动或方向键移动战机，自动射击前方敌机。",
-        "游戏采用 5 关空域推进，清完本关敌机波次后进入下一关。",
-        "击毁敌机获得分数，避开敌方弹幕。",
-        "敌机会掉落火力、护盾、维修和清屏脉冲，拾取后可短时间改变战局。",
-        "第 5 关清完波次后会出现核心战舰 Boss，生命归零失败。",
-        "难度会影响敌机密度、子弹速度和波次数。"
+        "在画布上拖动战机，桌面端也可用方向键移动，战机会自动射击。",
+        "游戏采用 160 关长线空域推进，击毁敌机获得积分，积分达到本关目标才会进入下一关。",
+        "躲过去的敌机不会计算通关进度，只会继续增加战场压力。",
+        "敌机会按关卡逐步解锁高速侦察机、装甲机、散射机、激光机、分裂机、护盾精英和指挥舰。",
+        "补给包含散弹、激光、僚机、护盾、维修和清屏脉冲，后期 Boss 关每 10 关出现一次。"
       ]
     },
     () => import("./space-shooter/game.js").then((module) => module.mountSpaceShooter)
@@ -474,7 +473,7 @@ const registrations = [
       secondaryCategories: ["quick"],
       complexity: "简单",
       modeSupport: ["solo"],
-      difficultySupport: ["easy", "medium", "hard", "devil"],
+      difficultySupport: ["medium"],
       progressType: "score",
       ...gamePluginMeta("snake", "arcade"),
       ...gameVisualStyle("classicArcade"),
@@ -484,10 +483,10 @@ const registrations = [
       rules: [
         "游戏采用 5 关任务模式，每关吃够指定数量的能量豆后进入下一关。",
         "控制蛇头吃到食物，每吃一个食物身体增长。",
-        "部分难度会出现障碍块，护盾豆可抵消一次障碍碰撞。",
+        "后续关卡会出现障碍块，护盾豆可抵消一次障碍碰撞。",
         "能量豆分为普通、加分、慢速和护盾，不同道具会影响节奏。",
         "撞墙、撞到自己或无护盾撞上障碍即结束。",
-        "难度和关卡会影响移动速度、目标数量和障碍数量。",
+        "关卡会影响移动速度、目标数量和障碍数量。",
         "移动端可用方向键，桌面端可用方向键或 WASD。"
       ]
     },
@@ -503,7 +502,7 @@ const registrations = [
       secondaryCategories: ["quick"],
       complexity: "简单",
       modeSupport: ["solo"],
-      difficultySupport: ["easy", "medium", "hard", "devil"],
+      difficultySupport: ["medium"],
       progressType: "score",
       ...gamePluginMeta("breakout", "arcade", { boss: true }),
       ...gameVisualStyle("classicArcade"),
@@ -515,7 +514,7 @@ const registrations = [
         "游戏采用 5 关砖阵推进，清空当前砖阵后进入下一关。",
         "击碎砖块可能掉落扩展挡板、慢速力场和备用球。",
         "第 5 关清空砖阵后会出现 Boss 砖核心，漏球会损失生命。",
-        "难度会影响小球速度、砖块行数和挡板宽度。",
+        "关卡会影响小球速度、砖块行数和挡板宽度。",
         "移动端可拖动挡板或按左右键。"
       ]
     },

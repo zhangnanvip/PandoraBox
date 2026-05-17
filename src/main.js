@@ -884,6 +884,7 @@ function renderSelectField({ label, attr, value, options }) {
 
 function renderModeField(game) {
   const modes = (game.modeSupport || []).map((value) => ({ value, label: modeLabel[value] || value }));
+  if (modes.length <= 1) return "";
   return renderSelectField({
     label: "对局模式",
     attr: "data-modal-mode",
@@ -894,6 +895,7 @@ function renderModeField(game) {
 
 function renderDifficultyField(game) {
   const difficulties = (game.difficultySupport || []).map((value) => ({ value, label: difficultyLabel[value] || value }));
+  if (difficulties.length <= 1) return "";
   return renderSelectField({
     label: "难度",
     attr: "data-modal-difficulty",
@@ -1577,6 +1579,11 @@ function renderGame() {
   const resumedSession = state.resumeSession ? sessionFor(game, options) : null;
   const canSaveSession = Boolean(game.capabilities?.sessionSave);
   const frameClass = game.capabilities?.fullscreen ? " arcade-play-frame" : "";
+  const loadingMeta = [
+    (game.modeSupport || []).length > 1 ? modeLabel[mode] : "",
+    (game.difficultySupport || []).length > 1 ? difficultyLabel[difficulty] : "",
+    "独立游戏插件"
+  ].filter(Boolean).join(" · ");
   syncGameStyleSheets(styleSheetsFor(game, visualStyle));
   app.innerHTML = `
     <main class="app-frame play-frame${frameClass}" data-game-id="${escapeAttr(game.id)}" data-category="${escapeAttr(game.category)}" data-visual-style="${escapeAttr(visualStyle)}">
@@ -1607,7 +1614,7 @@ function renderGame() {
     <section class="game-panel game-status">
       <div>
         <strong>正在装载 ${game.title}</strong>
-        <p class="game-note">${modeLabel[mode]} · ${difficultyLabel[difficulty]} · 独立游戏插件</p>
+        <p class="game-note">${loadingMeta}</p>
       </div>
     </section>
   `;
@@ -1713,13 +1720,16 @@ function modalContent() {
   }
 
   if (state.modal === "rules") {
+    const rulesContextItems = [
+      (game.modeSupport || []).length > 1 ? modeLabel[selectedModeFor(game)] || "单人挑战" : "",
+      (game.difficultySupport || []).length > 1 ? difficultyLabel[selectedDifficultyFor(game)] || "中等" : "",
+      visualStyleLabelFor(game)
+    ].filter(Boolean);
     return {
       title: `${game.title}规则`,
       body: `
         <div class="rules-context">
-          <span>${modeLabel[selectedModeFor(game)] || "单人挑战"}</span>
-          <span>${difficultyLabel[selectedDifficultyFor(game)] || "中等"}</span>
-          ${visualStyleLabelFor(game) ? `<span>${visualStyleLabelFor(game)}</span>` : ""}
+          ${rulesContextItems.map((item) => `<span>${item}</span>`).join("")}
         </div>
         <ul class="modal-list">
           ${(game.rules || []).map((rule, index) => `<li><b>${index + 1}</b><span>${rule}</span></li>`).join("")}

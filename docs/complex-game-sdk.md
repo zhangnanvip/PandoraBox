@@ -19,7 +19,7 @@ PandoraBox 的街机、塔防、动作类游戏仍然是独立游戏模块，但
 
 每个游戏保留自己的：
 
-- `CONFIG`：按 `easy / medium / hard / devil` 定义难度。
+- `CONFIG`：动作街机默认使用单一闯关配置；棋局/解谜仍可按 `easy / medium / hard / devil` 定义难度。
 - `initialState(config)`：初始状态。
 - `restoreState(config, savedState)` / `serializeState(state)`：续玩存档。
 - `sessionMeta(state)`：最近列表展示信息。
@@ -35,7 +35,8 @@ PandoraBox 的街机、塔防、动作类游戏仍然是独立游戏模块，但
 4. 如果支持续玩，声明 `capabilities.sessionSave = true`，并确保 `serializeState` 不保存临时特效。
 5. 使用 `createArcadeLoop` 时接入 `context.isPaused()`、`saveSession`、`bindShellRestart`。
 6. 闯关类接入 `stages.js`、`progression.js`；Boss 类接入 `bosses.js`；拾取物接入 `rewards.js`。
-7. 提交前运行：
+7. 动作街机入口不要再暴露简单/困难选择，优先通过关卡、敌人类型、地图和 Boss 组合来成长。
+8. 提交前运行：
 
 ```bash
 node scripts/check-syntax.mjs

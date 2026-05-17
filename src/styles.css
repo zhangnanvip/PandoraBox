@@ -2098,6 +2098,85 @@ input[type="range"] {
   width: min(94vw, 520px);
 }
 
+.space-shooter-hud {
+  --space-bar: rgba(248, 251, 255, 0.18);
+  --space-fill: #42f2ff;
+}
+
+.arcade-play-frame .space-shooter-hud {
+  top: max(52px, calc(env(safe-area-inset-top) + 48px));
+  padding: 7px 9px;
+  gap: 6px;
+}
+
+.space-hud-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.space-hud-top strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.space-hud-top span {
+  flex: 0 0 auto;
+  color: rgba(248, 251, 255, 0.78);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.space-progress-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.space-progress-grid label {
+  display: grid;
+  grid-template-columns: auto minmax(54px, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: rgba(248, 251, 255, 0.78);
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.space-progress-grid i {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--space-bar);
+}
+
+.space-progress-grid b {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--space-fill), #f7d46b);
+  transition: width 160ms ease-out;
+}
+
+.space-progress-grid em {
+  color: rgba(248, 251, 255, 0.88);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.arcade-play-frame[data-game-id="space-shooter"] .arcade-canvas.tall {
+  width: min(100vw, calc(100dvh * 0.5634));
+  max-height: 100dvh;
+  aspect-ratio: 320 / 568;
+}
+
 .tower-defense-controls {
   grid-template-columns: 1fr;
 }

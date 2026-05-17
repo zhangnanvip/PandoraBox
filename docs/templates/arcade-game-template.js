@@ -1,5 +1,5 @@
 // Copy this file to src/games/<game-id>/game.js, then adjust import paths and game logic.
-import { bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { bindDigitalKeys } from "../arcade/controls.js";
 import { rectFromCenter, rectsOverlap } from "../arcade/collision.js";
 import { addBurst, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { feedbackTimeScale, triggerHitStop, updateFeedback } from "../arcade/feedback.js";
@@ -11,12 +11,7 @@ const W = 360;
 const H = 360;
 const MAX_LEVEL = 5;
 
-const CONFIG = {
-  easy: { lives: 4, speed: 90 },
-  medium: { lives: 3, speed: 110 },
-  hard: { lives: 3, speed: 130 },
-  devil: { lives: 2, speed: 155 }
-};
+const CONFIG = { lives: 3, speed: 110 };
 
 function levelTuning(config, level) {
   return {
@@ -158,7 +153,7 @@ function draw(state, ctx) {
 }
 
 export function mountTemplateGame(root, context) {
-  const config = CONFIG[context.difficulty] || CONFIG.medium;
+  const config = CONFIG;
   let state = restoreState(config, context.savedState);
   const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0 };
 
@@ -166,7 +161,7 @@ export function mountTemplateGame(root, context) {
     <section class="game-panel game-status">
       <div>
         <strong data-status>${state.message}</strong>
-        <p class="game-note" data-note>${context.labels?.difficulty || "中等"} · 模板游戏</p>
+        <p class="game-note" data-note>单人闯关 · 模板游戏</p>
       </div>
       <div class="mini-stats">
         <span data-level>${stageLabel(state)}</span>
@@ -175,7 +170,6 @@ export function mountTemplateGame(root, context) {
     </section>
     <section class="arcade-shell" data-visual-style="${context.visualStyle || "classic-arcade"}">
       <div class="arcade-stage"><canvas class="arcade-canvas" width="${W}" height="${H}" aria-label="模板游戏"></canvas></div>
-      <div class="arcade-controls">${joystickMarkup("移动")}</div>
     </section>
   `;
 
@@ -210,7 +204,6 @@ export function mountTemplateGame(root, context) {
     }
   });
 
-  const cleanupJoystick = bindVirtualJoystick(root, controls);
   const cleanupKeys = bindDigitalKeys(controls);
   const cleanupShellRestart = bindShellRestart(root, context, restart);
   loop.start();
@@ -218,7 +211,6 @@ export function mountTemplateGame(root, context) {
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     loop.stop();
-    cleanupJoystick();
     cleanupKeys();
     cleanupShellRestart();
   };
