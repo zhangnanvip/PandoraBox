@@ -43,6 +43,7 @@ const SHARED_PRECACHE = {
     "./src/games/arcade/classic-visuals.js",
     "./src/games/arcade/collision.js",
     "./src/games/arcade/controls.js",
+    "./src/games/arcade/effects.js",
     "./src/games/arcade/engine.js"
   ]
 };

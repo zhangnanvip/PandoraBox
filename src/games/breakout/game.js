@@ -1,6 +1,7 @@
 import { HORIZONTAL_KEY_MAP, bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collision.js";
-import { addBurst, classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawEffects, drawPaddle, drawPowerup, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
+import { classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawPaddle, drawPowerup } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
 const W = 360;
@@ -123,6 +124,7 @@ function applyPowerup(state, item, context) {
     state.message = "备用球：生命 +1";
   }
   addBurst(state.effects, item.x, item.y, { count: 16, color: classicArcade.green, secondary: classicArcade.yellow, speed: 72, radius: 10 });
+  addFloatingText(state.effects, item.x, item.y - 16, item.type === "life" ? "+1" : "BUFF", { color: classicArcade.yellow });
   context.playSound?.("score");
 }
 
@@ -224,7 +226,9 @@ function update(state, config, controls, dt, context) {
     state.score += 20;
     addBurst(state.effects, ball.x, ball.y, { count: 8, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 52, life: 0.22, radius: 5 });
     if (hit.hp <= 0) {
-      addBurst(state.effects, hit.x + hit.w / 2, hit.y + hit.h / 2, { count: 14, color: classicArcade.orange, secondary: classicArcade.yellow, speed: 76, radius: 8 });
+      const hitCenter = { x: hit.x + hit.w / 2, y: hit.y + hit.h / 2 };
+      addBurst(state.effects, hitCenter.x, hitCenter.y, { count: 14, color: classicArcade.orange, secondary: classicArcade.yellow, speed: 76, radius: 8 });
+      addFloatingText(state.effects, hitCenter.x, hitCenter.y - 10, "+50", { color: classicArcade.yellow });
       spawnPowerup(state, hit);
       state.bricks = state.bricks.filter((brick) => brick !== hit);
       state.score += 30;
@@ -247,6 +251,7 @@ function update(state, config, controls, dt, context) {
       context.playSound?.("score");
       if (state.boss.hp <= 0) {
         addBurst(state.effects, state.boss.x, state.boss.y, { count: 44, color: classicArcade.red, secondary: classicArcade.yellow, speed: 116, radius: 26 });
+        addFloatingText(state.effects, state.boss.x, state.boss.y - 18, "+900", { color: classicArcade.yellow, size: 16 });
         state.score += 900;
         state.boss = null;
         finish(state, true, context);

@@ -1,7 +1,8 @@
 import { DIRECTION_KEY_MAP, bindDigitalKeys, bindHold, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { clamp, rectFromCenter, rectsOverlap } from "../arcade/collision.js";
+import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
-import { addBurst, classicArcade, drawArcadeBackdrop, drawBase, drawEffects, drawPowerup, drawTankSprite, drawTankWall, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { classicArcade, drawArcadeBackdrop, drawBase, drawPowerup, drawTankSprite, drawTankWall } from "../arcade/classic-visuals.js";
 
 const W = 360;
 const H = 360;
@@ -336,6 +337,7 @@ function applyPowerup(state, item, context) {
     state.message = "维修补给：生命 +1";
   }
   addBurst(state.effects, item.x, item.y, { count: 16, color: classicArcade.green, secondary: classicArcade.yellow, speed: 72, radius: 10 });
+  addFloatingText(state.effects, item.x, item.y - 16, item.type === "repair" ? "+1" : "BUFF", { color: classicArcade.yellow });
   context.playSound?.("score");
 }
 
@@ -469,6 +471,7 @@ function hitMineWithBullet(state, bulletRect) {
 function damagePlayer(state) {
   if (state.player.invuln > 0) return;
   addBurst(state.effects, state.player.x, state.player.y, { count: 18, color: classicArcade.red, secondary: classicArcade.yellow, speed: 92, radius: 11 });
+  addFloatingText(state.effects, state.player.x, state.player.y - 16, "-1", { color: classicArcade.red });
   state.shake = Math.max(state.shake, 5);
   state.player.lives -= 1;
   const playerSpawn = playerSpawnFor(state.map || mapForLevel(state.level));
@@ -487,6 +490,7 @@ function destroyEnemy(state, hit, context, source = "shot") {
     speed: hit.boss ? 118 : 92,
     radius: hit.boss ? 18 : 12
   });
+  addFloatingText(state.effects, hit.x, hit.y - 16, hit.boss ? "+600" : source === "mine" ? "+130" : "+100", { color: classicArcade.yellow, size: hit.boss ? 16 : 14 });
   state.enemies = state.enemies.filter((enemy) => enemy !== hit);
   state.destroyed += 1;
   state.score += hit.boss ? 600 : source === "mine" ? 130 : 100;

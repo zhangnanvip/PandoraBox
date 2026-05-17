@@ -1,6 +1,7 @@
 import { bindActionKeys, bindSwipeDirection, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { clamp, gridCellInBounds, gridKey, sameGridCell } from "../arcade/collision.js";
-import { addBurst, classicArcade, drawEffects, drawFood, drawPixelRect, drawPowerup, drawSnakeArena, drawSnakeSegment, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
+import { classicArcade, drawFood, drawPixelRect, drawPowerup, drawSnakeArena, drawSnakeSegment } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
 const SIZE = 18;
@@ -183,6 +184,7 @@ function step(state, config, context) {
     state.shield = 0;
     state.message = "护盾破障";
     addBurst(state.effects, center.x, center.y, { count: 18, color: classicArcade.blue, secondary: classicArcade.white, speed: 82, radius: 10 });
+    addFloatingText(state.effects, center.x, center.y - 12, "破障", { color: classicArcade.blue });
     context.playSound?.("move");
     return;
   }
@@ -200,6 +202,7 @@ function step(state, config, context) {
     state.eaten += 1;
     const foodCenter = cellCenter(head);
     addBurst(state.effects, foodCenter.x, foodCenter.y, { count: 14, color: classicArcade.green, secondary: classicArcade.yellow, speed: 72, radius: 9 });
+    addFloatingText(state.effects, foodCenter.x, foodCenter.y - 12, state.food.type === "bonus" ? "+35" : "+10", { color: classicArcade.yellow });
     if (state.food.type === "slow") {
       state.slow = 6;
       state.message = "慢速能量：节奏放缓";

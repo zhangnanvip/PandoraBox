@@ -1,4 +1,5 @@
-import { addBurst, classicArcade, drawArcadeBackdrop, drawEffects, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
+import { classicArcade, drawArcadeBackdrop } from "../arcade/classic-visuals.js";
 import { clamp, distance, withinDistance } from "../arcade/collision.js";
 import { bindActionKeys } from "../arcade/controls.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
@@ -235,6 +236,7 @@ function buildTower(state, cell) {
   state.gold -= def.cost;
   state.message = `建造${def.label}`;
   addBurst(state.effects, tower.x, tower.y, { color: def.color, secondary: classicArcade.white, count: 8, speed: 45 });
+  addFloatingText(state.effects, tower.x, tower.y - 12, `-${def.cost}`, { color: classicArcade.yellow, size: 12 });
 }
 
 function upgradeSelectedTower(state) {
@@ -256,6 +258,7 @@ function upgradeSelectedTower(state) {
   tower.level += 1;
   state.message = `${TOWER_TYPES[tower.type].label} 升到 Lv.${tower.level}`;
   addBurst(state.effects, tower.x, tower.y, { color: classicArcade.yellow, secondary: classicArcade.cyan, count: 12, speed: 58 });
+  addFloatingText(state.effects, tower.x, tower.y - 12, "UP", { color: classicArcade.yellow });
 }
 
 function sellSelectedTower(state) {
@@ -272,6 +275,7 @@ function sellSelectedTower(state) {
   state.selectedTower = null;
   state.message = `出售${label}，回收 ${refund} 金币`;
   addBurst(state.effects, tower.x, tower.y, { color: classicArcade.green, secondary: classicArcade.white, count: 10, speed: 52 });
+  addFloatingText(state.effects, tower.x, tower.y - 12, `+${refund}`, { color: classicArcade.green });
 }
 
 function spawnEnemy(state, template) {
@@ -345,6 +349,7 @@ function damageEnemy(state, enemy, amount, shot) {
       count: enemy.kind === "boss" ? 24 : 10,
       speed: enemy.kind === "boss" ? 110 : 70
     });
+    addFloatingText(state.effects, enemy.x, enemy.y - 12, enemy.kind === "boss" ? "+360" : `+${enemy.reward}`, { color: classicArcade.yellow, size: enemy.kind === "boss" ? 16 : 13 });
     return true;
   }
   return false;

@@ -1,6 +1,7 @@
 import { bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collision.js";
-import { addBurst, classicArcade, drawEffects, drawEnemyShip, drawPlayerShip, drawPowerup, drawStarfield, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
+import { classicArcade, drawEnemyShip, drawPlayerShip, drawPowerup, drawStarfield } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
 const W = 300;
@@ -134,6 +135,7 @@ function applyPowerup(state, item, context) {
     state.message = "维修胶囊：生命 +1";
   }
   addBurst(state.effects, item.x, item.y, { count: 18, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 78, radius: 10 });
+  addFloatingText(state.effects, item.x, item.y - 16, item.type === "life" ? "+1" : "BUFF", { color: classicArcade.yellow });
   context.playSound?.("score");
 }
 
@@ -278,6 +280,7 @@ function update(state, config, controls, dt, context) {
       addBurst(state.effects, bullet.x, bullet.y, { count: 6, color: classicArcade.cyan, secondary: classicArcade.white, speed: 46, life: 0.18, radius: 4 });
       if (hit.hp <= 0) {
         addBurst(state.effects, hit.x, hit.y, { count: 18, color: classicArcade.red, secondary: classicArcade.yellow, speed: 94, radius: 11 });
+        addFloatingText(state.effects, hit.x, hit.y - 14, "+80", { color: classicArcade.yellow });
         state.killed += 1;
         state.levelKills += 1;
         state.score += 80;
@@ -293,6 +296,7 @@ function update(state, config, controls, dt, context) {
       addBurst(state.effects, bullet.x, bullet.y, { count: 7, color: classicArcade.cyan, secondary: classicArcade.white, speed: 48, life: 0.18, radius: 4 });
       if (state.boss.hp <= 0) {
         addBurst(state.effects, state.boss.x, state.boss.y, { count: 42, color: classicArcade.red, secondary: classicArcade.yellow, speed: 118, radius: 28 });
+        addFloatingText(state.effects, state.boss.x, state.boss.y - 22, "+1000", { color: classicArcade.yellow, size: 16 });
         state.score += 1000;
         state.message = "核心战舰击破";
         state.shake = Math.max(state.shake, 8);
