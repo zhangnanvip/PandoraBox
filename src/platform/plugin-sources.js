@@ -1,3 +1,5 @@
+import { defineUrlGame } from "./game-plugin.js";
+
 export const PLUGIN_SOURCE_CONFIG_URL = new URL("../../public/plugin-sources.json", import.meta.url);
 
 export const DEFAULT_PLUGIN_SOURCE_STATE = {
@@ -75,19 +77,77 @@ function normalizeDiscoveredCatalog(catalog) {
   return {
     loaded: true,
     games: asArray(catalog.games).length,
+    loadableGames: 0,
     title: catalog.name || catalog.sourceId || "插件目录",
-    error: ""
+    error: "",
+    blocked: "",
+    loadErrors: [],
+    registrations: []
+  };
+}
+
+function resolvedAsset(value, baseUrl) {
+  return value ? new URL(value, baseUrl).toString() : value;
+}
+
+function resolveManifestUrls(game, catalogUrl) {
+  return {
+    ...game,
+    entry: resolvedAsset(game.entry, catalogUrl),
+    icon: resolvedAsset(game.icon, catalogUrl),
+    assets: asArray(game.assets).map((asset) => resolvedAsset(asset, catalogUrl)),
+    precacheAssets: asArray(game.precacheAssets).map((asset) => resolvedAsset(asset, catalogUrl))
+  };
+}
+
+function canLoadCatalogGames(catalogUrl, source, config) {
+  if (!source.enabled) return false;
+  const sameOrigin = catalogUrl.origin === PLUGIN_SOURCE_CONFIG_URL.origin;
+  if (sameOrigin || catalogUrl.protocol === "file:") return true;
+
+  const allowedProtocols = asArray(config.constraints?.allowedProtocols, DEFAULT_PLUGIN_SOURCE_STATE.constraints.allowedProtocols);
+  return config.allowRemote === true && allowedProtocols.includes(catalogUrl.protocol);
+}
+
+function normalizeLoadableCatalog(catalog, catalogUrl, source, config) {
+  const base = normalizeDiscoveredCatalog(catalog);
+  if (!base.loaded) return base;
+
+  const canLoad = canLoadCatalogGames(catalogUrl, source, config);
+  if (!canLoad) {
+    return {
+      ...base,
+      blocked: source.enabled ? "扩展源未通过加载策略" : ""
+    };
+  }
+
+  const loadErrors = [];
+  const registrations = asArray(catalog.games).flatMap((game) => {
+    try {
+      return [defineUrlGame(resolveManifestUrls(game, catalogUrl), catalogUrl.toString())];
+    } catch (error) {
+      loadErrors.push(`${game?.id || "unknown"}：${error?.message || "Manifest 无效"}`);
+      return [];
+    }
+  });
+
+  return {
+    ...base,
+    loadableGames: registrations.length,
+    loadErrors,
+    registrations
   };
 }
 
 async function discoverSourceCatalog(source, config, fetcher) {
   if (!canDiscoverSource(source, config)) return source;
   try {
-    const response = await fetcher(new URL(source.url, PLUGIN_SOURCE_CONFIG_URL), { cache: "no-cache" });
+    const catalogUrl = new URL(source.url, PLUGIN_SOURCE_CONFIG_URL);
+    const response = await fetcher(catalogUrl, { cache: "no-cache" });
     if (!response.ok) throw new Error(`目录读取失败：${response.status}`);
     return {
       ...source,
-      catalog: normalizeDiscoveredCatalog(await response.json())
+      catalog: normalizeLoadableCatalog(await response.json(), catalogUrl, source, config)
     };
   } catch (error) {
     return {
@@ -126,9 +186,15 @@ export function summarizePluginSources(pluginSources = DEFAULT_PLUGIN_SOURCE_STA
     total: sources.length,
     enabled: sources.filter((source) => source.enabled).length,
     discoveredGames: sources.reduce((sum, source) => sum + (source.catalog?.games || 0), 0),
+    loadableGames: sources.reduce((sum, source) => sum + (source.catalog?.loadableGames || 0), 0),
     remoteEnabled: pluginSources.allowRemote && sources.some((source) => source.type === "url" && source.enabled),
     remoteAvailable: sources.some((source) => source.type === "url"),
     loaded: pluginSources.loaded === true,
     error: pluginSources.error || ""
   };
+}
+
+export function collectEnabledPluginRegistrations(pluginSources = DEFAULT_PLUGIN_SOURCE_STATE) {
+  return asArray(pluginSources.sources, DEFAULT_PLUGIN_SOURCE_STATE.sources)
+    .flatMap((source) => asArray(source.catalog?.registrations));
 }

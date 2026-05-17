@@ -1,5 +1,6 @@
-import { categories, games, pluginCatalog, precacheAssets, findCategory, findGame, getGameSections, loadGamePlugin } from "./games/catalog.js";
-import { DEFAULT_PLUGIN_SOURCE_STATE, loadPluginSourceState, summarizePluginSources } from "./platform/plugin-sources.js";
+import { categories, games, pluginCatalog, precacheAssets, findCategory, findGame, loadGamePlugin as loadCatalogGamePlugin } from "./games/catalog.js";
+import { loadGamePlugin as loadRegisteredGamePlugin } from "./platform/game-plugin.js";
+import { DEFAULT_PLUGIN_SOURCE_STATE, collectEnabledPluginRegistrations, loadPluginSourceState, summarizePluginSources } from "./platform/plugin-sources.js";
 import { configureSound, playResultSound, playSound as playFeedbackSound } from "./platform/sound.js";
 import { interfaceThemes, themeOrder } from "./theme/skins.js";
 import { loadState, saveState } from "./utils/storage.js";
@@ -41,6 +42,60 @@ const state = {
 let cleanupGame = null;
 let gameLoadToken = 0;
 let installPrompt = null;
+
+function externalGameRegistrations() {
+  const seen = new Set(games.map((game) => game.id));
+  return collectEnabledPluginRegistrations(state.pluginSources).filter((registration) => {
+    const id = registration?.manifest?.id;
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+function availableGames() {
+  return [
+    ...games,
+    ...externalGameRegistrations().map((registration) => registration.manifest)
+  ];
+}
+
+function availablePluginCatalog() {
+  return [
+    ...pluginCatalog,
+    ...externalGameRegistrations().map((registration) => registration.manifest)
+  ];
+}
+
+function findAvailableGame(id) {
+  return availableGames().find((game) => game.id === id) || findGame(id);
+}
+
+function gameMatchesCategory(game, categoryId) {
+  if (categoryId === "all") return true;
+  return game.category === categoryId || (game.secondaryCategories || []).includes(categoryId);
+}
+
+function availableGameSections(categoryId = "all") {
+  const allGames = availableGames();
+  const visibleGames = allGames.filter((game) => gameMatchesCategory(game, categoryId));
+  const groups = categoryId === "all" ? categories.filter((category) => category.id !== "all") : [findCategory(categoryId)];
+
+  return groups
+    .map((category) => ({
+      ...category,
+      games: visibleGames.filter((game) => {
+        if (categoryId === "all") return game.category === category.id;
+        return gameMatchesCategory(game, category.id);
+      })
+    }))
+    .filter((section) => section.games.length > 0);
+}
+
+function loadAvailableGamePlugin(id) {
+  const externalRegistration = externalGameRegistrations().find((registration) => registration.manifest.id === id);
+  return externalRegistration ? loadRegisteredGamePlugin(externalRegistration) : loadCatalogGamePlugin(id);
+}
 
 const difficultyLabel = {
   easy: "简单",
@@ -227,13 +282,13 @@ function toggleFavorite(gameId) {
 
 function sessionsList() {
   return Object.entries(state.sessions)
-    .map(([key, session]) => ({ key, session, game: games.find((item) => item.id === session.gameId) }))
+    .map(([key, session]) => ({ key, session, game: availableGames().find((item) => item.id === session.gameId) }))
     .filter((item) => item.game)
     .sort((a, b) => new Date(b.session.updatedAt || 0) - new Date(a.session.updatedAt || 0));
 }
 
 function recentGames(limit = 4) {
-  return games
+  return availableGames()
     .map((game) => ({ game, progress: progressFor(game.id) }))
     .filter((item) => item.progress.lastPlayed)
     .sort((a, b) => new Date(b.progress.lastPlayed) - new Date(a.progress.lastPlayed))
@@ -242,12 +297,13 @@ function recentGames(limit = 4) {
 
 function totalStats() {
   const progressItems = Object.values(state.progress);
+  const allGames = availableGames();
   const started = progressItems.reduce((sum, item) => sum + (item.started || 0), 0);
   const completed = progressItems.reduce((sum, item) => sum + (item.completed || 0), 0);
   const wins = progressItems.reduce((sum, item) => sum + (item.wins || 0), 0);
   const bestScore = progressItems.reduce((best, item) => Math.max(best, item.bestScore || 0), 0);
-  const distinctStarted = games.filter((game) => progressFor(game.id).started > 0).length;
-  const arcadeStarted = games.filter((game) => game.category === "arcade" && progressFor(game.id).started > 0).length;
+  const distinctStarted = allGames.filter((game) => progressFor(game.id).started > 0).length;
+  const arcadeStarted = allGames.filter((game) => game.category === "arcade" && progressFor(game.id).started > 0).length;
   return {
     started,
     completed,
@@ -296,7 +352,7 @@ function launchGame(game, options, resume = false) {
 
 function startPendingGame(optionsOverride = null, resume = false) {
   if (!state.pendingGame) return;
-  const game = findGame(state.pendingGame);
+  const game = findAvailableGame(state.pendingGame);
   const options = optionsOverride || selectedGameOptions(game);
   launchGame(game, options, resume);
 }
@@ -304,7 +360,7 @@ function startPendingGame(optionsOverride = null, resume = false) {
 function resumeSessionByKey(key) {
   const session = state.sessions[key];
   if (!session) return;
-  const game = games.find((item) => item.id === session.gameId);
+  const game = availableGames().find((item) => item.id === session.gameId);
   if (!game) return;
   const options = {
     ...selectedGameOptions(game),
@@ -741,7 +797,7 @@ function renderRecentShortcut({ game, progress }) {
 }
 
 function renderFavoriteShortcut(gameId) {
-  const game = games.find((item) => item.id === gameId);
+  const game = availableGames().find((item) => item.id === gameId);
   if (!game) return "";
   return `
     <button class="recent-chip favorite-chip" data-prepare-game="${game.id}">
@@ -791,6 +847,9 @@ function renderPluginSourceList() {
             <span>
               ${source.type === "builtin" ? "随应用离线打包" : source.url || "扩展源预留"}
               ${source.catalog?.loaded ? ` · 可发现 ${source.catalog.games} 个游戏` : ""}
+              ${source.catalog?.loadableGames ? ` · 已接入 ${source.catalog.loadableGames} 个游戏` : ""}
+              ${source.catalog?.blocked ? ` · ${source.catalog.blocked}` : ""}
+              ${source.catalog?.loadErrors?.length ? ` · ${source.catalog.loadErrors.length} 个 Manifest 异常` : ""}
               ${source.catalog?.error ? ` · ${source.catalog.error}` : ""}
             </span>
           </div>
@@ -880,7 +939,7 @@ function renderGameCard(game) {
 }
 
 function renderGameSections() {
-  const sections = getGameSections(state.activeCategory);
+  const sections = availableGameSections(state.activeCategory);
   return sections.map((section) => `
     <section class="game-section" aria-label="${section.title}">
       <div class="game-section-head">
@@ -913,7 +972,7 @@ function renderLobby() {
         </div>
         <div class="lobby-status">
           <span>${icon("offline")}可离线</span>
-          <span>${games.length} 局游戏</span>
+          <span>${availableGames().length} 局游戏</span>
           <span>${interfaceThemes[state.theme]?.name || "国风界面"}</span>
         </div>
       </section>
@@ -949,7 +1008,7 @@ function renderLobby() {
 }
 
 function renderGame() {
-  const game = findGame(state.currentGame);
+  const game = findAvailableGame(state.currentGame);
   const token = gameLoadToken;
   const mode = selectedModeFor(game);
   const difficulty = selectedDifficultyFor(game);
@@ -989,7 +1048,7 @@ function renderGame() {
     </section>
   `;
 
-  loadGamePlugin(game.id)
+  loadAvailableGamePlugin(game.id)
     .then((plugin) => {
       if (token !== gameLoadToken) return;
       cleanupGame = plugin.mount(gameRoot, {
@@ -1044,7 +1103,7 @@ function bindShellActions() {
 }
 
 function modalContent() {
-  const game = findGame(state.currentGame || state.pendingGame);
+  const game = findAvailableGame(state.currentGame || state.pendingGame);
 
   if (state.modal === "start") {
     return {
@@ -1168,10 +1227,11 @@ function modalContent() {
             <span>完成 ${Object.values(state.progress).reduce((sum, item) => sum + (item.completed || 0), 0)}</span>
             <span>收藏 ${state.favorites.length}</span>
             <span>成就 ${unlockedAchievementCount()}/${ACHIEVEMENTS.length}</span>
-            <span>插件 ${pluginCatalog.length}</span>
+            <span>插件 ${availablePluginCatalog().length}</span>
             <span>预缓存 ${precacheAssets.length}</span>
             <span>插件源 ${pluginSourceSummary.enabled}/${pluginSourceSummary.total}</span>
             <span>可发现 ${pluginSourceSummary.discoveredGames}</span>
+            <span>已接入 ${pluginSourceSummary.loadableGames}</span>
           </div>
         </div>
         <div>
@@ -1195,7 +1255,7 @@ function renderModal() {
   app.querySelector(".modal-backdrop")?.remove();
   if (!state.modal) return;
 
-  const game = findGame(state.currentGame || state.pendingGame);
+  const game = findAvailableGame(state.currentGame || state.pendingGame);
   const content = modalContent();
   app.insertAdjacentHTML("beforeend", `
     <div class="modal-backdrop" role="presentation" data-close-modal>
