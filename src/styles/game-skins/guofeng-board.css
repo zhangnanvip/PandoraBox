@@ -1,0 +1,41 @@
+.play-frame[data-visual-style="guofeng-board"] .grid-board,
+.play-frame[data-visual-style="guofeng-board"] .xiangqi-board,
+.play-frame[data-visual-style="guofeng-board"] .star-board,
+.play-frame[data-visual-style="guofeng-board"] .flying-board,
+.play-frame[data-visual-style="guofeng-board"] .draughts-board {
+  border-color: rgba(28, 82, 67, 0.34);
+  background-color: #d9ae68;
+}
+
+.play-frame[data-game-id="tictactoe"] .board-wrap {
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+.play-frame[data-game-id="tictactoe"] .tictactoe-board,
+.play-frame[data-game-id="tictactoe"] .tictactoe-cell {
+  touch-action: none;
+}
+
+.play-frame[data-game-id="tictactoe"] .tictactoe-board {
+  width: min(100%, 380px);
+  border-color: rgba(15, 118, 105, 0.2);
+  background:
+    linear-gradient(135deg, rgba(230, 251, 247, 0.86), rgba(255, 255, 255, 0.74));
+}
+
+.play-frame[data-game-id="tictactoe"] .tictactoe-cell {
+  color: #0f7669;
+  font-size: 3.8rem;
+}
+
+.play-frame[data-game-id="tictactoe"] .tictactoe-cell.is-win {
+  background: rgba(196, 73, 57, 0.12);
+  color: var(--cinnabar);
+}
+
+@media (max-width: 520px) {
+  .play-frame[data-game-id="tictactoe"] .tictactoe-cell {
+    font-size: 3.2rem;
+  }
+}

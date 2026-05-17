@@ -62,6 +62,11 @@ node scripts/create-plugin.mjs maze-runner 迷宫逃脱 puzzle
       "difficultySupport": ["easy", "medium", "hard"],
       "icon": "./sample-dodge/icon.svg",
       "assets": ["./sample-dodge/icon.svg"],
+      "styleSheets": ["./sample-dodge/skin.css"],
+      "visualStyles": [
+        { "value": "classic-arcade", "label": "经典街机", "styleSheets": ["./sample-dodge/skin.css"] }
+      ],
+      "defaultVisualStyle": "classic-arcade",
       "capabilities": {
         "offline": true,
         "fullscreen": true,
@@ -75,6 +80,14 @@ node scripts/create-plugin.mjs maze-runner 迷宫逃脱 puzzle
 
 路径都相对当前 `catalog.json` 解析。`id` 使用小写字母、数字和连字符，不能和内置游戏重复。
 
+皮肤相关字段：
+
+- `styleSheets`: 游戏级 CSS，进入该游戏时加载，回到大厅后卸载。
+- `visualStyles`: 游戏可选择的视觉样式；每个样式也可以声明自己的 `styleSheets`。
+- `defaultVisualStyle`: 默认视觉样式，必须对应 `visualStyles[].value`。
+
+插件 CSS 建议用 `.play-frame[data-game-id="your-game-id"]` 或游戏根节点内的类名做作用域，避免影响大厅或其他游戏。
+
 常用 `capabilities`：
 
 - `offline`: 插件声明可离线运行
@@ -85,7 +98,7 @@ node scripts/create-plugin.mjs maze-runner 迷宫逃脱 puzzle
 - `staged`: 有闯关流程
 - `boss`: 有 Boss 关或 Boss 模式
 
-设置页审核插件源时会展示这些能力声明。用户确认启用后，PandoraBox 会尝试把 `entry`、`icon`、`assets` 和 `precacheAssets` 加入浏览器缓存；缓存成功后审核页会显示“资源已缓存”。
+设置页审核插件源时会展示这些能力声明。用户确认启用后，PandoraBox 会尝试把 `entry`、`icon`、`assets`、`styleSheets`、`visualStyles[].styleSheets` 和 `precacheAssets` 加入浏览器缓存；缓存成功后审核页会显示“资源已缓存”。
 
 ## 入口模块
 
@@ -127,7 +140,7 @@ node scripts/check-plugins.mjs
 - 插件源 catalog 是否存在
 - `sourceId` 是否和插件源 id 匹配
 - 游戏 id 是否重复或冲突
-- entry、icon、assets 文件是否存在
+- entry、icon、assets、styleSheets 文件是否存在
 - JS 语法是否有效
 - entry 模块是否能导入并导出 `mount`
 

@@ -40,11 +40,12 @@ public/games/<type>/...        游戏自己的图标与素材目录
   complexity: "中等",
   accent: "ink",
   visualStyles: [
-    { value: "guofeng-board", label: "国风棋盘" }
+    { value: "guofeng-board", label: "国风棋盘", styleSheets: ["./src/styles/game-skins/guofeng-board.css"] }
   ],
   defaultVisualStyle: "guofeng-board",
   icon: "./public/skins/guofeng-ink/icons/reversi.svg",
   assets: [],
+  styleSheets: [],
   rules: []
 }
 ```
@@ -118,5 +119,5 @@ export function mount(root, context) {
 
 1. 新建 `src/games/<id>/game.js`，导出挂载函数。
 2. 在 `src/games/catalog.js` 里用 `defineLocalGame(manifest, loader)` 注册，并声明适合自己的 `visualStyles`。
-3. 把图标、纹理等静态资源加入 `manifest.assets` 和 `sw.js` 缓存列表。
+3. 把图标、纹理等静态资源加入 `manifest.assets`；把游戏级 CSS 放进 `styleSheets` 或 `visualStyles[].styleSheets`。
 4. 确认移动端尺寸、离线缓存、返回大厅时 cleanup 正常。

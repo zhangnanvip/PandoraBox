@@ -1,0 +1,6 @@
+.arcade-shell[data-visual-style="classic-arcade"] {
+  --arcade-neon: #42f2ff;
+  --arcade-danger: #ff4d5e;
+  --arcade-panel: #121a31;
+  --arcade-floor: #101629;
+}

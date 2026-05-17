@@ -103,6 +103,40 @@ function loadAvailableGamePlugin(id) {
   return externalRegistration ? loadRegisteredGamePlugin(externalRegistration) : loadCatalogGamePlugin(id);
 }
 
+function uniqueStyleSheets(paths) {
+  return [...new Set(paths.filter(Boolean))];
+}
+
+function styleSheetHref(path) {
+  return new URL(path, document.baseURI).toString();
+}
+
+function styleSheetsFor(game, visualStyle) {
+  const activeStyle = (game.visualStyles || []).find((style) => style.value === visualStyle);
+  return uniqueStyleSheets([
+    ...(game.styleSheets || []),
+    ...(activeStyle?.styleSheets || [])
+  ]);
+}
+
+function syncGameStyleSheets(paths = []) {
+  const desired = new Set(paths.map(styleSheetHref));
+  document.querySelectorAll("link[data-game-style-sheet]").forEach((link) => {
+    if (!desired.has(link.href)) link.remove();
+  });
+  paths.forEach((path) => {
+    const href = styleSheetHref(path);
+    const exists = [...document.querySelectorAll("link[data-game-style-sheet]")]
+      .some((link) => link.href === href);
+    if (exists) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.gameStyleSheet = "true";
+    document.head.append(link);
+  });
+}
+
 const difficultyLabel = {
   easy: "简单",
   medium: "中等",
@@ -1505,6 +1539,7 @@ function renderGame() {
   const resumedSession = state.resumeSession ? sessionFor(game, options) : null;
   const canSaveSession = Boolean(game.capabilities?.sessionSave);
   const frameClass = game.capabilities?.fullscreen ? " arcade-play-frame" : "";
+  syncGameStyleSheets(styleSheetsFor(game, visualStyle));
   app.innerHTML = `
     <main class="app-frame play-frame${frameClass}" data-game-id="${escapeAttr(game.id)}" data-category="${escapeAttr(game.category)}" data-visual-style="${escapeAttr(visualStyle)}">
       <header class="play-header">
@@ -1866,6 +1901,7 @@ function render() {
     return;
   }
 
+  syncGameStyleSheets([]);
   if (cleanupGame) {
     gameLoadToken += 1;
     cleanupGame();

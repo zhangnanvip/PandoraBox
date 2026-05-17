@@ -134,6 +134,8 @@ function canDiscoverSource(source, config) {
 }
 
 function normalizeGamePreview(game) {
+  const styleSheets = asArray(game?.styleSheets);
+  const visualStyleSheets = asArray(game?.visualStyles).flatMap((style) => asArray(style?.styleSheets));
   return {
     id: safeSlug(game?.id, "unknown"),
     title: escapeText(game?.title, game?.id || "未命名游戏"),
@@ -147,6 +149,8 @@ function normalizeGamePreview(game) {
     assets: unique([
       game?.entry,
       game?.icon,
+      ...styleSheets,
+      ...visualStyleSheets,
       ...asArray(game?.assets),
       ...asArray(game?.precacheAssets)
     ]).length
@@ -181,6 +185,11 @@ function resolveManifestUrls(game, catalogUrl) {
     ...game,
     entry: resolvedAsset(game.entry, catalogUrl),
     icon: resolvedAsset(game.icon, catalogUrl),
+    styleSheets: asArray(game.styleSheets).map((asset) => resolvedAsset(asset, catalogUrl)),
+    visualStyles: asArray(game.visualStyles).map((style) => ({
+      ...style,
+      styleSheets: asArray(style?.styleSheets).map((asset) => resolvedAsset(asset, catalogUrl))
+    })),
     assets: asArray(game.assets).map((asset) => resolvedAsset(asset, catalogUrl)),
     precacheAssets: asArray(game.precacheAssets).map((asset) => resolvedAsset(asset, catalogUrl))
   };
@@ -190,7 +199,8 @@ function normalizeVisualStyles(styles) {
   return asArray(styles)
     .map((style) => ({
       value: safeSlug(style?.value, ""),
-      label: escapeText(style?.label, "")
+      label: escapeText(style?.label, ""),
+      styleSheets: asArray(style?.styleSheets).map((asset) => String(asset || "")).filter(Boolean)
     }))
     .filter((style) => style.value && style.label);
 }
@@ -222,6 +232,7 @@ function normalizeExternalManifest(game, catalogUrl) {
     complexity: escapeText(manifest.complexity, "中等"),
     accent: safeSlug(manifest.accent, "sky"),
     rules: asArray(manifest.rules).map((rule) => escapeText(rule)),
+    styleSheets: asArray(manifest.styleSheets).map((asset) => String(asset || "")).filter(Boolean),
     visualStyles: normalizeVisualStyles(manifest.visualStyles),
     defaultVisualStyle: safeSlug(manifest.defaultVisualStyle, ""),
     setupFields: normalizeSetupFields(manifest.setupFields)

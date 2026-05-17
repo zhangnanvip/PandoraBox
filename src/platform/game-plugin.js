@@ -42,8 +42,19 @@ export function normalizeGameManifest(manifest) {
   if (manifest.pluginApiVersion && manifest.pluginApiVersion > GAME_PLUGIN_API_VERSION) {
     throw new TypeError(`${manifest.title} requires plugin API ${manifest.pluginApiVersion}, current API is ${GAME_PLUGIN_API_VERSION}.`);
   }
-  const visualStyles = asArray(manifest.visualStyles).filter((style) => style?.value && style?.label);
-  const assets = unique(asArray(manifest.assets));
+  const visualStyles = asArray(manifest.visualStyles)
+    .filter((style) => style?.value && style?.label)
+    .map((style) => ({
+      ...style,
+      styleSheets: unique(asArray(style.styleSheets))
+    }));
+  const styleSheets = unique(asArray(manifest.styleSheets));
+  const visualStyleSheets = unique(visualStyles.flatMap((style) => style.styleSheets));
+  const assets = unique([
+    ...asArray(manifest.assets),
+    ...styleSheets,
+    ...visualStyleSheets
+  ]);
   const precacheAssets = unique([
     manifest.entry,
     manifest.icon,
@@ -65,6 +76,7 @@ export function normalizeGameManifest(manifest) {
     difficultySupport: DEFAULT_DIFFICULTIES,
     progressType: "match",
     assets: [],
+    styleSheets: [],
     precacheAssets: [],
     capabilities: DEFAULT_CAPABILITIES,
     visualStyles: [],
@@ -78,6 +90,7 @@ export function normalizeGameManifest(manifest) {
     visualStyles,
     defaultVisualStyle: manifest.defaultVisualStyle || visualStyles[0]?.value || "",
     assets,
+    styleSheets,
     precacheAssets
   };
 }

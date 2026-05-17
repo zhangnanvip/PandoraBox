@@ -21,11 +21,12 @@
       "modeSupport": ["solo"],
       "difficultySupport": ["easy", "medium", "hard"],
       "progressType": "score",
-      "visualStyles": [{ "value": "classic-arcade", "label": "经典街机" }],
+      "visualStyles": [{ "value": "classic-arcade", "label": "经典街机", "styleSheets": ["./sample-dodge/skin.css"] }],
       "defaultVisualStyle": "classic-arcade",
       "accent": "sky",
       "icon": "./sample-dodge/icon.svg",
       "assets": ["./sample-dodge/icon.svg"],
+      "styleSheets": ["./sample-dodge/skin.css"],
       "capabilities": {
         "offline": true,
         "fullscreen": true,

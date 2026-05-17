@@ -1,4 +1,5 @@
 import { createGameRegistry, defineLocalGame } from "../platform/game-plugin.js";
+import { visualStyleDefinition } from "../theme/game-visuals.js";
 
 export const categories = [
   { id: "all", title: "全部", shortTitle: "全部" },
@@ -10,13 +11,6 @@ export const categories = [
   { id: "arcade", title: "动作街机", shortTitle: "街机" },
   { id: "quick", title: "快速对弈", shortTitle: "快局" }
 ];
-
-const VISUAL_STYLES = {
-  guofengBoard: { value: "guofeng-board", label: "国风棋盘" },
-  classicPuzzle: { value: "classic-puzzle", label: "经典解谜" },
-  classicNumber: { value: "classic-number", label: "经典数字" },
-  classicArcade: { value: "classic-arcade", label: "经典街机" }
-};
 
 const GAME_ENTRIES = {
   gomoku: "./src/games/gomoku/game.js",
@@ -49,7 +43,7 @@ const SHARED_PRECACHE = {
 };
 
 function gameVisualStyle(key) {
-  const style = VISUAL_STYLES[key] || VISUAL_STYLES.guofengBoard;
+  const style = visualStyleDefinition(key);
   return {
     visualStyles: [style],
     defaultVisualStyle: style.value
