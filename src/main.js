@@ -377,6 +377,15 @@ function toggleFavorite(gameId) {
   render();
 }
 
+function favoriteGames(limit = state.favorites.length) {
+  return state.favorites
+    .slice()
+    .reverse()
+    .map((gameId) => availableGames().find((item) => item.id === gameId))
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
 function sessionsList() {
   return Object.entries(state.sessions)
     .map(([key, session]) => ({ key, session, game: availableGames().find((item) => item.id === session.gameId) }))
@@ -519,8 +528,26 @@ function bindRecentActivityActions(root = app) {
   });
 }
 
+function bindGameStartActions(root = app) {
+  root.querySelectorAll("[data-prepare-game]").forEach((button) => {
+    button.addEventListener("click", () => {
+      openModal("start", { pendingGame: button.dataset.prepareGame });
+    });
+  });
+}
+
+function bindFavoriteActions(root = app) {
+  root.querySelectorAll("[data-toggle-favorite]").forEach((button) => {
+    button.addEventListener("click", () => toggleFavorite(button.dataset.toggleFavorite));
+  });
+}
+
 function openHistoryPage() {
   setState({ view: "history", modal: "" });
+}
+
+function openFavoritesPage() {
+  setState({ view: "favorites", modal: "" });
 }
 
 function openAchievementsPage() {
@@ -960,14 +987,24 @@ function renderRecentShortcut({ game, progress, sessionItem }) {
   `;
 }
 
-function renderFavoriteShortcut(gameId) {
-  const game = availableGames().find((item) => item.id === gameId);
-  if (!game) return "";
+function favoriteDetail(game) {
+  const progress = progressFor(game.id);
+  if (progress.lastPlayed) return `最近 ${formatTime(progress.lastPlayed)}`;
+  return `${findCategory(game.category).shortTitle} · 尚未开局`;
+}
+
+function renderFavoriteShortcut(game) {
   return `
-    <button class="recent-chip favorite-chip" data-prepare-game="${game.id}">
-      <span>${game.title}</span>
-      <small>${findCategory(game.category).shortTitle}</small>
-    </button>
+    <article class="recent-activity favorite-activity accent-${game.accent}">
+      <div class="recent-activity-copy">
+        <span class="game-tag">收藏</span>
+        <h3>${game.title}</h3>
+        <p>${favoriteDetail(game)}</p>
+      </div>
+      <div class="recent-actions">
+        <button class="primary-button mini-action" type="button" data-prepare-game="${escapeAttr(game.id)}" aria-label="开始${game.title}">${icon("play")} 开始</button>
+      </div>
+    </article>
   `;
 }
 
@@ -1119,6 +1156,77 @@ function renderHistoryPage() {
   renderModal();
 }
 
+function renderFavoriteItem(game) {
+  const category = findCategory(game.category);
+  const progress = progressFor(game.id);
+  const resultText = progress.lastResult ? `上次 ${outcomeLabel(progress.lastResult)}` : "暂无结算";
+  return `
+    <article class="history-row favorite-row accent-${game.accent}">
+      <div class="game-card-icon history-icon" aria-hidden="true">
+        ${boardPreview(game)}
+      </div>
+      <div class="history-copy">
+        <div class="history-title-line">
+          <span class="game-tag">收藏</span>
+          <span>${category.shortTitle}</span>
+        </div>
+        <h2>${game.title}</h2>
+        <p>${game.subtitle}</p>
+        <div class="quick-stats history-stats">
+          <span>开局 ${progress.started || 0}</span>
+          <span>完成 ${progress.completed || 0}</span>
+          <span>${progress.lastPlayed ? `最近 ${formatTime(progress.lastPlayed)}` : resultText}</span>
+        </div>
+      </div>
+      <div class="history-actions">
+        <button class="primary-button mini-action" type="button" data-prepare-game="${escapeAttr(game.id)}" aria-label="开始${game.title}">${icon("play")} 开始</button>
+        <button class="secondary-button mini-action" type="button" data-toggle-favorite="${escapeAttr(game.id)}" aria-label="取消收藏${game.title}">取消</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderFavoritesPage() {
+  const favorites = favoriteGames();
+  app.innerHTML = `
+    <main class="app-frame lobby-frame">
+      <header class="app-topbar">
+        <div class="brand-lockup">
+          <button class="icon-button top-icon" data-view-lobby aria-label="返回大厅">${icon("back")}</button>
+          <div>
+            <h1>收藏游戏</h1>
+          </div>
+        </div>
+        <button class="icon-button top-icon" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
+      </header>
+
+      <section class="history-page">
+        <div class="achievement-hero history-hero">
+          <div>
+            <span class="game-tag">常玩清单</span>
+            <strong>${favorites.length}</strong>
+            <p>收藏的游戏集中在这里，首页只显示最近收藏的两款。</p>
+          </div>
+          <div class="quick-stats">
+            <span>棋类 ${favorites.filter((game) => game.category === "board").length}</span>
+            <span>街机 ${favorites.filter((game) => game.category === "arcade").length}</span>
+            <span>可续玩 ${favorites.filter((game) => game.capabilities?.sessionSave).length}</span>
+          </div>
+        </div>
+        <div class="history-list">
+          ${favorites.length ? favorites.map(renderFavoriteItem).join("") : "<p class=\"empty-note\">点亮游戏卡片上的星标后会出现在这里。</p>"}
+        </div>
+      </section>
+    </main>
+  `;
+
+  app.querySelector("[data-view-lobby]")?.addEventListener("click", () => setState({ view: "lobby", modal: "" }));
+  bindGameStartActions();
+  bindFavoriteActions();
+  bindShellActions();
+  renderModal();
+}
+
 function pluginSourceById(sourceId) {
   const sources = state.pluginSources.sources || DEFAULT_PLUGIN_SOURCE_STATE.sources;
   return sources.find((source) => source.id === sourceId) || null;
@@ -1245,7 +1353,7 @@ function renderPluginSourceList() {
 function renderLobbyDashboard() {
   const recent = recentActivities(2);
   const stats = totalStats();
-  const favoriteGames = state.favorites.slice(0, 1);
+  const favoriteItems = favoriteGames(2);
   return `
     <section class="lobby-dashboard" aria-label="游戏进度概览">
       <div class="dashboard-panel dashboard-primary compact-dashboard recent-dashboard">
@@ -1269,10 +1377,13 @@ function renderLobbyDashboard() {
             <span class="game-tag">收藏</span>
             <h2>常玩</h2>
           </div>
-          <span>${state.favorites.length} 款</span>
+          <div class="dashboard-head-actions">
+            <span>${favoriteGames().length} 款</span>
+            <button class="dashboard-link" type="button" data-open-favorites>全部</button>
+          </div>
         </div>
         <div class="recent-list favorites-strip">
-          ${favoriteGames.length ? favoriteGames.map(renderFavoriteShortcut).join("") : "<p class=\"empty-note\">点亮卡片星标后会出现在这里。</p>"}
+          ${favoriteItems.length ? favoriteItems.map(renderFavoriteShortcut).join("") : "<p class=\"empty-note\">点亮卡片星标后会出现在这里。</p>"}
         </div>
       </div>
     </section>
@@ -1373,16 +1484,13 @@ function renderLobby() {
   app.querySelectorAll("[data-open-history]").forEach((button) => {
     button.addEventListener("click", openHistoryPage);
   });
+  app.querySelectorAll("[data-open-favorites]").forEach((button) => {
+    button.addEventListener("click", openFavoritesPage);
+  });
   app.querySelector("[data-open-achievements]")?.addEventListener("click", openAchievementsPage);
-  app.querySelectorAll("[data-prepare-game]").forEach((button) => {
-    button.addEventListener("click", () => {
-      openModal("start", { pendingGame: button.dataset.prepareGame });
-    });
-  });
+  bindGameStartActions();
   bindRecentActivityActions();
-  app.querySelectorAll("[data-toggle-favorite]").forEach((button) => {
-    button.addEventListener("click", () => toggleFavorite(button.dataset.toggleFavorite));
-  });
+  bindFavoriteActions();
   bindShellActions();
   renderModal();
 }
@@ -1631,6 +1739,7 @@ function modalContent() {
         <div class="settings-actions">
           <button class="secondary-button" data-open-modal="offline">${icon("offline")} 离线状态</button>
           <button class="secondary-button" data-open-history>${icon("history")} 最近对局</button>
+          <button class="secondary-button" data-open-favorites>${icon("star")} 收藏游戏</button>
           <button class="secondary-button" data-open-achievements>${icon("trophy")} 成就中心</button>
           <button class="secondary-button" data-install-app ${installPrompt ? "" : "disabled"}>安装到设备</button>
         </div>
@@ -1688,6 +1797,9 @@ function renderModal() {
   });
   app.querySelectorAll(".modal-panel [data-open-history]").forEach((button) => {
     button.addEventListener("click", openHistoryPage);
+  });
+  app.querySelectorAll(".modal-panel [data-open-favorites]").forEach((button) => {
+    button.addEventListener("click", openFavoritesPage);
   });
   app.querySelectorAll(".modal-panel [data-review-plugin-source]").forEach((button) => {
     button.addEventListener("click", () => openModal("plugin-source", { pendingPluginSource: button.dataset.reviewPluginSource }));
@@ -1760,6 +1872,7 @@ function render() {
   renderedGameId = "";
   if (state.view === "achievements") renderAchievementPage();
   else if (state.view === "history") renderHistoryPage();
+  else if (state.view === "favorites") renderFavoritesPage();
   else renderLobby();
 }
 

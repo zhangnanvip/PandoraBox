@@ -405,9 +405,17 @@ select:focus-visible {
   font-size: 0.68rem;
 }
 
-.favorites-strip .recent-chip {
+.favorite-activity {
   border-color: rgba(215, 157, 56, 0.32);
   background: rgba(255, 250, 240, 0.74);
+}
+
+.favorite-activity .recent-actions {
+  justify-content: flex-end;
+}
+
+.favorite-row::before {
+  border-left-color: var(--gold);
 }
 
 .compact-dashboard .primary-button {
