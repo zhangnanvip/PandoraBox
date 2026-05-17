@@ -1097,10 +1097,10 @@ function renderPluginSourceList() {
 }
 
 function renderLobbyDashboard() {
-  const sessions = sessionsList().slice(0, 2);
-  const recent = recentGames(2);
+  const sessions = sessionsList().slice(0, 1);
+  const recent = recentGames(1);
   const stats = totalStats();
-  const favoriteGames = state.favorites.slice(0, 2);
+  const favoriteGames = state.favorites.slice(0, 1);
   return `
     <section class="lobby-dashboard" aria-label="游戏进度概览">
       <div class="dashboard-panel dashboard-primary compact-dashboard">
@@ -1155,21 +1155,22 @@ function renderGameCard(game) {
         aria-pressed="${favorite ? "true" : "false"}"
       >${icon("star")}</button>
       <div class="game-card-top">
-        <div>
-          <span class="game-tag">${game.tag}</span>
+        <div class="game-card-icon">
+          ${boardPreview(game)}
+        </div>
+        <div class="game-card-copy">
           <h2>${game.title}</h2>
           <p>${game.subtitle}</p>
           <div class="game-meta">
+            <span class="tag-chip">${game.tag}</span>
             <span>${category.shortTitle}</span>
             ${game.capabilities?.fullscreen ? "<span>全屏</span>" : ""}
             ${game.capabilities?.sessionSave ? "<span>可续玩</span>" : ""}
           </div>
-          ${renderProgressPills(game, true)}
         </div>
-        ${boardPreview(game)}
       </div>
       <div class="game-card-actions">
-        <button class="primary-button" data-prepare-game="${game.id}">${icon("play")} 开始对局</button>
+        <button class="primary-button compact-play-button" data-prepare-game="${game.id}" aria-label="开始${game.title}">${icon("play")} 开始</button>
       </div>
     </article>
   `;
