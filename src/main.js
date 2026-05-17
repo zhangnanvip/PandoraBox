@@ -15,6 +15,7 @@ const preferences = loadState("preferences", {
 });
 const savedProgress = loadState("progress", {});
 const savedSessions = loadState("sessions", {});
+const savedFavorites = loadState("favorites", []);
 const preferredTheme = preferences.theme || preferences.skin || "guofeng";
 
 const state = {
@@ -30,6 +31,7 @@ const state = {
   activeCategory: "all",
   progress: savedProgress && typeof savedProgress === "object" ? savedProgress : {},
   sessions: savedSessions && typeof savedSessions === "object" ? savedSessions : {},
+  favorites: Array.isArray(savedFavorites) ? savedFavorites.filter(Boolean) : [],
   resultSummary: null,
   resumeSession: false
 };
@@ -51,6 +53,45 @@ const modeLabel = {
   local: "本地双人",
   solo: "单人挑战"
 };
+
+const ACHIEVEMENTS = [
+  {
+    id: "first_play",
+    title: "开盒第一局",
+    desc: "开始任意一局游戏",
+    unlocked: (stats) => stats.started >= 1
+  },
+  {
+    id: "first_finish",
+    title: "首个结算",
+    desc: "完成任意一局游戏",
+    unlocked: (stats) => stats.completed >= 1
+  },
+  {
+    id: "first_win",
+    title: "旗开得胜",
+    desc: "赢下一局对局或挑战",
+    unlocked: (stats) => stats.wins >= 1
+  },
+  {
+    id: "arcade_ready",
+    title: "街机上手",
+    desc: "游玩任意动作街机游戏",
+    unlocked: (stats) => stats.arcadeStarted >= 1
+  },
+  {
+    id: "collector",
+    title: "收纳师",
+    desc: "收藏 3 款游戏",
+    unlocked: (stats) => stats.favorites >= 3
+  },
+  {
+    id: "explorer",
+    title: "多面手",
+    desc: "游玩 5 款不同游戏",
+    unlocked: (stats) => stats.distinctStarted >= 5
+  }
+];
 
 function syncSoundPreferences() {
   configureSound({ enabled: state.sound, volume: state.volume });
@@ -77,6 +118,10 @@ function persistProgress() {
 
 function persistSessions() {
   saveState("sessions", state.sessions);
+}
+
+function persistFavorites() {
+  saveState("favorites", state.favorites);
 }
 
 function setState(patch) {
@@ -165,12 +210,69 @@ function sessionSummary(session) {
   ].filter(Boolean).join(" · ");
 }
 
-function startPendingGame(optionsOverride = null, resume = false) {
-  if (!state.pendingGame) return;
-  const game = findGame(state.pendingGame);
-  const mode = selectedModeFor(game);
-  const difficulty = selectedDifficultyFor(game);
-  const options = optionsOverride || selectedGameOptions(game);
+function isFavorite(gameId) {
+  return state.favorites.includes(gameId);
+}
+
+function toggleFavorite(gameId) {
+  const next = isFavorite(gameId)
+    ? state.favorites.filter((id) => id !== gameId)
+    : [...state.favorites, gameId];
+  state.favorites = next;
+  persistFavorites();
+  render();
+}
+
+function sessionsList() {
+  return Object.entries(state.sessions)
+    .map(([key, session]) => ({ key, session, game: games.find((item) => item.id === session.gameId) }))
+    .filter((item) => item.game)
+    .sort((a, b) => new Date(b.session.updatedAt || 0) - new Date(a.session.updatedAt || 0));
+}
+
+function recentGames(limit = 4) {
+  return games
+    .map((game) => ({ game, progress: progressFor(game.id) }))
+    .filter((item) => item.progress.lastPlayed)
+    .sort((a, b) => new Date(b.progress.lastPlayed) - new Date(a.progress.lastPlayed))
+    .slice(0, limit);
+}
+
+function totalStats() {
+  const progressItems = Object.values(state.progress);
+  const started = progressItems.reduce((sum, item) => sum + (item.started || 0), 0);
+  const completed = progressItems.reduce((sum, item) => sum + (item.completed || 0), 0);
+  const wins = progressItems.reduce((sum, item) => sum + (item.wins || 0), 0);
+  const bestScore = progressItems.reduce((best, item) => Math.max(best, item.bestScore || 0), 0);
+  const distinctStarted = games.filter((game) => progressFor(game.id).started > 0).length;
+  const arcadeStarted = games.filter((game) => game.category === "arcade" && progressFor(game.id).started > 0).length;
+  return {
+    started,
+    completed,
+    wins,
+    bestScore,
+    distinctStarted,
+    arcadeStarted,
+    favorites: state.favorites.length,
+    sessions: sessionsList().length
+  };
+}
+
+function achievementStates() {
+  const stats = totalStats();
+  return ACHIEVEMENTS.map((achievement) => ({
+    ...achievement,
+    unlocked: achievement.unlocked(stats)
+  }));
+}
+
+function unlockedAchievementCount() {
+  return achievementStates().filter((achievement) => achievement.unlocked).length;
+}
+
+function launchGame(game, options, resume = false) {
+  const mode = supportedValue(options.mode || state.mode, game.modeSupport || ["ai", "local"], "local");
+  const difficulty = supportedValue(options.difficulty || state.difficulty, game.difficultySupport || ["easy", "medium", "hard"], "medium");
   state.gameOptions = {
     ...state.gameOptions,
     [game.id]: options
@@ -190,6 +292,24 @@ function startPendingGame(optionsOverride = null, resume = false) {
   });
 }
 
+function startPendingGame(optionsOverride = null, resume = false) {
+  if (!state.pendingGame) return;
+  const game = findGame(state.pendingGame);
+  const options = optionsOverride || selectedGameOptions(game);
+  launchGame(game, options, resume);
+}
+
+function resumeSessionByKey(key) {
+  const session = state.sessions[key];
+  if (!session) return;
+  const game = findGame(session.gameId);
+  const options = {
+    ...selectedGameOptions(game),
+    ...(session.options || {})
+  };
+  launchGame(game, options, true);
+}
+
 function icon(name) {
   const paths = {
     settings: '<path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.04.04a2.16 2.16 0 0 1-3.06 3.06l-.04-.04a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.08 1.64V21.4a2.16 2.16 0 0 1-4.32 0v-.08a1.8 1.8 0 0 0-1.08-1.64 1.8 1.8 0 0 0-1.98.36l-.04.04a2.16 2.16 0 0 1-3.06-3.06l.04-.04A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.64-1.08H2.88a2.16 2.16 0 0 1 0-4.32h.08A1.8 1.8 0 0 0 4.6 8.52a1.8 1.8 0 0 0-.36-1.98l-.04-.04A2.16 2.16 0 0 1 7.26 3.44l.04.04a1.8 1.8 0 0 0 1.98.36A1.8 1.8 0 0 0 10.36 2.2V2.12a2.16 2.16 0 0 1 4.32 0v.08a1.8 1.8 0 0 0 1.08 1.64 1.8 1.8 0 0 0 1.98-.36l.04-.04a2.16 2.16 0 0 1 3.06 3.06l-.04.04a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.64 1.08h.08a2.16 2.16 0 0 1 0 4.32h-.08A1.8 1.8 0 0 0 19.4 15Z"/>',
@@ -198,6 +318,7 @@ function icon(name) {
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     play: '<path d="M8 5v14l11-7L8 5Z"/>',
     pause: '<path d="M7 5h3v14H7V5Z"/><path d="M14 5h3v14h-3V5Z"/>',
+    star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>',
     sound: '<path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9.5a4 4 0 0 1 0 5"/>',
     offline: '<path d="M6 19h12a4 4 0 0 0 .6-7.96A6.5 6.5 0 0 0 6 9.2 4.9 4.9 0 0 0 6 19Z"/><path d="m9 14 2.2 2.2L16 11"/>'
   };
@@ -206,6 +327,13 @@ function icon(name) {
 
 function option(value, label, selected) {
   return `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
+}
+
+function escapeAttr(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("<", "&lt;");
 }
 
 function supportedValue(current, supported, fallback) {
@@ -587,10 +715,120 @@ function renderCategoryTabs() {
   `).join("");
 }
 
+function renderSessionShortcut({ key, session, game }) {
+  return `
+    <article class="shortcut-card accent-${game.accent}">
+      <div>
+        <span class="game-tag">继续游戏</span>
+        <h3>${game.title}</h3>
+        <p>${sessionSummary(session) || "已有未完成进度"}</p>
+      </div>
+      <button class="primary-button" data-resume-session="${escapeAttr(key)}">${icon("play")} 继续</button>
+    </article>
+  `;
+}
+
+function renderRecentShortcut({ game, progress }) {
+  return `
+    <button class="recent-chip" data-prepare-game="${game.id}">
+      <span>${game.title}</span>
+      <small>${formatTime(progress.lastPlayed)}</small>
+    </button>
+  `;
+}
+
+function renderFavoriteShortcut(gameId) {
+  const game = games.find((item) => item.id === gameId);
+  if (!game) return "";
+  return `
+    <button class="recent-chip favorite-chip" data-prepare-game="${game.id}">
+      <span>${game.title}</span>
+      <small>${findCategory(game.category).shortTitle}</small>
+    </button>
+  `;
+}
+
+function renderAchievementSummary() {
+  const achievements = achievementStates();
+  const unlocked = achievements.filter((achievement) => achievement.unlocked);
+  const next = achievements.find((achievement) => !achievement.unlocked);
+  return `
+    <div class="achievement-summary">
+      <strong>${unlocked.length}/${achievements.length}</strong>
+      <span>${next ? `下个目标：${next.title}` : "全部基础成就已解锁"}</span>
+    </div>
+  `;
+}
+
+function renderAchievementList() {
+  return `
+    <div class="achievement-list">
+      ${achievementStates().map((achievement) => `
+        <div class="achievement-row ${achievement.unlocked ? "is-unlocked" : ""}">
+          <div>
+            <strong>${achievement.title}</strong>
+            <span>${achievement.desc}</span>
+          </div>
+          <b>${achievement.unlocked ? "已解锁" : "未达成"}</b>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderLobbyDashboard() {
+  const sessions = sessionsList().slice(0, 2);
+  const recent = recentGames(4);
+  const stats = totalStats();
+  const favoriteGames = state.favorites.slice(0, 4);
+  return `
+    <section class="lobby-dashboard" aria-label="游戏进度概览">
+      <div class="dashboard-panel dashboard-primary">
+        <div class="dashboard-head">
+          <div>
+            <span class="game-tag">续玩</span>
+            <h2>接着上次玩</h2>
+          </div>
+          <span>${stats.sessions} 个存档</span>
+        </div>
+        <div class="shortcut-list">
+          ${sessions.length ? sessions.map(renderSessionShortcut).join("") : "<p class=\"empty-note\">暂无未完成游戏。</p>"}
+        </div>
+      </div>
+      <div class="dashboard-panel">
+        <div class="dashboard-head">
+          <div>
+            <span class="game-tag">记录</span>
+            <h2>最近与收藏</h2>
+          </div>
+          <span>${stats.started} 次开局</span>
+        </div>
+        <div class="quick-stats">
+          <span>完成 ${stats.completed}</span>
+          <span>胜利 ${stats.wins}</span>
+          ${stats.bestScore ? `<span>最高 ${stats.bestScore}</span>` : ""}
+        </div>
+        <div class="recent-list">
+          ${recent.length ? recent.map(renderRecentShortcut).join("") : "<p class=\"empty-note\">开始一局后会出现在这里。</p>"}
+        </div>
+        ${favoriteGames.length ? `<div class="recent-list favorites-strip">${favoriteGames.map(renderFavoriteShortcut).join("")}</div>` : ""}
+        ${renderAchievementSummary()}
+      </div>
+    </section>
+  `;
+}
+
 function renderGameCard(game) {
   const category = findCategory(game.category);
+  const favorite = isFavorite(game.id);
   return `
     <article class="game-card accent-${game.accent}">
+      <button
+        class="favorite-button ${favorite ? "is-active" : ""}"
+        data-toggle-favorite="${game.id}"
+        aria-label="${favorite ? "取消收藏" : "收藏"}${game.title}"
+        aria-pressed="${favorite ? "true" : "false"}"
+      >${icon("star")}</button>
       <div class="game-card-top">
         <div>
           <span class="game-tag">${game.tag}</span>
@@ -603,7 +841,9 @@ function renderGameCard(game) {
         </div>
         ${boardPreview(game)}
       </div>
-      <button class="primary-button" data-prepare-game="${game.id}">${icon("play")} 开始对局</button>
+      <div class="game-card-actions">
+        <button class="primary-button" data-prepare-game="${game.id}">${icon("play")} 开始对局</button>
+      </div>
     </article>
   `;
 }
@@ -647,6 +887,8 @@ function renderLobby() {
         </div>
       </section>
 
+      ${renderLobbyDashboard()}
+
       <section class="category-tabs" aria-label="游戏分类">
         ${renderCategoryTabs()}
       </section>
@@ -664,6 +906,12 @@ function renderLobby() {
     button.addEventListener("click", () => {
       openModal("start", { pendingGame: button.dataset.prepareGame });
     });
+  });
+  app.querySelectorAll("[data-resume-session]").forEach((button) => {
+    button.addEventListener("click", () => resumeSessionByKey(button.dataset.resumeSession));
+  });
+  app.querySelectorAll("[data-toggle-favorite]").forEach((button) => {
+    button.addEventListener("click", () => toggleFavorite(button.dataset.toggleFavorite));
   });
   bindShellActions();
   renderModal();
@@ -884,7 +1132,13 @@ function modalContent() {
           <div class="progress-pills">
             <span>开局 ${Object.values(state.progress).reduce((sum, item) => sum + (item.started || 0), 0)}</span>
             <span>完成 ${Object.values(state.progress).reduce((sum, item) => sum + (item.completed || 0), 0)}</span>
+            <span>收藏 ${state.favorites.length}</span>
+            <span>成就 ${unlockedAchievementCount()}/${ACHIEVEMENTS.length}</span>
           </div>
+        </div>
+        <div>
+          <span class="modal-label">基础成就</span>
+          ${renderAchievementList()}
         </div>
         <div class="settings-actions">
           <button class="secondary-button" data-open-modal="offline">${icon("offline")} 离线状态</button>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "pandora-box-v30";
+const CACHE_NAME = "pandora-box-v31";
 const SCOPE_URL = new URL(self.registration.scope);
 
 const APP_SHELL = [
