@@ -1218,12 +1218,14 @@ select {
   white-space: nowrap;
 }
 
-.achievement-list {
+.achievement-list,
+.plugin-source-list {
   display: grid;
   gap: 8px;
 }
 
-.achievement-row {
+.achievement-row,
+.plugin-source-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
@@ -1236,33 +1238,40 @@ select {
 }
 
 .achievement-row strong,
-.achievement-row span {
+.achievement-row span,
+.plugin-source-row strong,
+.plugin-source-row span {
   display: block;
 }
 
-.achievement-row strong {
+.achievement-row strong,
+.plugin-source-row strong {
   color: var(--ink);
   font-size: 0.92rem;
 }
 
-.achievement-row span {
+.achievement-row span,
+.plugin-source-row span {
   color: var(--muted);
   font-size: 0.76rem;
   line-height: 1.35;
 }
 
-.achievement-row b {
+.achievement-row b,
+.plugin-source-row b {
   color: var(--muted);
   font-size: 0.76rem;
   white-space: nowrap;
 }
 
-.achievement-row.is-unlocked {
+.achievement-row.is-unlocked,
+.plugin-source-row.is-enabled {
   border-color: rgba(31, 95, 74, 0.26);
   background: rgba(220, 234, 223, 0.62);
 }
 
-.achievement-row.is-unlocked b {
+.achievement-row.is-unlocked b,
+.plugin-source-row.is-enabled b {
   color: var(--jade);
 }
 
@@ -2298,7 +2307,8 @@ input[type="range"] {
 
   .shortcut-card,
   .recent-list,
-  .achievement-row {
+  .achievement-row,
+  .plugin-source-row {
     grid-template-columns: 1fr;
   }
 

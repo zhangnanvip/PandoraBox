@@ -1,38 +1,25 @@
-const CACHE_NAME = "pandora-box-v32";
+import { precacheAssets } from "./src/games/catalog.js";
+
+const CACHE_NAME = "pandora-box-v33";
 const SCOPE_URL = new URL(self.registration.scope);
 
-const APP_SHELL = [
+const CORE_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
+  "./public/plugin-sources.json",
   "./public/icon.svg",
   "./public/icon-180.png",
   "./public/icon-512.png",
   "./src/styles.css",
   "./src/main.js",
   "./src/platform/game-plugin.js",
+  "./src/platform/plugin-sources.js",
   "./src/platform/sound.js",
   "./src/theme/skins.js",
   "./src/utils/storage.js",
   "./src/utils/random.js",
   "./src/games/catalog.js",
-  "./src/games/gomoku/game.js",
-  "./src/games/go/game.js",
-  "./src/games/xiangqi/game.js",
-  "./src/games/reversi/game.js",
-  "./src/games/tictactoe/game.js",
-  "./src/games/checkers/game.js",
-  "./src/games/draughts/game.js",
-  "./src/games/flying/game.js",
-  "./src/games/sudoku/game.js",
-  "./src/games/klotski/game.js",
-  "./src/games/number-2048/game.js",
-  "./src/games/arcade/classic-visuals.js",
-  "./src/games/arcade/controls.js",
-  "./src/games/tank-battle/game.js",
-  "./src/games/space-shooter/game.js",
-  "./src/games/snake/game.js",
-  "./src/games/breakout/game.js",
   "./public/skins/guofeng/textures/paper.svg",
   "./public/skins/guofeng/textures/wood.svg",
   "./public/skins/guofeng/ornaments/cloud-corner.svg",
@@ -57,11 +44,8 @@ const APP_SHELL = [
   "./public/skins/guofeng-ink/icons/sudoku.svg",
   "./public/skins/guofeng-ink/icons/klotski.svg",
   "./public/skins/guofeng-ink/icons/2048.svg",
-  "./public/games/arcade/icons/tank-battle.svg",
-  "./public/games/arcade/icons/space-shooter.svg",
-  "./public/games/arcade/icons/snake.svg",
-  "./public/games/arcade/icons/breakout.svg"
 ];
+const APP_SHELL = [...new Set([...CORE_SHELL, ...precacheAssets])];
 const APP_SHELL_URLS = APP_SHELL.map((path) => new URL(path, SCOPE_URL).toString());
 const INDEX_URL = new URL("./index.html", SCOPE_URL).toString();
 

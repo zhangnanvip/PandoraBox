@@ -1,4 +1,5 @@
 import { categories, games, pluginCatalog, precacheAssets, findCategory, findGame, getGameSections, loadGamePlugin } from "./games/catalog.js";
+import { DEFAULT_PLUGIN_SOURCE_STATE, loadPluginSourceState, summarizePluginSources } from "./platform/plugin-sources.js";
 import { configureSound, playResultSound, playSound as playFeedbackSound } from "./platform/sound.js";
 import { interfaceThemes, themeOrder } from "./theme/skins.js";
 import { loadState, saveState } from "./utils/storage.js";
@@ -32,6 +33,7 @@ const state = {
   progress: savedProgress && typeof savedProgress === "object" ? savedProgress : {},
   sessions: savedSessions && typeof savedSessions === "object" ? savedSessions : {},
   favorites: Array.isArray(savedFavorites) ? savedFavorites.filter(Boolean) : [],
+  pluginSources: DEFAULT_PLUGIN_SOURCE_STATE,
   resultSummary: null,
   resumeSession: false
 };
@@ -777,6 +779,28 @@ function renderAchievementList() {
   `;
 }
 
+function renderPluginSourceList() {
+  const summary = summarizePluginSources(state.pluginSources);
+  const sources = state.pluginSources.sources || DEFAULT_PLUGIN_SOURCE_STATE.sources;
+  return `
+    <div class="plugin-source-list">
+      ${sources.map((source) => `
+        <div class="plugin-source-row ${source.enabled ? "is-enabled" : ""}">
+          <div>
+            <strong>${source.name}</strong>
+            <span>${source.type === "builtin" ? "随应用离线打包" : source.url || "扩展源预留"}</span>
+          </div>
+          <b>${source.enabled ? "启用" : "禁用"}</b>
+        </div>
+      `).join("")}
+      <p class="empty-note">
+        ${summary.remoteEnabled ? "远程扩展源已启用。" : "远程扩展源默认禁用，后续只会在用户明确开启并完成审核后加载。"}
+      </p>
+      ${summary.error ? `<p class="empty-note">${summary.error}</p>` : ""}
+    </div>
+  `;
+}
+
 function renderLobbyDashboard() {
   const sessions = sessionsList().slice(0, 2);
   const recent = recentGames(4);
@@ -1140,7 +1164,12 @@ function modalContent() {
             <span>成就 ${unlockedAchievementCount()}/${ACHIEVEMENTS.length}</span>
             <span>插件 ${pluginCatalog.length}</span>
             <span>预缓存 ${precacheAssets.length}</span>
+            <span>插件源 ${summarizePluginSources(state.pluginSources).enabled}/${summarizePluginSources(state.pluginSources).total}</span>
           </div>
+        </div>
+        <div>
+          <span class="modal-label">插件源</span>
+          ${renderPluginSourceList()}
         </div>
         <div>
           <span class="modal-label">基础成就</span>
@@ -1243,7 +1272,7 @@ function render() {
 
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register(new URL("../sw.js", import.meta.url)).catch(() => {});
+    navigator.serviceWorker.register(new URL("../sw.js", import.meta.url), { type: "module" }).catch(() => {});
   });
 }
 
@@ -1264,3 +1293,9 @@ app.addEventListener("click", (event) => {
 });
 
 render();
+
+loadPluginSourceState().then((pluginSources) => {
+  state.pluginSources = pluginSources;
+  if (!state.currentGame) render();
+  else if (state.modal === "settings") renderModal();
+});

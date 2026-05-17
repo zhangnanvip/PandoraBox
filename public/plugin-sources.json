@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "allowRemote": false,
+  "sources": [
+    {
+      "id": "builtin",
+      "name": "内置游戏包",
+      "type": "builtin",
+      "enabled": true,
+      "trust": "bundled"
+    },
+    {
+      "id": "local-extension",
+      "name": "本地扩展包",
+      "type": "url",
+      "enabled": false,
+      "url": "./plugins/local/catalog.json",
+      "trust": "manual-review"
+    }
+  ],
+  "constraints": {
+    "apiVersion": 1,
+    "remoteCodeDefault": "disabled",
+    "allowedProtocols": ["https:", "http:"],
+    "requireUserEnablement": true,
+    "requireManualReview": true
+  }
+}

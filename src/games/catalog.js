@@ -18,21 +18,21 @@ const VISUAL_STYLES = {
 };
 
 const GAME_ENTRIES = {
-  gomoku: "./gomoku/game.js",
-  go: "./go/game.js",
-  xiangqi: "./xiangqi/game.js",
-  reversi: "./reversi/game.js",
-  tictactoe: "./tictactoe/game.js",
-  checkers: "./checkers/game.js",
-  draughts: "./draughts/game.js",
-  flying: "./flying/game.js",
-  sudoku: "./sudoku/game.js",
-  klotski: "./klotski/game.js",
-  "2048": "./number-2048/game.js",
-  "tank-battle": "./tank-battle/game.js",
-  "space-shooter": "./space-shooter/game.js",
-  snake: "./snake/game.js",
-  breakout: "./breakout/game.js"
+  gomoku: "./src/games/gomoku/game.js",
+  go: "./src/games/go/game.js",
+  xiangqi: "./src/games/xiangqi/game.js",
+  reversi: "./src/games/reversi/game.js",
+  tictactoe: "./src/games/tictactoe/game.js",
+  checkers: "./src/games/checkers/game.js",
+  draughts: "./src/games/draughts/game.js",
+  flying: "./src/games/flying/game.js",
+  sudoku: "./src/games/sudoku/game.js",
+  klotski: "./src/games/klotski/game.js",
+  "2048": "./src/games/number-2048/game.js",
+  "tank-battle": "./src/games/tank-battle/game.js",
+  "space-shooter": "./src/games/space-shooter/game.js",
+  snake: "./src/games/snake/game.js",
+  breakout: "./src/games/breakout/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -40,6 +40,10 @@ const CAPABILITY_PRESETS = {
   puzzle: { fullscreen: false, sessionSave: false, staged: false, boss: false },
   number: { fullscreen: false, sessionSave: false, staged: false, boss: false },
   arcade: { fullscreen: true, sessionSave: true, staged: true, boss: false }
+};
+
+const SHARED_PRECACHE = {
+  arcade: ["./src/games/arcade/classic-visuals.js", "./src/games/arcade/controls.js"]
 };
 
 function gameVisualStyle(key) {
@@ -54,6 +58,7 @@ function gamePluginMeta(id, preset, capabilities = {}) {
   return {
     pluginId: `pandora.local.${id}`,
     entry: GAME_ENTRIES[id],
+    precacheAssets: SHARED_PRECACHE[preset] || [],
     capabilities: {
       ...(CAPABILITY_PRESETS[preset] || CAPABILITY_PRESETS.board),
       ...capabilities
