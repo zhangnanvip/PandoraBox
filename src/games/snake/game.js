@@ -1,4 +1,5 @@
 import { bindActionKeys, bindSwipeDirection, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { clamp } from "../arcade/collision.js";
 import { addBurst, classicArcade, drawEffects, drawFood, drawPixelRect, drawPowerup, drawSnakeArena, drawSnakeSegment, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
@@ -21,10 +22,6 @@ const DIRS = {
 
 function keyOf(cell) {
   return `${cell.x},${cell.y}`;
-}
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
 }
 
 function randomFood(snake, obstacles = []) {

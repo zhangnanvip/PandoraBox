@@ -39,7 +39,12 @@ const CAPABILITY_PRESETS = {
 };
 
 const SHARED_PRECACHE = {
-  arcade: ["./src/games/arcade/classic-visuals.js", "./src/games/arcade/controls.js"]
+  arcade: [
+    "./src/games/arcade/classic-visuals.js",
+    "./src/games/arcade/collision.js",
+    "./src/games/arcade/controls.js",
+    "./src/games/arcade/engine.js"
+  ]
 };
 
 function gameVisualStyle(key) {

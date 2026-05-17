@@ -1806,6 +1806,30 @@ function modalContent() {
     };
   }
 
+  if (state.currentGame) {
+    return {
+      title: "设置",
+      body: `
+        <div class="settings-screen in-game-settings">
+          <div>
+            <span class="modal-label">界面主题</span>
+            <div class="skin-tabs compact">
+              ${renderThemeTabs()}
+            </div>
+          </div>
+          <label class="toggle-row">
+            <span>${icon("sound")} 音效</span>
+            <input type="checkbox" data-modal-sound ${state.sound ? "checked" : ""} />
+          </label>
+          <label class="modal-field">
+            <span>音量 ${state.volume}%</span>
+            <input type="range" min="0" max="100" step="5" value="${state.volume}" data-modal-volume />
+          </label>
+        </div>
+      `
+    };
+  }
+
   const pluginSourceSummary = summarizePluginSources(state.pluginSources);
 
   return {

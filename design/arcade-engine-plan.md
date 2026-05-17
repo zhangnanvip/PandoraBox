@@ -20,7 +20,7 @@
 
 - 抽 `StageManager`：关卡、波次、Boss、结算、下一关提示。
 - 抽 `InputManager`：虚拟摇杆、拖动、长按开火、键盘映射、方向滑动。当前已把方向键、动作键、滑动方向抽到 `src/games/arcade/controls.js` 并迁移到五个 Canvas 游戏。
-- 抽 `Collision`：矩形、圆形、网格碰撞、拾取物判定。
+- 抽 `Collision`：当前已把 `clamp`、矩形碰撞、距离计算抽到 `src/games/arcade/collision.js`，并迁移到坦克大战、雷霆战机、贪吃蛇、打砖块、机关塔防；后续再补圆形、网格碰撞和拾取物判定。
 - 抽 `Effects`：爆炸、屏幕震动、命中特效、道具飘字。
 
 ## 边界

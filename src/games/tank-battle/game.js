@@ -1,4 +1,5 @@
 import { DIRECTION_KEY_MAP, bindDigitalKeys, bindHold, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { clamp, rectsOverlap } from "../arcade/collision.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { addBurst, classicArcade, drawArcadeBackdrop, drawBase, drawEffects, drawPowerup, drawTankSprite, drawTankWall, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
@@ -28,14 +29,6 @@ const LEVEL_PROFILES = [
   { cols: 16, rows: 16, title: "最终指挥部", feature: "Boss · 全地形" }
 ];
 const MAX_LEVEL = LEVEL_PROFILES.length;
-
-function rectsOverlap(a, b) {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
 
 function levelProfile(level) {
   return LEVEL_PROFILES[clamp(level, 1, MAX_LEVEL) - 1] || LEVEL_PROFILES[0];

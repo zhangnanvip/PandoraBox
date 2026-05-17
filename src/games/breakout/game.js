@@ -1,4 +1,5 @@
 import { HORIZONTAL_KEY_MAP, bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { clamp, rectsOverlap as overlap } from "../arcade/collision.js";
 import { addBurst, classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawEffects, drawPaddle, drawPowerup, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
@@ -11,14 +12,6 @@ const CONFIG = {
   devil: { rows: 7, speed: 210, paddle: 58, lives: 2 }
 };
 const MAX_LEVEL = 5;
-
-function overlap(a, b) {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
 
 function levelTuning(config, level) {
   return {

@@ -1,4 +1,5 @@
 import { addBurst, classicArcade, drawArcadeBackdrop, drawEffects, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { clamp, distance } from "../arcade/collision.js";
 import { bindActionKeys } from "../arcade/controls.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
@@ -37,14 +38,6 @@ const WAYPOINTS = [
   ...PATH_CELLS.map(([x, y]) => ({ x: x * CELL + CELL / 2, y: y * CELL + CELL / 2 })),
   { x: W + CELL / 2, y: 4.5 * CELL }
 ];
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function dist(a, b) {
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
 
 function towerStats(tower) {
   const base = TOWER_TYPES[tower.type] || TOWER_TYPES.arrow;
@@ -397,7 +390,7 @@ function updateTowers(state, dt) {
     if (tower.cooldown > 0) continue;
     const stats = towerStats(tower);
     const target = state.enemies
-      .filter((enemy) => dist(tower, enemy) <= stats.range)
+      .filter((enemy) => distance(tower, enemy) <= stats.range)
       .sort((a, b) => b.pathIndex - a.pathIndex || a.hp - b.hp)[0];
     if (!target) continue;
     tower.cooldown = stats.cooldown;
