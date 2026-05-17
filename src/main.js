@@ -1,4 +1,4 @@
-import { categories, games, findCategory, findGame, getGameSections, loadGamePlugin } from "./games/catalog.js";
+import { categories, games, pluginCatalog, precacheAssets, findCategory, findGame, getGameSections, loadGamePlugin } from "./games/catalog.js";
 import { configureSound, playResultSound, playSound as playFeedbackSound } from "./platform/sound.js";
 import { interfaceThemes, themeOrder } from "./theme/skins.js";
 import { loadState, saveState } from "./utils/storage.js";
@@ -302,7 +302,8 @@ function startPendingGame(optionsOverride = null, resume = false) {
 function resumeSessionByKey(key) {
   const session = state.sessions[key];
   if (!session) return;
-  const game = findGame(session.gameId);
+  const game = games.find((item) => item.id === session.gameId);
+  if (!game) return;
   const options = {
     ...selectedGameOptions(game),
     ...(session.options || {})
@@ -836,6 +837,8 @@ function renderGameCard(game) {
           <p>${game.subtitle}</p>
           <div class="game-meta">
             <span>${category.shortTitle}</span>
+            ${game.capabilities?.fullscreen ? "<span>全屏</span>" : ""}
+            ${game.capabilities?.sessionSave ? "<span>可续玩</span>" : ""}
           </div>
           ${renderProgressPills(game, true)}
         </div>
@@ -924,7 +927,8 @@ function renderGame() {
   const difficulty = selectedDifficultyFor(game);
   const options = selectedGameOptions(game);
   const resumedSession = state.resumeSession ? sessionFor(game, options) : null;
-  const frameClass = game.category === "arcade" ? " arcade-play-frame" : "";
+  const canSaveSession = Boolean(game.capabilities?.sessionSave);
+  const frameClass = game.capabilities?.fullscreen ? " arcade-play-frame" : "";
   app.innerHTML = `
     <main class="app-frame play-frame${frameClass}">
       <header class="play-header">
@@ -973,11 +977,11 @@ function renderGame() {
         },
         playSound: (name) => playFeedbackSound(name),
         isPaused: () => Boolean(state.modal && state.modal !== "result"),
-        savedState: resumedSession?.snapshot || null,
-        saveSession: (snapshot, meta) => saveGameSession(game, options, snapshot, meta),
-        clearSession: () => clearGameSession(game, options),
+        savedState: canSaveSession ? resumedSession?.snapshot || null : null,
+        saveSession: canSaveSession ? (snapshot, meta) => saveGameSession(game, options, snapshot, meta) : null,
+        clearSession: canSaveSession ? () => clearGameSession(game, options) : null,
         reportResult: (result) => {
-          clearGameSession(game, options);
+          if (canSaveSession) clearGameSession(game, options);
           handleGameResult(game, result);
         }
       });
@@ -1134,6 +1138,8 @@ function modalContent() {
             <span>完成 ${Object.values(state.progress).reduce((sum, item) => sum + (item.completed || 0), 0)}</span>
             <span>收藏 ${state.favorites.length}</span>
             <span>成就 ${unlockedAchievementCount()}/${ACHIEVEMENTS.length}</span>
+            <span>插件 ${pluginCatalog.length}</span>
+            <span>预缓存 ${precacheAssets.length}</span>
           </div>
         </div>
         <div>

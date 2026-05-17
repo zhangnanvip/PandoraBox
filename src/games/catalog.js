@@ -1,4 +1,4 @@
-import { defineLocalGame, loadGamePlugin as loadRegisteredGamePlugin } from "../platform/game-plugin.js";
+import { createGameRegistry, defineLocalGame } from "../platform/game-plugin.js";
 
 export const categories = [
   { id: "all", title: "全部", shortTitle: "全部" },
@@ -17,11 +17,47 @@ const VISUAL_STYLES = {
   classicArcade: { value: "classic-arcade", label: "经典街机" }
 };
 
+const GAME_ENTRIES = {
+  gomoku: "./gomoku/game.js",
+  go: "./go/game.js",
+  xiangqi: "./xiangqi/game.js",
+  reversi: "./reversi/game.js",
+  tictactoe: "./tictactoe/game.js",
+  checkers: "./checkers/game.js",
+  draughts: "./draughts/game.js",
+  flying: "./flying/game.js",
+  sudoku: "./sudoku/game.js",
+  klotski: "./klotski/game.js",
+  "2048": "./number-2048/game.js",
+  "tank-battle": "./tank-battle/game.js",
+  "space-shooter": "./space-shooter/game.js",
+  snake: "./snake/game.js",
+  breakout: "./breakout/game.js"
+};
+
+const CAPABILITY_PRESETS = {
+  board: { fullscreen: false, sessionSave: false, staged: false, boss: false },
+  puzzle: { fullscreen: false, sessionSave: false, staged: false, boss: false },
+  number: { fullscreen: false, sessionSave: false, staged: false, boss: false },
+  arcade: { fullscreen: true, sessionSave: true, staged: true, boss: false }
+};
+
 function gameVisualStyle(key) {
   const style = VISUAL_STYLES[key] || VISUAL_STYLES.guofengBoard;
   return {
     visualStyles: [style],
     defaultVisualStyle: style.value
+  };
+}
+
+function gamePluginMeta(id, preset, capabilities = {}) {
+  return {
+    pluginId: `pandora.local.${id}`,
+    entry: GAME_ENTRIES[id],
+    capabilities: {
+      ...(CAPABILITY_PRESETS[preset] || CAPABILITY_PRESETS.board),
+      ...capabilities
+    }
   };
 }
 
@@ -37,6 +73,7 @@ const registrations = [
       complexity: "简单",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gamePluginMeta("gomoku", "board"),
       ...gameVisualStyle("guofengBoard"),
       accent: "ink",
       icon: "./public/skins/guofeng-ink/icons/gomoku.svg",
@@ -59,6 +96,7 @@ const registrations = [
       complexity: "困难",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gamePluginMeta("go", "board"),
       ...gameVisualStyle("guofengBoard"),
       setupFields: [
         {
@@ -93,6 +131,7 @@ const registrations = [
       complexity: "困难",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gamePluginMeta("xiangqi", "board"),
       ...gameVisualStyle("guofengBoard"),
       accent: "cinnabar",
       icon: "./public/skins/guofeng-ink/icons/xiangqi.svg",
@@ -115,6 +154,7 @@ const registrations = [
       complexity: "中等",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gamePluginMeta("reversi", "board"),
       ...gameVisualStyle("guofengBoard"),
       accent: "ink",
       icon: "./public/skins/guofeng-ink/icons/reversi.svg",
@@ -137,6 +177,7 @@ const registrations = [
       secondaryCategories: ["quick"],
       complexity: "简单",
       progressType: "match",
+      ...gamePluginMeta("tictactoe", "board"),
       ...gameVisualStyle("guofengBoard"),
       accent: "jade",
       icon: "./public/skins/guofeng-ink/icons/tictactoe.svg",
@@ -159,6 +200,7 @@ const registrations = [
       complexity: "中等",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gamePluginMeta("checkers", "board"),
       ...gameVisualStyle("guofengBoard"),
       accent: "lotus",
       icon: "./public/skins/guofeng-ink/icons/checkers.svg",
@@ -181,6 +223,7 @@ const registrations = [
       complexity: "中等",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
+      ...gamePluginMeta("draughts", "board"),
       ...gameVisualStyle("guofengBoard"),
       accent: "cinnabar",
       icon: "./public/skins/guofeng-ink/icons/draughts.svg",
@@ -203,6 +246,7 @@ const registrations = [
       secondaryCategories: ["quick"],
       complexity: "简单",
       progressType: "match",
+      ...gamePluginMeta("flying", "board"),
       ...gameVisualStyle("guofengBoard"),
       accent: "sky",
       icon: "./public/skins/guofeng-ink/icons/flying.svg",
@@ -225,6 +269,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "puzzle",
+      ...gamePluginMeta("sudoku", "puzzle"),
       ...gameVisualStyle("classicPuzzle"),
       setupFields: [
         {
@@ -260,6 +305,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "puzzle",
+      ...gamePluginMeta("klotski", "puzzle"),
       ...gameVisualStyle("classicPuzzle"),
       setupFields: [
         {
@@ -296,6 +342,7 @@ const registrations = [
       complexity: "简单",
       modeSupport: ["solo"],
       progressType: "score",
+      ...gamePluginMeta("2048", "number"),
       ...gameVisualStyle("classicNumber"),
       setupFields: [
         {
@@ -333,6 +380,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "score",
+      ...gamePluginMeta("tank-battle", "arcade", { boss: true }),
       ...gameVisualStyle("classicArcade"),
       accent: "cinnabar",
       icon: "./public/games/arcade/icons/tank-battle.svg",
@@ -360,6 +408,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "score",
+      ...gamePluginMeta("space-shooter", "arcade", { boss: true }),
       ...gameVisualStyle("classicArcade"),
       accent: "sky",
       icon: "./public/games/arcade/icons/space-shooter.svg",
@@ -387,6 +436,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "score",
+      ...gamePluginMeta("snake", "arcade"),
       ...gameVisualStyle("classicArcade"),
       accent: "jade",
       icon: "./public/games/arcade/icons/snake.svg",
@@ -415,6 +465,7 @@ const registrations = [
       modeSupport: ["solo"],
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "score",
+      ...gamePluginMeta("breakout", "arcade", { boss: true }),
       ...gameVisualStyle("classicArcade"),
       accent: "lotus",
       icon: "./public/games/arcade/icons/breakout.svg",
@@ -432,16 +483,18 @@ const registrations = [
   )
 ];
 
-const gameMap = new Map(registrations.map((registration) => [registration.manifest.id, registration]));
+const registry = createGameRegistry(registrations);
 
-export const games = registrations.map((registration) => registration.manifest);
+export const games = registry.games;
+export const pluginCatalog = registry.manifests;
+export const precacheAssets = registry.precacheAssets;
 
 export function findCategory(id) {
   return categories.find((category) => category.id === id) || categories[0];
 }
 
 export function findGame(id) {
-  return games.find((game) => game.id === id) || games[0];
+  return registry.find(id);
 }
 
 export function gameMatchesCategory(game, categoryId) {
@@ -465,6 +518,5 @@ export function getGameSections(categoryId = "all") {
 }
 
 export async function loadGamePlugin(id) {
-  const registration = gameMap.get(id) || gameMap.get(games[0].id);
-  return loadRegisteredGamePlugin(registration);
+  return registry.load(id);
 }
