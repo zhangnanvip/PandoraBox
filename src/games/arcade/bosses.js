@@ -1,4 +1,6 @@
 import { clamp } from "./collision.js";
+import { triggerFlash, triggerHitStop } from "./feedback.js";
+import { announceProgress } from "./progression.js";
 
 export function createBoss(config = {}) {
   const hp = Math.max(1, Math.round(config.hp ?? config.maxHp ?? 1));
@@ -22,8 +24,44 @@ export function spawnBossOnce(state, factory, options = {}) {
   const boss = factory();
   state.bossSpawned = true;
   state.boss = boss;
-  if (options.message) state.message = options.message;
+  if (options.intro) {
+    announceBossIntro(state, options.context, boss, {
+      message: options.message,
+      ...options.intro
+    });
+  } else if (options.message) {
+    state.message = options.message;
+  }
   options.onSpawn?.(boss);
+  return boss;
+}
+
+export function announceBossIntro(state, context, boss, options = {}) {
+  const title = options.title || "Boss 出现";
+  const subtitle = options.subtitle || options.name || "";
+  const message = options.message || (subtitle ? `${title}：${subtitle}` : title);
+  const position = options.position || (boss ? { x: boss.x, y: boss.y } : null);
+  triggerFlash(boss, options.flash ?? 0.48);
+  triggerHitStop(state, options.hitStop ?? 0.09, options.hitStopScale ?? 0.38);
+  announceProgress(state, context, {
+    message,
+    transition: {
+      title,
+      subtitle,
+      duration: options.duration ?? 1.18
+    },
+    effects: options.effects || state.effects,
+    position,
+    burst: options.burst || {
+      count: 34,
+      color: options.color,
+      secondary: options.secondary,
+      speed: 90,
+      radius: 24
+    },
+    shake: options.shake ?? 5,
+    sound: options.sound ?? "start"
+  });
   return boss;
 }
 

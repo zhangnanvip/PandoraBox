@@ -4,7 +4,7 @@ import { classicArcade, drawArcadeBackdrop } from "../arcade/classic-visuals.js"
 import { clamp, distance, withinDistance } from "../arcade/collision.js";
 import { bindActionKeys } from "../arcade/controls.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
-import { createBossEnemy } from "../arcade/bosses.js";
+import { announceBossIntro, createBossEnemy } from "../arcade/bosses.js";
 import { announceStageClear, drawStageTransition, grantProgressRewards, rewardSummary, updateStageTransition } from "../arcade/progression.js";
 import { advanceWave, createStageState, isFinalWave, restoreStageLevel, stageLabel, stageMeta, totalWaves, waveIndex, waveLabel, waveMeta } from "../arcade/stages.js";
 
@@ -290,9 +290,9 @@ function sellSelectedTower(state) {
   addFloatingText(state.effects, tower.x, tower.y - 12, `+${refund}`, { color: classicArcade.green });
 }
 
-function spawnEnemy(state, template) {
+function spawnEnemy(state, template, context) {
   const start = WAYPOINTS[0];
-  state.enemies.push({
+  const enemy = {
     ...template,
     maxHp: template.hp,
     x: start.x,
@@ -300,7 +300,22 @@ function spawnEnemy(state, template) {
     pathIndex: 0,
     slowTimer: 0,
     slowFactor: 1
-  });
+  };
+  state.enemies.push(enemy);
+  if (enemy.kind === "boss") {
+    announceBossIntro(state, context, enemy, {
+      message: "Boss 出现：魔盒攻城兽",
+      title: "Boss 波来袭",
+      subtitle: "魔盒攻城兽",
+      effects: state.effects,
+      position: { x: 26, y: start.y },
+      burst: { count: 32, color: classicArcade.red, secondary: classicArcade.yellow, speed: 92, radius: 20 },
+      shake: 4.5,
+      flash: 0.5,
+      hitStop: 0.08,
+      hitStopScale: 0.42
+    });
+  }
 }
 
 function startWave(state, config) {
@@ -515,7 +530,7 @@ function update(state, config, dt, context, rawDt = dt) {
     const waveCfg = waveConfig(config, state.level, state.wave);
     state.spawnTimer -= dt;
     if (state.spawnTimer <= 0 && state.queue.length) {
-      spawnEnemy(state, state.queue.shift());
+      spawnEnemy(state, state.queue.shift(), context);
       state.spawnTimer = waveCfg.interval;
     }
     if (!state.queue.length) state.spawning = false;

@@ -137,7 +137,7 @@ function resetBall(state) {
   state.ball = { x: state.paddle.x, y: H - 56, vx: state.levelConfig.speed * (Math.random() < 0.5 ? -0.52 : 0.52), vy: -state.levelConfig.speed };
 }
 
-function spawnBoss(state) {
+function spawnBoss(state, context) {
   spawnBossOnce(state, () => createBoss({
     x: W / 2,
     y: 74,
@@ -146,12 +146,18 @@ function spawnBoss(state) {
     vx: 44,
     hp: state.levelConfig.bossHp
   }), {
-    message: "Boss 砖核心出现",
-    onSpawn: (boss) => {
-      triggerFlash(boss, 0.42);
-      triggerHitStop(state, 0.07, 0.45);
-      addBurst(state.effects, W / 2, 86, { count: 34, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 92, radius: 24 });
-      state.shake = Math.max(state.shake, 4.5);
+    context,
+    intro: {
+      message: "Boss 砖核心出现",
+      title: "Boss 出现",
+      subtitle: "砖核心",
+      effects: state.effects,
+      position: { x: W / 2, y: 86 },
+      burst: { count: 34, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 92, radius: 24 },
+      shake: 4.5,
+      flash: 0.42,
+      hitStop: 0.07,
+      hitStopScale: 0.45
     }
   });
 }
@@ -303,7 +309,7 @@ function update(state, config, controls, dt, context, rawDt = dt) {
   }
   if (!state.bricks.length && !state.boss && !state.over) {
     if (!isFinalStage(state)) advanceLevel(state, config, context);
-    else if (!state.bossSpawned) spawnBoss(state);
+    else if (!state.bossSpawned) spawnBoss(state, context);
   }
 }
 

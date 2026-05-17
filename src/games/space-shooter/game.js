@@ -182,7 +182,7 @@ function spawnEnemy(state, config) {
   state.spawned += 1;
 }
 
-function spawnBoss(state) {
+function spawnBoss(state, context) {
   spawnBossOnce(state, () => createBoss({
     x: W / 2,
     y: 54,
@@ -190,12 +190,18 @@ function spawnBoss(state) {
     hp: state.levelConfig.bossHp,
     fire: 0.65
   }), {
-    message: "Boss 出现：核心战舰",
-    onSpawn: (boss) => {
-      triggerFlash(boss, 0.44);
-      triggerHitStop(state, 0.08, 0.42);
-      addBurst(state.effects, W / 2, 58, { count: 34, color: classicArcade.red, secondary: classicArcade.magenta, speed: 88, radius: 28 });
-      state.shake = Math.max(state.shake, 5);
+    context,
+    intro: {
+      message: "Boss 出现：核心战舰",
+      title: "Boss 出现",
+      subtitle: "核心战舰",
+      effects: state.effects,
+      position: { x: W / 2, y: 58 },
+      burst: { count: 34, color: classicArcade.red, secondary: classicArcade.magenta, speed: 88, radius: 28 },
+      shake: 5,
+      flash: 0.44,
+      hitStop: 0.08,
+      hitStopScale: 0.42
     }
   });
 }
@@ -251,7 +257,7 @@ function update(state, config, controls, dt, context, rawDt = dt) {
     }
   }
   if (state.spawned >= state.levelConfig.waves && !state.enemies.length && isFinalStage(state) && !state.bossSpawned) {
-    spawnBoss(state);
+    spawnBoss(state, context);
   }
   if (state.boss) {
     const boss = state.boss;

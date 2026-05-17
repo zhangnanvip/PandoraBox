@@ -4,7 +4,7 @@ import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } fr
 import { drawFlashHalo, feedbackTimeScale, triggerFlash, triggerHitStop, updateFeedback } from "../arcade/feedback.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { classicArcade, drawArcadeBackdrop, drawBase, drawPowerup, drawTankSprite, drawTankWall } from "../arcade/classic-visuals.js";
-import { bossHealthRatio, createBossEnemy } from "../arcade/bosses.js";
+import { announceBossIntro, bossHealthRatio, createBossEnemy } from "../arcade/bosses.js";
 import { announceStageStart, drawStageTransition, updateStageTransition } from "../arcade/progression.js";
 import { addPickup, chooseRewardType, collectPickups, pickupRect, shouldDropReward, updatePickups } from "../arcade/rewards.js";
 import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } from "../arcade/stages.js";
@@ -358,7 +358,7 @@ function applyPowerup(state, item, context) {
   context.playSound?.("score");
 }
 
-function spawnEnemy(state) {
+function spawnEnemy(state, context) {
   const config = state.levelConfig;
   if (state.spawned >= state.total || state.enemies.length >= config.active) return;
   const map = state.map || mapForLevel(state.level);
@@ -382,9 +382,18 @@ function spawnEnemy(state) {
   const spawnedEnemy = isBoss ? createBossEnemy(enemy) : enemy;
   state.enemies.push(spawnedEnemy);
   if (isBoss) {
-    state.message = "Boss 出现：重装指挥坦克";
-    triggerFlash(spawnedEnemy, 0.5);
-    triggerHitStop(state, 0.08, 0.42);
+    announceBossIntro(state, context, spawnedEnemy, {
+      message: "Boss 出现：重装指挥坦克",
+      title: "Boss 出现",
+      subtitle: "重装指挥坦克",
+      effects: state.effects,
+      position: spawn,
+      burst: { count: 34, color: classicArcade.red, secondary: classicArcade.yellow, speed: 104, radius: 20 },
+      shake: 5.8,
+      flash: 0.5,
+      hitStop: 0.08,
+      hitStopScale: 0.42
+    });
   }
   state.spawned += 1;
 }
@@ -575,7 +584,7 @@ function update(state, config, controls, dt, context, rawDt = dt) {
   }
   state.spawnTimer -= dt;
   if (state.spawnTimer <= 0) {
-    spawnEnemy(state);
+    spawnEnemy(state, context);
     state.spawnTimer = 1.25;
   }
 

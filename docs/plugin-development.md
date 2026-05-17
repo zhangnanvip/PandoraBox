@@ -146,3 +146,7 @@ node scripts/check-plugins.mjs
 - entry 模块是否能导入并导出 `mount`
 
 GitHub Pages 部署前也会自动执行 `npm run check`。
+
+## 复杂 Canvas 游戏
+
+如果要开发坦克大战、塔防、射击、动作闯关这类复杂 Canvas 游戏，优先参考 [复杂游戏 SDK 说明](./complex-game-sdk.md)。里面整理了 `engine`、`controls`、`stages`、`bosses`、`rewards`、`feedback` 等公共模块的职责，以及一个可复制的街机游戏骨架模板。
