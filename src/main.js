@@ -1208,7 +1208,7 @@ function renderFavoritesPage() {
             <p>收藏的游戏集中在这里，首页只显示最近收藏的两款。</p>
           </div>
           <div class="quick-stats">
-            <span>棋类 ${favorites.filter((game) => game.category === "board").length}</span>
+            <span>棋类 ${favorites.filter((game) => game.category === "classic" || game.secondaryCategories?.includes("classic")).length}</span>
             <span>街机 ${favorites.filter((game) => game.category === "arcade").length}</span>
             <span>可续玩 ${favorites.filter((game) => game.capabilities?.sessionSave).length}</span>
           </div>
@@ -1501,11 +1501,12 @@ function renderGame() {
   const mode = selectedModeFor(game);
   const difficulty = selectedDifficultyFor(game);
   const options = selectedGameOptions(game);
+  const visualStyle = selectedVisualStyleFor(game);
   const resumedSession = state.resumeSession ? sessionFor(game, options) : null;
   const canSaveSession = Boolean(game.capabilities?.sessionSave);
   const frameClass = game.capabilities?.fullscreen ? " arcade-play-frame" : "";
   app.innerHTML = `
-    <main class="app-frame play-frame${frameClass}">
+    <main class="app-frame play-frame${frameClass}" data-game-id="${escapeAttr(game.id)}" data-category="${escapeAttr(game.category)}" data-visual-style="${escapeAttr(visualStyle)}">
       <header class="play-header">
         <button class="icon-button" id="back-button" aria-label="返回大厅">${icon("back")}</button>
         <div>
@@ -1544,7 +1545,7 @@ function renderGame() {
         mode,
         options,
         theme: state.theme,
-        visualStyle: selectedVisualStyleFor(game),
+        visualStyle,
         labels: {
           difficulty: difficultyLabel[difficulty],
           mode: modeLabel[mode],

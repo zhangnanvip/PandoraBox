@@ -3316,3 +3316,337 @@ input[type="range"] {
     flex: 1 1 92px;
   }
 }
+
+/* Gameplay visual pass: shared shell first, game-specific skins can override by data-game-id. */
+.play-frame:not(.arcade-play-frame) {
+  position: relative;
+  width: min(100%, 760px);
+  gap: 10px;
+}
+
+.play-frame:not(.arcade-play-frame)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(66, 242, 255, 0.14), transparent 28%),
+    radial-gradient(circle at 88% 18%, rgba(200, 150, 45, 0.13), transparent 26%),
+    linear-gradient(135deg, rgba(15, 118, 105, 0.08), transparent 36%);
+}
+
+.play-frame:not(.arcade-play-frame) .play-header {
+  position: sticky;
+  top: max(8px, env(safe-area-inset-top));
+  z-index: 16;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgba(66, 242, 255, 0.18);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(233, 247, 244, 0.72)),
+    rgba(255, 255, 255, 0.68);
+  box-shadow: 0 16px 34px rgba(20, 36, 32, 0.1);
+  backdrop-filter: blur(18px);
+}
+
+.play-frame:not(.arcade-play-frame) .play-header > div:nth-child(2) {
+  min-width: 0;
+}
+
+.play-frame:not(.arcade-play-frame) .play-header h1 {
+  max-width: 100%;
+  color: #122522;
+  font-size: 1.2rem;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play-frame:not(.arcade-play-frame) .play-header .eyebrow {
+  margin-bottom: 2px;
+  color: var(--jade);
+  font-size: 0.68rem;
+}
+
+.play-frame:not(.arcade-play-frame) .play-header .header-actions {
+  display: flex;
+  gap: 6px;
+  min-width: max-content;
+}
+
+.play-frame:not(.arcade-play-frame) .play-header .icon-button {
+  width: 38px;
+  height: 38px;
+  border-color: rgba(15, 118, 105, 0.14);
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 8px 18px rgba(20, 36, 32, 0.08);
+}
+
+.play-frame:not(.arcade-play-frame) .play-header .icon-button.small {
+  width: 36px;
+  height: 36px;
+}
+
+.play-frame:not(.arcade-play-frame) .game-root {
+  gap: 10px;
+  padding-bottom: 8px;
+}
+
+.play-frame:not(.arcade-play-frame) .game-status,
+.play-frame:not(.arcade-play-frame) .toolbar,
+.play-frame:not(.arcade-play-frame) .game-panel:not(.game-status) {
+  border: 1px solid rgba(20, 36, 32, 0.08);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(239, 248, 245, 0.68)),
+    rgba(255, 255, 255, 0.72);
+  box-shadow: 0 12px 26px rgba(20, 36, 32, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.play-frame:not(.arcade-play-frame) .game-status {
+  position: relative;
+  min-height: 74px;
+  overflow: hidden;
+  border-left: 4px solid var(--jade);
+}
+
+.play-frame:not(.arcade-play-frame) .game-status::after {
+  content: "";
+  position: absolute;
+  right: -28px;
+  top: -42px;
+  width: 112px;
+  aspect-ratio: 1;
+  border: 16px solid rgba(15, 118, 105, 0.06);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.play-frame:not(.arcade-play-frame) .game-status strong {
+  color: #142420;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.play-frame:not(.arcade-play-frame) .game-note {
+  color: var(--muted);
+}
+
+.play-frame:not(.arcade-play-frame) .mini-stats span,
+.play-frame:not(.arcade-play-frame) .score-row span {
+  border: 1px solid rgba(15, 118, 105, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+  color: #31564f;
+}
+
+.play-frame:not(.arcade-play-frame) .board-wrap {
+  position: relative;
+  padding: 10px 6px 12px;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(229, 242, 238, 0.42)),
+    rgba(255, 255, 255, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(66, 242, 255, 0.08);
+  overflow: hidden;
+}
+
+.play-frame:not(.arcade-play-frame) .board-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(15, 118, 105, 0.06);
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.play-frame:not(.arcade-play-frame) .grid-board,
+.play-frame:not(.arcade-play-frame) .xiangqi-board,
+.play-frame:not(.arcade-play-frame) .star-board,
+.play-frame:not(.arcade-play-frame) .flying-board,
+.play-frame:not(.arcade-play-frame) .draughts-board,
+.play-frame:not(.arcade-play-frame) .number-board,
+.play-frame:not(.arcade-play-frame) .tictactoe-board,
+.play-frame:not(.arcade-play-frame) .sudoku-board,
+.play-frame:not(.arcade-play-frame) .klotski-board {
+  position: relative;
+  z-index: 1;
+  contain: layout paint;
+  box-shadow:
+    0 18px 34px rgba(20, 36, 32, 0.13),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.38);
+}
+
+.play-frame[data-visual-style="guofeng-board"] .grid-board,
+.play-frame[data-visual-style="guofeng-board"] .xiangqi-board,
+.play-frame[data-visual-style="guofeng-board"] .star-board,
+.play-frame[data-visual-style="guofeng-board"] .flying-board,
+.play-frame[data-visual-style="guofeng-board"] .draughts-board {
+  border-color: rgba(28, 82, 67, 0.34);
+  background-color: #d9ae68;
+}
+
+.play-frame[data-visual-style="classic-puzzle"] .sudoku-board,
+.play-frame[data-visual-style="classic-puzzle"] .klotski-board {
+  border-color: rgba(15, 118, 105, 0.24);
+  background-color: rgba(251, 255, 249, 0.92);
+}
+
+.play-frame[data-visual-style="classic-number"] .number-board {
+  gap: 8px;
+  width: min(100%, 430px);
+  border-color: rgba(15, 118, 105, 0.18);
+  background:
+    linear-gradient(135deg, rgba(16, 42, 39, 0.14), rgba(200, 150, 45, 0.12)),
+    rgba(14, 39, 35, 0.18);
+}
+
+.play-frame[data-visual-style="classic-number"] .number-board-5,
+.play-frame[data-visual-style="classic-number"] .number-board-6 {
+  width: min(100%, 500px);
+}
+
+.play-frame[data-visual-style="classic-number"] .number-board-8 {
+  width: min(100%, 560px);
+  gap: 5px;
+}
+
+.play-frame[data-visual-style="classic-number"] .number-tile {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.36);
+  font-size: 2rem;
+  transition: background-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.play-frame[data-visual-style="classic-number"] .number-board-5 .number-tile {
+  font-size: 1.62rem;
+}
+
+.play-frame[data-visual-style="classic-number"] .number-board-6 .number-tile {
+  font-size: 1.32rem;
+}
+
+.play-frame[data-visual-style="classic-number"] .number-board-8 .number-tile {
+  font-size: 0.92rem;
+}
+
+.play-frame[data-game-id="tictactoe"] .board-wrap {
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+.play-frame[data-game-id="tictactoe"] .tictactoe-board,
+.play-frame[data-game-id="tictactoe"] .tictactoe-cell {
+  touch-action: none;
+}
+
+.play-frame[data-game-id="tictactoe"] .tictactoe-board {
+  width: min(100%, 380px);
+  border-color: rgba(15, 118, 105, 0.2);
+  background:
+    linear-gradient(135deg, rgba(230, 251, 247, 0.86), rgba(255, 255, 255, 0.74));
+}
+
+.play-frame[data-game-id="tictactoe"] .tictactoe-cell {
+  color: #0f7669;
+  font-size: 3.8rem;
+}
+
+.play-frame[data-game-id="tictactoe"] .tictactoe-cell.is-win {
+  background: rgba(196, 73, 57, 0.12);
+  color: var(--cinnabar);
+}
+
+.play-frame:not(.arcade-play-frame) .toolbar {
+  justify-content: stretch;
+}
+
+.play-frame:not(.arcade-play-frame) .toolbar > button,
+.play-frame:not(.arcade-play-frame) .number-help > button {
+  min-height: 42px;
+}
+
+@media (max-width: 520px) {
+  .play-frame:not(.arcade-play-frame) {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .play-frame:not(.arcade-play-frame) .play-header {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 7px;
+  }
+
+  .play-frame:not(.arcade-play-frame) .play-header .header-actions {
+    grid-column: auto;
+    justify-self: end;
+  }
+
+  .play-frame:not(.arcade-play-frame) .play-header .icon-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .play-frame:not(.arcade-play-frame) .play-header .icon-button.small {
+    width: 34px;
+    height: 34px;
+  }
+
+  .play-frame:not(.arcade-play-frame) .play-header h1 {
+    font-size: 1.08rem;
+  }
+
+  .play-frame:not(.arcade-play-frame) .play-header .eyebrow {
+    display: none;
+  }
+
+  .play-frame:not(.arcade-play-frame) .game-status {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    min-height: 68px;
+  }
+
+  .play-frame:not(.arcade-play-frame) .game-status .mini-stats {
+    justify-content: start;
+  }
+
+  .play-frame:not(.arcade-play-frame) .board-wrap {
+    padding: 8px 4px 10px;
+  }
+
+  .play-frame[data-game-id="tictactoe"] .tictactoe-cell {
+    font-size: 3.2rem;
+  }
+
+  .play-frame[data-visual-style="classic-number"] .number-board {
+    width: min(100%, 430px);
+  }
+
+  .play-frame[data-visual-style="classic-number"] .number-board-8 {
+    gap: 4px;
+    padding: 7px;
+  }
+
+  .play-frame[data-visual-style="classic-number"] .number-board-4 .number-tile {
+    font-size: 1.8rem;
+  }
+
+  .play-frame[data-visual-style="classic-number"] .number-board-5 .number-tile {
+    font-size: 1.38rem;
+  }
+
+  .play-frame[data-visual-style="classic-number"] .number-board-6 .number-tile {
+    font-size: 1.08rem;
+  }
+
+  .play-frame[data-visual-style="classic-number"] .number-board-8 .number-tile {
+    font-size: 0.72rem;
+  }
+}
