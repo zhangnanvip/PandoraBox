@@ -106,6 +106,92 @@ export function bindHold(root, selector, onChange) {
   };
 }
 
+export const DIRECTION_KEY_MAP = {
+  ArrowUp: "up",
+  KeyW: "up",
+  ArrowDown: "down",
+  KeyS: "down",
+  ArrowLeft: "left",
+  KeyA: "left",
+  ArrowRight: "right",
+  KeyD: "right"
+};
+
+export const HORIZONTAL_KEY_MAP = {
+  ArrowLeft: "left",
+  KeyA: "left",
+  ArrowRight: "right",
+  KeyD: "right"
+};
+
+export function bindDigitalKeys(controls, keyMap = DIRECTION_KEY_MAP, options = {}) {
+  const target = options.target || window;
+  const preventDefault = options.preventDefault !== false;
+
+  function setControl(event, pressed) {
+    const control = keyMap[event.code];
+    if (!control) return;
+    if (preventDefault) event.preventDefault();
+    controls[control] = pressed;
+    options.onChange?.(control, pressed, event);
+  }
+
+  const onKeyDown = (event) => setControl(event, true);
+  const onKeyUp = (event) => setControl(event, false);
+  target.addEventListener("keydown", onKeyDown);
+  target.addEventListener("keyup", onKeyUp);
+
+  return () => {
+    target.removeEventListener("keydown", onKeyDown);
+    target.removeEventListener("keyup", onKeyUp);
+  };
+}
+
+export function bindActionKeys(keyMap, onAction, options = {}) {
+  const target = options.target || window;
+  const preventDefault = options.preventDefault !== false;
+
+  const onKeyDown = (event) => {
+    const action = keyMap[event.code];
+    if (!action || (options.ignoreRepeat && event.repeat)) return;
+    if (preventDefault) event.preventDefault();
+    onAction(action, event);
+  };
+
+  target.addEventListener("keydown", onKeyDown);
+  return () => target.removeEventListener("keydown", onKeyDown);
+}
+
+export function bindSwipeDirection(element, onDirection, options = {}) {
+  if (!element) return () => {};
+  const threshold = options.threshold || 24;
+  let pointerStart = null;
+
+  const onPointerDown = (event) => {
+    if (options.preventDefault) event.preventDefault();
+    pointerStart = { x: event.clientX, y: event.clientY };
+  };
+  const onPointerUp = (event) => {
+    if (!pointerStart) return;
+    const dir = directionFromSwipe(event.clientX - pointerStart.x, event.clientY - pointerStart.y, threshold);
+    if (dir) onDirection(dir, event);
+    pointerStart = null;
+  };
+  const onPointerCancel = () => {
+    pointerStart = null;
+  };
+
+  element.addEventListener("pointerdown", onPointerDown);
+  element.addEventListener("pointerup", onPointerUp);
+  element.addEventListener("pointercancel", onPointerCancel);
+
+  return () => {
+    element.removeEventListener("pointerdown", onPointerDown);
+    element.removeEventListener("pointerup", onPointerUp);
+    element.removeEventListener("pointercancel", onPointerCancel);
+  };
+}
+
 export function directionFromSwipe(dx, dy, threshold = 24) {
   if (Math.hypot(dx, dy) < threshold) return "";
   return Math.abs(dx) > Math.abs(dy)

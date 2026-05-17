@@ -1,4 +1,4 @@
-import { bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { HORIZONTAL_KEY_MAP, bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { addBurst, classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawEffects, drawPaddle, drawPowerup, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
@@ -400,16 +400,12 @@ export function mountBreakout(root, context) {
     }
   });
 
-  const onKeyDown = (event) => setKey(event, true);
-  const onKeyUp = (event) => setKey(event, false);
-  function setKey(event, pressed) {
-    if (event.code === "ArrowLeft" || event.code === "KeyA") controls.left = pressed;
-    else if (event.code === "ArrowRight" || event.code === "KeyD") controls.right = pressed;
-    else return;
-    controls.pointerX = NaN;
-    event.preventDefault();
-  }
   const cleanupJoystick = bindVirtualJoystick(root, controls);
+  const cleanupKeys = bindDigitalKeys(controls, HORIZONTAL_KEY_MAP, {
+    onChange: () => {
+      controls.pointerX = NaN;
+    }
+  });
   const cleanupShellRestart = bindShellRestart(root, context, restart);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   const onPointerDown = (event) => {
@@ -431,20 +427,17 @@ export function mountBreakout(root, context) {
   canvas.addEventListener("pointermove", onPointerMove);
   canvas.addEventListener("pointerup", onPointerEnd);
   canvas.addEventListener("pointercancel", onPointerEnd);
-  window.addEventListener("keydown", onKeyDown);
-  window.addEventListener("keyup", onKeyUp);
   loop.start();
 
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     loop.stop();
     cleanupJoystick();
+    cleanupKeys();
     cleanupShellRestart();
     canvas.removeEventListener("pointerdown", onPointerDown);
     canvas.removeEventListener("pointermove", onPointerMove);
     canvas.removeEventListener("pointerup", onPointerEnd);
     canvas.removeEventListener("pointercancel", onPointerEnd);
-    window.removeEventListener("keydown", onKeyDown);
-    window.removeEventListener("keyup", onKeyUp);
   };
 }

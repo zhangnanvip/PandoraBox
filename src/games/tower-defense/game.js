@@ -1,4 +1,5 @@
 import { addBurst, classicArcade, drawArcadeBackdrop, drawEffects, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
+import { bindActionKeys } from "../arcade/controls.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
 const W = 360;
@@ -708,23 +709,17 @@ export function mountTowerDefense(root, context) {
     buildTower(state, cellAt(toCanvasPoint(event)));
   }
 
-  function onKey(event) {
-    const towerKeys = { Digit1: "arrow", Digit2: "cannon", Digit3: "frost", Digit4: "spark" };
-    if (towerKeys[event.code]) {
-      event.preventDefault();
-      state.selectedType = towerKeys[event.code];
+  function handleKeyAction(action) {
+    if (TOWER_TYPES[action]) {
+      state.selectedType = action;
       state.message = `选择${TOWER_TYPES[state.selectedType].label}`;
-    } else if (event.code === "Space") {
-      event.preventDefault();
+    } else if (action === "wave") {
       startWave(state, config);
-    } else if (event.code === "KeyU") {
-      event.preventDefault();
+    } else if (action === "upgrade") {
       upgradeSelectedTower(state);
-    } else if (event.code === "KeyX") {
-      event.preventDefault();
+    } else if (action === "sell") {
       sellSelectedTower(state);
-    } else if (event.code === "KeyR") {
-      event.preventDefault();
+    } else if (action === "restart") {
       restart();
     }
   }
@@ -738,17 +733,26 @@ export function mountTowerDefense(root, context) {
   root.querySelector("[data-action='upgrade']").addEventListener("click", () => upgradeSelectedTower(state));
   root.querySelector("[data-action='wave']").addEventListener("click", () => startWave(state, config));
   root.querySelector("[data-action='sell']").addEventListener("click", () => sellSelectedTower(state));
+  const cleanupKeys = bindActionKeys({
+    Digit1: "arrow",
+    Digit2: "cannon",
+    Digit3: "frost",
+    Digit4: "spark",
+    Space: "wave",
+    KeyU: "upgrade",
+    KeyX: "sell",
+    KeyR: "restart"
+  }, handleKeyAction);
   const cleanupShellRestart = bindShellRestart(root, context, restart);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   canvas.addEventListener("pointerdown", onPointerDown);
-  window.addEventListener("keydown", onKey);
   loop.start();
 
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     loop.stop();
+    cleanupKeys();
     cleanupShellRestart();
     canvas.removeEventListener("pointerdown", onPointerDown);
-    window.removeEventListener("keydown", onKey);
   };
 }

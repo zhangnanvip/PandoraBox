@@ -1,4 +1,4 @@
-import { bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { addBurst, classicArcade, drawEffects, drawEnemyShip, drawPlayerShip, drawPowerup, drawStarfield, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
@@ -492,16 +492,8 @@ export function mountSpaceShooter(root, context) {
     controls.pointer = null;
     controls.pointerOffset = null;
   };
-  const onKeyDown = (event) => setKey(event, true);
-  const onKeyUp = (event) => setKey(event, false);
-  function setKey(event, pressed) {
-    const map = { ArrowUp: "up", KeyW: "up", ArrowDown: "down", KeyS: "down", ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right" };
-    const key = map[event.code];
-    if (!key) return;
-    event.preventDefault();
-    controls[key] = pressed;
-  }
   const cleanupJoystick = bindVirtualJoystick(root, controls);
+  const cleanupKeys = bindDigitalKeys(controls);
   const cleanupShellRestart = bindShellRestart(root, context, restart);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
   root.querySelector("[data-action='clear-pointer']").addEventListener("click", () => { controls.pointer = null; controls.pointerOffset = null; });
@@ -509,20 +501,17 @@ export function mountSpaceShooter(root, context) {
   canvas.addEventListener("pointermove", onPointerMove);
   canvas.addEventListener("pointerup", onPointerLeave);
   canvas.addEventListener("pointercancel", onPointerLeave);
-  window.addEventListener("keydown", onKeyDown);
-  window.addEventListener("keyup", onKeyUp);
   loop.start();
 
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     loop.stop();
     cleanupJoystick();
+    cleanupKeys();
     cleanupShellRestart();
     canvas.removeEventListener("pointerdown", onPointerDown);
     canvas.removeEventListener("pointermove", onPointerMove);
     canvas.removeEventListener("pointerup", onPointerLeave);
     canvas.removeEventListener("pointercancel", onPointerLeave);
-    window.removeEventListener("keydown", onKeyDown);
-    window.removeEventListener("keyup", onKeyUp);
   };
 }

@@ -1,4 +1,4 @@
-import { bindVirtualJoystick, directionFromSwipe, joystickMarkup } from "../arcade/controls.js";
+import { bindActionKeys, bindSwipeDirection, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { addBurst, classicArcade, drawEffects, drawFood, drawPixelRect, drawPowerup, drawSnakeArena, drawSnakeSegment, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
@@ -254,7 +254,6 @@ export function mountSnake(root, context) {
   let state = restoreState(config, context.savedState);
   let acc = 0;
   const controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0 };
-  let pointerStart = null;
 
   root.innerHTML = `
     <section class="game-panel game-status">
@@ -333,42 +332,28 @@ export function mountSnake(root, context) {
     }
   });
 
-  const onKey = (event) => {
-    const map = { ArrowUp: "up", KeyW: "up", ArrowDown: "down", KeyS: "down", ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right" };
-    const dir = map[event.code];
-    if (!dir) return;
-    event.preventDefault();
-    setDir(dir);
-  };
+  const cleanupKeys = bindActionKeys({
+    ArrowUp: "up",
+    KeyW: "up",
+    ArrowDown: "down",
+    KeyS: "down",
+    ArrowLeft: "left",
+    KeyA: "left",
+    ArrowRight: "right",
+    KeyD: "right"
+  }, setDir);
   const cleanupJoystick = bindVirtualJoystick(root, controls, { onDirection: setDir });
-  const onPointerDown = (event) => {
-    pointerStart = { x: event.clientX, y: event.clientY };
-  };
-  const onPointerUp = (event) => {
-    if (!pointerStart) return;
-    const dir = directionFromSwipe(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
-    if (dir) setDir(dir);
-    pointerStart = null;
-  };
-  const onPointerCancel = () => {
-    pointerStart = null;
-  };
+  const cleanupSwipe = bindSwipeDirection(canvas, setDir);
   const cleanupShellRestart = bindShellRestart(root, context, restart);
-  canvas.addEventListener("pointerdown", onPointerDown);
-  canvas.addEventListener("pointerup", onPointerUp);
-  canvas.addEventListener("pointercancel", onPointerCancel);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
-  window.addEventListener("keydown", onKey);
   loop.start();
 
   return () => {
     if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     loop.stop();
+    cleanupKeys();
     cleanupJoystick();
+    cleanupSwipe();
     cleanupShellRestart();
-    canvas.removeEventListener("pointerdown", onPointerDown);
-    canvas.removeEventListener("pointerup", onPointerUp);
-    canvas.removeEventListener("pointercancel", onPointerCancel);
-    window.removeEventListener("keydown", onKey);
   };
 }

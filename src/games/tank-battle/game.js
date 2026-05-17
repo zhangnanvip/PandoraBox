@@ -1,4 +1,4 @@
-import { bindHold, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
+import { DIRECTION_KEY_MAP, bindDigitalKeys, bindHold, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { addBurst, classicArcade, drawArcadeBackdrop, drawBase, drawEffects, drawPowerup, drawTankSprite, drawTankWall, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
@@ -846,32 +846,11 @@ export function mountTankBattle(root, context) {
     loop.resetClock();
   }
 
-  function onKey(event, pressed) {
-    const keyMap = {
-      ArrowUp: "up",
-      KeyW: "up",
-      ArrowDown: "down",
-      KeyS: "down",
-      ArrowLeft: "left",
-      KeyA: "left",
-      ArrowRight: "right",
-      KeyD: "right",
-      Space: "fire"
-    };
-    const key = keyMap[event.code];
-    if (!key) return;
-    event.preventDefault();
-    controls[key] = pressed;
-  }
-  const onKeyDown = (event) => onKey(event, true);
-  const onKeyUp = (event) => onKey(event, false);
-
   const cleanupJoystick = bindVirtualJoystick(root, controls);
   const cleanupFire = bindHold(root, "[data-control='fire']", (pressed) => { controls.fire = pressed; });
+  const cleanupKeys = bindDigitalKeys(controls, { ...DIRECTION_KEY_MAP, Space: "fire" });
   const cleanupShellRestart = bindShellRestart(root, context, restart);
   root.querySelector("[data-action='restart']").addEventListener("click", restart);
-  window.addEventListener("keydown", onKeyDown);
-  window.addEventListener("keyup", onKeyUp);
   loop.start();
 
   return () => {
@@ -879,8 +858,7 @@ export function mountTankBattle(root, context) {
     loop.stop();
     cleanupJoystick();
     cleanupFire();
+    cleanupKeys();
     cleanupShellRestart();
-    window.removeEventListener("keydown", onKeyDown);
-    window.removeEventListener("keyup", onKeyUp);
   };
 }
