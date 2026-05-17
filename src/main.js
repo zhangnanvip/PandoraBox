@@ -40,6 +40,7 @@ const state = {
   pluginSources: DEFAULT_PLUGIN_SOURCE_STATE,
   pluginSourceOverrides: preferences.pluginSourceOverrides && typeof preferences.pluginSourceOverrides === "object" ? preferences.pluginSourceOverrides : {},
   pluginCacheStatus: {},
+  cacheNotice: "",
   resultSummary: null,
   resumeSession: false
 };
@@ -333,6 +334,27 @@ async function cachePluginSourceAssets(sourceId) {
       }
     };
   }
+}
+
+async function clearOfflineCaches() {
+  if (!("caches" in window) || !location.protocol.startsWith("http")) {
+    state.cacheNotice = "当前打开方式不支持清除离线缓存，对局记录未受影响。";
+    renderModal();
+    return;
+  }
+
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((key) => caches.delete(key)));
+    state.pluginCacheStatus = {};
+    state.cacheNotice = keys.length
+      ? `已清除 ${keys.length} 个离线缓存，刷新后会重新拉取资源；对局记录已保留。`
+      : "没有可清除的离线缓存，对局记录已保留。";
+    navigator.serviceWorker?.getRegistration?.().then((registration) => registration?.update?.()).catch(() => {});
+  } catch (error) {
+    state.cacheNotice = `清除缓存失败：${error?.message || "未知错误"}`;
+  }
+  renderModal();
 }
 
 async function setPluginSourceEnabled(sourceId, enabled) {
@@ -1827,8 +1849,10 @@ function modalContent() {
           <button class="secondary-button" data-open-history>${icon("history")} 最近对局</button>
           <button class="secondary-button" data-open-favorites>${icon("star")} 收藏游戏</button>
           <button class="secondary-button" data-open-achievements>${icon("trophy")} 成就中心</button>
+          <button class="secondary-button" data-clear-cache>清除缓存</button>
           <button class="secondary-button" data-install-app ${installPrompt ? "" : "disabled"}>安装到设备</button>
         </div>
+        ${state.cacheNotice ? `<p class="settings-note">${state.cacheNotice}</p>` : ""}
       </div>
     `
   };
@@ -1863,6 +1887,7 @@ function renderModal() {
     field.addEventListener("change", (event) => updateGameOption(game, { [event.target.dataset.modalOption]: event.target.value }));
   });
   app.querySelector("[data-modal-visual-style]")?.addEventListener("change", (event) => updateGameOption(game, { visualStyle: event.target.value }));
+  app.querySelector("[data-clear-cache]")?.addEventListener("click", clearOfflineCaches);
   app.querySelector("[data-modal-sound]")?.addEventListener("change", (event) => {
     const sound = event.target.checked;
     setState({ sound });

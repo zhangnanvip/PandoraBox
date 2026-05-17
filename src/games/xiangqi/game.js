@@ -382,9 +382,9 @@ function renderBoardLines() {
 
 function renderCellStyle(index) {
   const [x, y] = xy(index);
-  const left = 5.5556 + x * 11.1111;
+  const left = (100 / 18) + x * (100 / 9);
   const top = 5 + y * 10;
-  return `left:${left.toFixed(4)}%;top:${top.toFixed(4)}%;`;
+  return `--cell-left:${left.toFixed(6)}%;--cell-top:${top.toFixed(6)}%;`;
 }
 
 export function mountXiangqi(root, context) {

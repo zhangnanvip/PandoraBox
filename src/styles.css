@@ -1502,6 +1502,13 @@ select {
   gap: 14px;
 }
 
+.settings-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .start-preview {
   display: grid;
   grid-template-columns: 96px 1fr;
@@ -2245,7 +2252,11 @@ input[type="range"] {
 
 .xiangqi-lines {
   position: absolute;
-  inset: 5% 5.5556%;
+  left: 5.5555555556%;
+  top: 5%;
+  width: 88.8888888889%;
+  height: 90%;
+  display: block;
   z-index: 1;
   pointer-events: none;
 }
@@ -2263,9 +2274,11 @@ input[type="range"] {
 
 .xiangqi-cell {
   position: absolute;
+  left: var(--cell-left);
+  top: var(--cell-top);
   z-index: 3;
-  width: min(10.2%, 54px);
-  height: min(9.18%, 54px);
+  width: 10.2222222222%;
+  height: 9.2%;
   transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
