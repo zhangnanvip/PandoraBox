@@ -27,6 +27,18 @@ function checkJavaScript(url, failures) {
   if (result.status !== 0) failures.push(`JS 语法检查失败：${fileURLToPath(url)}`);
 }
 
+async function checkEntryModule(url, label, failures) {
+  if (url.protocol !== "file:" || !url.pathname.endsWith(".js")) return;
+  try {
+    const module = await import(`${url.href}?check=${Date.now()}`);
+    if (typeof module.mount !== "function") {
+      failures.push(`${label} 必须导出 mount(root, context) 方法`);
+    }
+  } catch (error) {
+    failures.push(`${label} 模块导入失败：${error?.message || "未知错误"}`);
+  }
+}
+
 const failures = [];
 const sourceConfig = normalizePluginSourceConfig(await readJson(sourceConfigUrl));
 const knownIds = new Set(pluginCatalog.map((game) => game.id));
@@ -42,6 +54,9 @@ for (const source of sourceConfig.sources) {
 
   catalogs += 1;
   const catalog = await readJson(catalogUrl);
+  if (catalog.sourceId && catalog.sourceId !== source.id) {
+    failures.push(`${source.name} sourceId 与插件源 id 不一致：${catalog.sourceId}`);
+  }
   const games = Array.isArray(catalog.games) ? catalog.games : [];
   externalGames += games.length;
 
@@ -57,11 +72,16 @@ for (const source of sourceConfig.sources) {
     if (knownIds.has(manifest.id)) failures.push(`外部插件 id 与内置游戏冲突：${manifest.id}`);
     if (externalIds.has(manifest.id)) failures.push(`外部插件 id 重复：${manifest.id}`);
     externalIds.add(manifest.id);
+    if (!manifest.entry) failures.push(`${manifest.id} 缺少 entry 入口模块`);
 
     for (const asset of manifest.precacheAssets) {
       const assetUrl = resolveCatalogAsset(catalogUrl, asset);
       assertFile(assetUrl, `${manifest.id} asset`, failures);
       checkJavaScript(assetUrl, failures);
+    }
+
+    if (manifest.entry) {
+      await checkEntryModule(resolveCatalogAsset(catalogUrl, manifest.entry), `${manifest.id} entry`, failures);
     }
   }
 }
