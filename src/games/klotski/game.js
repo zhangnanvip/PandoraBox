@@ -310,6 +310,7 @@ export function mountKlotski(root, context) {
             <button
               class="klotski-piece ${item.kind} ${item.id === state.selected ? "is-selected" : ""}"
               data-piece="${item.id}"
+              data-piece-name="${item.name}"
               style="--x:${item.x}; --y:${item.y}; --w:${item.w}; --h:${item.h};"
             >${item.name}</button>
           `).join("")}

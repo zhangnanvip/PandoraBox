@@ -1523,6 +1523,7 @@ function renderGame() {
       <section id="game-root" class="game-root"></section>
     </main>
   `;
+  window.scrollTo(0, 0);
 
   app.querySelector("#back-button").addEventListener("click", () => setState({ currentGame: "" }));
   bindShellActions();

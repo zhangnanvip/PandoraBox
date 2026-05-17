@@ -272,12 +272,13 @@ export function mountSudoku(root, context) {
             const selected = state.selected === index;
             const related = state.selected >= 0 && isPeer(state.selected, index);
             const fixed = isFixed(state, index);
+            const sameValue = value && state.selected >= 0 && value === state.values[state.selected];
             const conflict = (assist.passiveFeedback && hasConflict(state.values, index)) ||
               (assist.realtimeErrors && value && value !== state.solution[index]) ||
               state.checkedIndex === index;
             return `
               <button
-                class="sudoku-cell ${fixed ? "is-fixed" : ""} ${selected ? "is-selected" : ""} ${related ? "is-related" : ""} ${conflict ? "is-error" : ""}"
+                class="sudoku-cell ${fixed ? "is-fixed" : ""} ${selected ? "is-selected" : ""} ${related ? "is-related" : ""} ${sameValue ? "is-same" : ""} ${conflict ? "is-error" : ""}"
                 data-cell="${index}"
               >${value}</button>
             `;
@@ -286,7 +287,16 @@ export function mountSudoku(root, context) {
       </section>
 
       <section class="game-panel sudoku-pad" aria-label="数字面板">
-        ${Array.from({ length: 9 }, (_, index) => `<button class="secondary-button" data-number="${index + 1}">${index + 1}</button>`).join("")}
+        ${Array.from({ length: 9 }, (_, index) => {
+          const digit = String(index + 1);
+          const used = state.values.filter((value) => value === digit).length;
+          const complete = used >= 9;
+          const active = state.selected >= 0 && state.values[state.selected] === digit;
+          return `<button class="secondary-button sudoku-number ${active ? "is-active" : ""} ${complete ? "is-complete" : ""}" data-number="${digit}" ${complete ? "disabled" : ""}>
+            <b>${digit}</b>
+            <small>${used}/9</small>
+          </button>`;
+        }).join("")}
         <button class="secondary-button" data-number="">清除</button>
         <button class="secondary-button" data-action="undo" ${state.history.length ? "" : "disabled"}>悔棋</button>
         ${assist.tools ? "<button class=\"secondary-button\" data-action=\"hint\">提示</button>" : ""}
