@@ -53,13 +53,31 @@ public/plugins/local/
       "modeSupport": ["solo"],
       "difficultySupport": ["easy", "medium", "hard"],
       "icon": "./sample-dodge/icon.svg",
-      "assets": ["./sample-dodge/icon.svg"]
+      "assets": ["./sample-dodge/icon.svg"],
+      "capabilities": {
+        "offline": true,
+        "fullscreen": true,
+        "touchControls": true,
+        "keyboardControls": true
+      }
     }
   ]
 }
 ```
 
 路径都相对当前 `catalog.json` 解析。`id` 使用小写字母、数字和连字符，不能和内置游戏重复。
+
+常用 `capabilities`：
+
+- `offline`: 插件声明可离线运行
+- `fullscreen`: 游戏更适合全屏游玩
+- `sessionSave`: 支持保存未完成进度
+- `touchControls`: 支持移动端触控
+- `keyboardControls`: 支持键盘操作
+- `staged`: 有闯关流程
+- `boss`: 有 Boss 关或 Boss 模式
+
+设置页审核插件源时会展示这些能力声明。用户确认启用后，PandoraBox 会尝试把 `entry`、`icon`、`assets` 和 `precacheAssets` 加入浏览器缓存；缓存成功后审核页会显示“资源已缓存”。
 
 ## 入口模块
 

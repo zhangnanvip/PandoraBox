@@ -1276,6 +1276,18 @@ select {
   font-size: 0.76rem;
 }
 
+.plugin-game-preview {
+  align-items: start;
+}
+
+.plugin-game-preview .progress-pills {
+  margin-top: 7px;
+}
+
+.plugin-capability-pills span {
+  font-size: 0.7rem;
+}
+
 .achievement-row.is-unlocked,
 .plugin-source-row.is-enabled {
   border-color: rgba(31, 95, 74, 0.26);

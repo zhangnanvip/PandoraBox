@@ -38,6 +38,7 @@ const state = {
   favorites: Array.isArray(savedFavorites) ? savedFavorites.filter(Boolean) : [],
   pluginSources: DEFAULT_PLUGIN_SOURCE_STATE,
   pluginSourceOverrides: preferences.pluginSourceOverrides && typeof preferences.pluginSourceOverrides === "object" ? preferences.pluginSourceOverrides : {},
+  pluginCacheStatus: {},
   resultSummary: null,
   resumeSession: false
 };
@@ -112,6 +113,16 @@ const modeLabel = {
   ai: "单人对弈",
   local: "本地双人",
   solo: "单人挑战"
+};
+
+const capabilityLabel = {
+  offline: "离线",
+  fullscreen: "全屏",
+  sessionSave: "续玩",
+  touchControls: "触控",
+  keyboardControls: "键盘",
+  staged: "闯关",
+  boss: "Boss"
 };
 
 const ACHIEVEMENTS = [
@@ -205,25 +216,80 @@ function closeModal() {
   render();
 }
 
-async function refreshPluginSources() {
+async function refreshPluginSources(options = {}) {
   state.pluginSources = await loadPluginSourceState({
     sourceOverrides: state.pluginSourceOverrides
   });
   if (state.currentGame && !availableGames().some((game) => game.id === state.currentGame)) {
     state.currentGame = "";
   }
+  if (options.cacheEnabled) {
+    await Promise.all((state.pluginSources.sources || [])
+      .filter((source) => source.enabled && source.type === "url")
+      .map((source) => cachePluginSourceAssets(source.id)));
+  }
   render();
 }
 
-function setPluginSourceEnabled(sourceId, enabled) {
+function pluginAssetUrlsForSource(source) {
+  return [...new Set((source?.catalog?.registrations || []).flatMap((registration) => registration.manifest.precacheAssets || []))];
+}
+
+function cacheStatusForSource(source) {
+  if (!source?.enabled) return { state: "disabled", text: "未启用" };
+  const status = state.pluginCacheStatus[source.id];
+  if (!status) return { state: "pending", text: "等待缓存" };
+  if (status.state === "ready") return { ...status, text: `资源已缓存 ${status.done}/${status.total}` };
+  if (status.state === "empty") return { ...status, text: "无额外资源" };
+  if (status.state === "unavailable") return { ...status, text: "当前环境不支持缓存" };
+  if (status.state === "error") return { ...status, text: `缓存失败 ${status.done || 0}/${status.total || 0}` };
+  return { ...status, text: "缓存中" };
+}
+
+async function cachePluginSourceAssets(sourceId) {
+  const source = pluginSourceById(sourceId);
+  const urls = pluginAssetUrlsForSource(source);
+  if (!source?.enabled) return;
+  if (!urls.length) {
+    state.pluginCacheStatus = { ...state.pluginCacheStatus, [sourceId]: { state: "empty", done: 0, total: 0 } };
+    return;
+  }
+  if (!("caches" in window) || !location.protocol.startsWith("http")) {
+    state.pluginCacheStatus = { ...state.pluginCacheStatus, [sourceId]: { state: "unavailable", done: 0, total: urls.length } };
+    return;
+  }
+
+  state.pluginCacheStatus = { ...state.pluginCacheStatus, [sourceId]: { state: "loading", done: 0, total: urls.length } };
+  try {
+    const cache = await caches.open("pandora-box-plugin-assets-v1");
+    await cache.addAll(urls);
+    state.pluginCacheStatus = { ...state.pluginCacheStatus, [sourceId]: { state: "ready", done: urls.length, total: urls.length } };
+  } catch (error) {
+    state.pluginCacheStatus = {
+      ...state.pluginCacheStatus,
+      [sourceId]: {
+        state: "error",
+        done: 0,
+        total: urls.length,
+        error: error?.message || "缓存失败"
+      }
+    };
+  }
+}
+
+async function setPluginSourceEnabled(sourceId, enabled) {
   state.pluginSourceOverrides = {
     ...state.pluginSourceOverrides,
     [sourceId]: { enabled }
   };
   state.pendingPluginSource = sourceId;
   state.modal = "plugin-source";
+  if (!enabled) {
+    const { [sourceId]: _removed, ...rest } = state.pluginCacheStatus;
+    state.pluginCacheStatus = rest;
+  }
   persistPreferences();
-  refreshPluginSources();
+  await refreshPluginSources({ cacheEnabled: enabled });
 }
 
 function collectSetupValuesFromModal(game) {
@@ -873,10 +939,22 @@ function renderPluginSourceGameList(source) {
   return `
     <div class="achievement-list">
       ${gamesPreview.map((game) => `
-        <div class="achievement-row">
+        <div class="achievement-row plugin-game-preview">
           <div>
             <strong>${game.title}</strong>
-            <span>${game.subtitle || `${game.id} · ${game.version}`}</span>
+            <span>${[
+              game.subtitle || game.id,
+              game.version ? `v${game.version}` : "",
+              game.modeSupport?.length ? game.modeSupport.map((mode) => modeLabel[mode] || mode).join("/") : "",
+              game.difficultySupport?.length ? game.difficultySupport.map((difficulty) => difficultyLabel[difficulty] || difficulty).join("/") : "",
+              game.assets ? `${game.assets} 个资源` : ""
+            ].filter(Boolean).join(" · ")}</span>
+            <div class="progress-pills plugin-capability-pills">
+              ${Object.entries(game.capabilities || {})
+                .filter(([, enabled]) => enabled)
+                .map(([key]) => `<span>${capabilityLabel[key] || key}</span>`)
+                .join("") || "<span>基础插件</span>"}
+            </div>
           </div>
           <b>${game.status}</b>
         </div>
@@ -900,6 +978,7 @@ function renderPluginSourceAudit(source) {
   const catalog = source.catalog || {};
   const canToggle = source.type === "url" && catalog.loaded && !catalog.error;
   const status = source.enabled ? "已启用" : "未启用";
+  const cacheStatus = cacheStatusForSource(source);
   const action = source.enabled
     ? `<button class="danger-button" data-disable-plugin-source="${escapeAttr(source.id)}">停用扩展包</button>`
     : `<button class="primary-button" data-enable-plugin-source="${escapeAttr(source.id)}" ${canToggle ? "" : "disabled"}>确认启用</button>`;
@@ -912,6 +991,7 @@ function renderPluginSourceAudit(source) {
         <span>${source.trust}</span>
         <span>可发现 ${catalog.games || 0}</span>
         <span>可接入 ${catalog.loadableGames || 0}</span>
+        <span>${cacheStatus.text}</span>
         ${source.enabledByUser ? "<span>本机启用</span>" : ""}
       </div>
       <div class="source-audit-meta">
@@ -921,6 +1001,7 @@ function renderPluginSourceAudit(source) {
         ${catalog.description ? `<span>${catalog.description}</span>` : ""}
         ${catalog.error ? `<span>${catalog.error}</span>` : ""}
         ${catalog.blocked ? `<span>${catalog.blocked}</span>` : ""}
+        ${cacheStatus.error ? `<span>${cacheStatus.error}</span>` : ""}
       </div>
       ${renderPluginSourceGameList(source)}
       ${catalog.loadErrors?.length ? `
@@ -949,6 +1030,7 @@ function renderPluginSourceList() {
               ${source.type === "builtin" ? "随应用离线打包" : source.url || "扩展源预留"}
               ${source.catalog?.loaded ? ` · 可发现 ${source.catalog.games} 个游戏` : ""}
               ${source.catalog?.loadableGames ? ` · 已接入 ${source.catalog.loadableGames} 个游戏` : ""}
+              ${source.enabled ? ` · ${cacheStatusForSource(source).text}` : ""}
               ${source.catalog?.blocked ? ` · ${source.catalog.blocked}` : ""}
               ${source.catalog?.loadErrors?.length ? ` · ${source.catalog.loadErrors.length} 个 Manifest 异常` : ""}
               ${source.catalog?.error ? ` · ${source.catalog.error}` : ""}
@@ -1411,10 +1493,10 @@ function renderModal() {
     button.addEventListener("click", () => openModal("plugin-source", { pendingPluginSource: button.dataset.reviewPluginSource }));
   });
   app.querySelector("[data-enable-plugin-source]")?.addEventListener("click", (event) => {
-    setPluginSourceEnabled(event.currentTarget.dataset.enablePluginSource, true);
+    setPluginSourceEnabled(event.currentTarget.dataset.enablePluginSource, true).catch(() => render());
   });
   app.querySelector("[data-disable-plugin-source]")?.addEventListener("click", (event) => {
-    setPluginSourceEnabled(event.currentTarget.dataset.disablePluginSource, false);
+    setPluginSourceEnabled(event.currentTarget.dataset.disablePluginSource, false).catch(() => render());
   });
   app.querySelector(".modal-panel [data-install-app]")?.addEventListener("click", async () => {
     if (!installPrompt) return;
@@ -1482,4 +1564,4 @@ app.addEventListener("click", (event) => {
 
 render();
 
-refreshPluginSources();
+refreshPluginSources({ cacheEnabled: true });

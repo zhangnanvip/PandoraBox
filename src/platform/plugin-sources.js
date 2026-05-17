@@ -41,6 +41,25 @@ function safeSlug(value, fallback = "") {
   return /^[a-z0-9][a-z0-9-]*$/.test(text) ? text : fallback;
 }
 
+function safeCapabilityKey(value) {
+  const text = String(value || "");
+  return /^[a-z][a-zA-Z0-9]*$/.test(text) ? text : "";
+}
+
+function unique(values) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function normalizeBooleanCapabilities(capabilities = {}) {
+  if (!capabilities || typeof capabilities !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(capabilities)
+      .filter(([, value]) => typeof value === "boolean")
+      .map(([key, value]) => [safeCapabilityKey(key), value])
+      .filter(([key]) => key)
+  );
+}
+
 function normalizeSource(source) {
   if (!source || typeof source !== "object") return null;
   if (!source.id || !source.name || !source.type) return null;
@@ -121,7 +140,16 @@ function normalizeGamePreview(game) {
     subtitle: escapeText(game?.subtitle, ""),
     version: escapeText(game?.version, "0.1.0"),
     status: escapeText(game?.status, "preview"),
-    category: safeSlug(game?.category, "quick")
+    category: safeSlug(game?.category, "quick"),
+    modeSupport: asArray(game?.modeSupport).map((mode) => safeSlug(mode, "")).filter(Boolean),
+    difficultySupport: asArray(game?.difficultySupport).map((difficulty) => safeSlug(difficulty, "")).filter(Boolean),
+    capabilities: normalizeBooleanCapabilities(game?.capabilities),
+    assets: unique([
+      game?.entry,
+      game?.icon,
+      ...asArray(game?.assets),
+      ...asArray(game?.precacheAssets)
+    ]).length
   };
 }
 
