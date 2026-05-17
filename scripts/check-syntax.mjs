@@ -17,6 +17,7 @@ const files = [
   "sw.js",
   "scripts/dev-server.mjs",
   "scripts/check-plugins.mjs",
+  "scripts/create-plugin.mjs",
   ...await collect("src"),
   ...await collect("public/plugins")
 ];

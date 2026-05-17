@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
-    "check": "node scripts/check-syntax.mjs && node scripts/check-plugins.mjs"
+    "check": "node scripts/check-syntax.mjs && node scripts/check-plugins.mjs",
+    "plugin:new": "node scripts/create-plugin.mjs"
   }
 }

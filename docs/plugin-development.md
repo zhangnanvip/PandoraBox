@@ -14,6 +14,14 @@ public/plugins/local/
     icon.svg
 ```
 
+也可以用脚本生成模板：
+
+```bash
+node scripts/create-plugin.mjs maze-runner 迷宫逃脱 puzzle
+```
+
+脚本会创建游戏目录、基础 `game.js`、`icon.svg`，并把 manifest 追加到 `public/plugins/local/catalog.json`。
+
 `public/plugin-sources.json` 负责声明插件源：
 
 ```json
