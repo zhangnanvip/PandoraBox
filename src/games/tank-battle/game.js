@@ -1,5 +1,5 @@
 import { DIRECTION_KEY_MAP, bindDigitalKeys, bindHold, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
-import { clamp, rectsOverlap } from "../arcade/collision.js";
+import { clamp, rectFromCenter, rectsOverlap } from "../arcade/collision.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { addBurst, classicArcade, drawArcadeBackdrop, drawBase, drawEffects, drawPowerup, drawTankSprite, drawTankWall, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 
@@ -52,7 +52,7 @@ function baseFor(map) {
 }
 
 function tankRect(tank, x = tank.x, y = tank.y) {
-  return { x: x - 11, y: y - 11, w: 22, h: 22 };
+  return rectFromCenter({ x, y }, 22);
 }
 
 function wantedDirection(controls) {
@@ -298,7 +298,7 @@ function powerupSpotsFor(state) {
 }
 
 function spotBlocked(state, spot) {
-  const rect = { x: spot.x - 12, y: spot.y - 12, w: 24, h: 24 };
+  const rect = rectFromCenter(spot, 24);
   return state.walls.some((wall) => rectsOverlap(rect, wall)) ||
     state.terrain.some((tile) => tile.type === "river" && rectsOverlap(rect, tile)) ||
     (state.base.alive && rectsOverlap(rect, state.base));
@@ -562,7 +562,7 @@ function update(state, config, controls, dt, context) {
   if (controls.fire && fire(state, state.player, "player")) context.playSound?.("move");
 
   state.powerups = state.powerups.filter((item) => {
-    const collected = rectsOverlap(tankRect(state.player), { x: item.x - 11, y: item.y - 11, w: 22, h: 22 });
+    const collected = rectsOverlap(tankRect(state.player), rectFromCenter(item, 22));
     if (collected) applyPowerup(state, item, context);
     return !collected;
   });
@@ -593,7 +593,7 @@ function update(state, config, controls, dt, context) {
   state.bullets = state.bullets.filter((bullet) => {
     bullet.x += bullet.vx * dt;
     bullet.y += bullet.vy * dt;
-    const rect = { x: bullet.x - 3, y: bullet.y - 3, w: 6, h: 6 };
+    const rect = rectFromCenter(bullet, 6);
     const map = state.map || mapForLevel(state.level);
     if (rect.x < -6 || rect.y < -6 || rect.x > map.w + 6 || rect.y > map.h + 6) return false;
     if (hitMineWithBullet(state, rect)) return false;

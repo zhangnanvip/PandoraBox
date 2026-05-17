@@ -1,5 +1,5 @@
 import { HORIZONTAL_KEY_MAP, bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
-import { clamp, rectsOverlap as overlap } from "../arcade/collision.js";
+import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collision.js";
 import { addBurst, classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawEffects, drawPaddle, drawPowerup, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
@@ -207,8 +207,9 @@ function update(state, config, controls, dt, context) {
     ball.vy *= -1;
     addBurst(state.effects, ball.x, ball.y, { count: 4, color: classicArcade.cyan, secondary: classicArcade.white, speed: 38, life: 0.16, radius: 3 });
   }
+  const ballRect = rectFromCenter(ball, 12);
   const paddleRect = { x: state.paddle.x - state.paddle.w / 2, y: state.paddle.y, w: state.paddle.w, h: 12 };
-  if (ball.vy > 0 && overlap({ x: ball.x - 6, y: ball.y - 6, w: 12, h: 12 }, paddleRect)) {
+  if (ball.vy > 0 && overlap(ballRect, paddleRect)) {
     const offset = (ball.x - state.paddle.x) / (state.paddle.w / 2);
     ball.vx = offset * state.levelConfig.speed * 0.9;
     ball.vy = -Math.abs(ball.vy);
@@ -216,7 +217,7 @@ function update(state, config, controls, dt, context) {
     context.playSound?.("move");
   }
 
-  const hit = state.bricks.find((brick) => overlap({ x: ball.x - 6, y: ball.y - 6, w: 12, h: 12 }, brick));
+  const hit = state.bricks.find((brick) => overlap(ballRect, brick));
   if (hit) {
     hit.hp -= 1;
     ball.vy *= -1;
@@ -235,7 +236,7 @@ function update(state, config, controls, dt, context) {
 
   if (!hit && state.boss) {
     const bossRect = { x: state.boss.x - state.boss.w / 2, y: state.boss.y, w: state.boss.w, h: state.boss.h };
-    if (overlap({ x: ball.x - 6, y: ball.y - 6, w: 12, h: 12 }, bossRect)) {
+    if (overlap(ballRect, bossRect)) {
       state.boss.hp -= 1;
       ball.vy = Math.abs(ball.vy);
       ball.vx += (ball.x - state.boss.x) * 0.9;
@@ -263,7 +264,7 @@ function update(state, config, controls, dt, context) {
 
   const paddleRectForPower = { x: state.paddle.x - state.paddle.w / 2, y: state.paddle.y - 8, w: state.paddle.w, h: 26 };
   state.powerups = state.powerups.filter((item) => {
-    const collected = overlap(paddleRectForPower, { x: item.x - 10, y: item.y - 10, w: 20, h: 20 });
+    const collected = overlap(paddleRectForPower, rectFromCenter(item, 20));
     if (collected) applyPowerup(state, item, context);
     return !collected;
   });

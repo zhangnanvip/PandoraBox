@@ -1,5 +1,5 @@
 import { bindDigitalKeys, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
-import { clamp, rectsOverlap as overlap } from "../arcade/collision.js";
+import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collision.js";
 import { addBurst, classicArcade, drawEffects, drawEnemyShip, drawPlayerShip, drawPowerup, drawStarfield, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
@@ -271,7 +271,7 @@ function update(state, config, controls, dt, context) {
 
   for (const bullet of state.bullets) {
     bullet.x += (bullet.vx || 0) * dt;
-    const hit = state.enemies.find((enemy) => overlap({ x: bullet.x - 3, y: bullet.y - 8, w: 6, h: 12 }, { x: enemy.x - 13, y: enemy.y - 11, w: 26, h: 22 }));
+    const hit = state.enemies.find((enemy) => overlap(rectFromCenter({ x: bullet.x, y: bullet.y - 2 }, 6, 12), rectFromCenter(enemy, 26, 22)));
     if (hit) {
       hit.hp -= 1;
       bullet.y = -99;
@@ -287,7 +287,7 @@ function update(state, config, controls, dt, context) {
         if (Math.random() < 0.24 || state.levelKills === 3) spawnPowerup(state, hit.x, hit.y);
       }
     }
-    if (bullet.y > -90 && state.boss && overlap({ x: bullet.x - 3, y: bullet.y - 8, w: 6, h: 12 }, bossRect(state.boss))) {
+    if (bullet.y > -90 && state.boss && overlap(rectFromCenter({ x: bullet.x, y: bullet.y - 2 }, 6, 12), bossRect(state.boss))) {
       state.boss.hp -= 1;
       bullet.y = -99;
       addBurst(state.effects, bullet.x, bullet.y, { count: 7, color: classicArcade.cyan, secondary: classicArcade.white, speed: 48, life: 0.18, radius: 4 });
@@ -303,15 +303,15 @@ function update(state, config, controls, dt, context) {
   }
   state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
 
-  const playerRect = { x: player.x - 12, y: player.y - 13, w: 24, h: 26 };
+  const playerRect = rectFromCenter(player, 24, 26);
   state.powerups = state.powerups.filter((item) => {
-    const collected = overlap(playerRect, { x: item.x - 10, y: item.y - 10, w: 20, h: 20 });
+    const collected = overlap(playerRect, rectFromCenter(item, 20));
     if (collected) applyPowerup(state, item, context);
     return !collected;
   });
 
-  const hitByBullet = state.enemyBullets.some((bullet) => overlap(playerRect, { x: bullet.x - 4, y: bullet.y - 4, w: 8, h: 8 }));
-  const hitByEnemy = state.enemies.some((enemy) => overlap(playerRect, { x: enemy.x - 13, y: enemy.y - 11, w: 26, h: 22 }));
+  const hitByBullet = state.enemyBullets.some((bullet) => overlap(playerRect, rectFromCenter(bullet, 8)));
+  const hitByEnemy = state.enemies.some((enemy) => overlap(playerRect, rectFromCenter(enemy, 26, 22)));
   const hitByBoss = state.boss ? overlap(playerRect, bossRect(state.boss)) : false;
   if ((hitByBullet || hitByEnemy || hitByBoss) && player.invuln <= 0) {
     if (state.buffs.shield > 0) {

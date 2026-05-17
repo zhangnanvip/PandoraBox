@@ -1,5 +1,5 @@
 import { addBurst, classicArcade, drawArcadeBackdrop, drawEffects, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
-import { clamp, distance } from "../arcade/collision.js";
+import { clamp, distance, withinDistance } from "../arcade/collision.js";
 import { bindActionKeys } from "../arcade/controls.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
@@ -390,7 +390,7 @@ function updateTowers(state, dt) {
     if (tower.cooldown > 0) continue;
     const stats = towerStats(tower);
     const target = state.enemies
-      .filter((enemy) => distance(tower, enemy) <= stats.range)
+      .filter((enemy) => withinDistance(tower, enemy, stats.range))
       .sort((a, b) => b.pathIndex - a.pathIndex || a.hp - b.hp)[0];
     if (!target) continue;
     tower.cooldown = stats.cooldown;
@@ -427,14 +427,14 @@ function updateShots(state, dt) {
       if (shot.splash) {
         for (let i = state.enemies.length - 1; i >= 0; i -= 1) {
           const enemy = state.enemies[i];
-          if (Math.hypot(enemy.x - target.x, enemy.y - target.y) > shot.splash) continue;
+          if (!withinDistance(enemy, target, shot.splash)) continue;
           const killed = damageEnemy(state, enemy, shot.damage * (enemy === target ? 1 : 0.62), shot);
           if (killed) state.enemies.splice(i, 1);
         }
       } else if (shot.chain) {
         const chainTargets = state.enemies
-          .filter((enemy) => enemy !== target && Math.hypot(enemy.x - target.x, enemy.y - target.y) <= 56)
-          .sort((a, b) => Math.hypot(a.x - target.x, a.y - target.y) - Math.hypot(b.x - target.x, b.y - target.y))
+          .filter((enemy) => enemy !== target && withinDistance(enemy, target, 56))
+          .sort((a, b) => distance(a, target) - distance(b, target))
           .slice(0, shot.chain);
         const hits = [
           { enemy: target, damage: shot.damage },

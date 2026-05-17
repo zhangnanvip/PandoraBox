@@ -1,5 +1,5 @@
 import { bindActionKeys, bindSwipeDirection, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
-import { clamp } from "../arcade/collision.js";
+import { clamp, gridCellInBounds, gridKey, sameGridCell } from "../arcade/collision.js";
 import { addBurst, classicArcade, drawEffects, drawFood, drawPixelRect, drawPowerup, drawSnakeArena, drawSnakeSegment, shakeOffset, updateEffects } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 
@@ -20,16 +20,12 @@ const DIRS = {
   right: { x: 1, y: 0 }
 };
 
-function keyOf(cell) {
-  return `${cell.x},${cell.y}`;
-}
-
 function randomFood(snake, obstacles = []) {
-  const occupied = new Set([...snake.map(keyOf), ...obstacles.map(keyOf)]);
+  const occupied = new Set([...snake.map(gridKey), ...obstacles.map(gridKey)]);
   let food = { x: 9, y: 9 };
   do {
     food = { x: Math.floor(Math.random() * SIZE), y: Math.floor(Math.random() * SIZE) };
-  } while (occupied.has(keyOf(food)));
+  } while (occupied.has(gridKey(food)));
   const roll = Math.random();
   return {
     ...food,
@@ -43,11 +39,11 @@ function cellCenter(cell) {
 
 function makeObstacles(count, snake) {
   const obstacles = [];
-  const blocked = new Set(snake.map(keyOf));
+  const blocked = new Set(snake.map(gridKey));
   while (obstacles.length < count) {
     const cell = { x: 2 + Math.floor(Math.random() * (SIZE - 4)), y: 2 + Math.floor(Math.random() * (SIZE - 4)) };
-    if (blocked.has(keyOf(cell)) || Math.abs(cell.x - 8) < 3 && Math.abs(cell.y - 10) < 3) continue;
-    blocked.add(keyOf(cell));
+    if (blocked.has(gridKey(cell)) || Math.abs(cell.x - 8) < 3 && Math.abs(cell.y - 10) < 3) continue;
+    blocked.add(gridKey(cell));
     obstacles.push(cell);
   }
   return obstacles;
@@ -180,7 +176,7 @@ function step(state, config, context) {
   if (canTurn(state.dir, state.nextDir)) state.dir = state.nextDir;
   const dir = DIRS[state.dir];
   const head = { x: state.snake[0].x + dir.x, y: state.snake[0].y + dir.y };
-  const hitObstacle = state.obstacles.find((cell) => cell.x === head.x && cell.y === head.y);
+  const hitObstacle = state.obstacles.find((cell) => sameGridCell(cell, head));
   if (hitObstacle && state.shield > 0) {
     const center = cellCenter(hitObstacle);
     state.obstacles = state.obstacles.filter((cell) => cell !== hitObstacle);
@@ -190,7 +186,7 @@ function step(state, config, context) {
     context.playSound?.("move");
     return;
   }
-  if (head.x < 0 || head.y < 0 || head.x >= SIZE || head.y >= SIZE || hitObstacle || state.snake.some((cell) => cell.x === head.x && cell.y === head.y)) {
+  if (!gridCellInBounds(head, SIZE) || hitObstacle || state.snake.some((cell) => sameGridCell(cell, head))) {
     const currentHead = cellCenter(state.snake[0]);
     addBurst(state.effects, currentHead.x, currentHead.y, { count: 22, color: classicArcade.red, secondary: classicArcade.yellow, speed: 90, radius: 12 });
     state.shake = Math.max(state.shake, 5);
@@ -199,7 +195,7 @@ function step(state, config, context) {
   }
 
   state.snake.unshift(head);
-  if (head.x === state.food.x && head.y === state.food.y) {
+  if (sameGridCell(head, state.food)) {
     state.score += state.food.type === "bonus" ? 35 : 10;
     state.eaten += 1;
     const foodCenter = cellCenter(head);
