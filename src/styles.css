@@ -1552,6 +1552,13 @@ select {
   line-height: 1.35;
 }
 
+.resume-card p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .resume-card .primary-button,
 .resume-card .secondary-button {
   min-height: 42px;

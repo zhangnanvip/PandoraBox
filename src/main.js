@@ -405,6 +405,15 @@ function sessionFor(game, options = selectedGameOptions(game)) {
   return state.sessions[sessionKeyFor(game, options)] || null;
 }
 
+function sessionItemForGame(game, options = selectedGameOptions(game)) {
+  const selectedKey = sessionKeyFor(game, options);
+  if (state.sessions[selectedKey]) {
+    return { key: selectedKey, session: state.sessions[selectedKey], game, matchesOptions: true };
+  }
+  const latestItem = sessionsList().find((item) => item.game.id === game.id);
+  return latestItem ? { ...latestItem, matchesOptions: false } : null;
+}
+
 function saveGameSession(game, options, snapshot, meta = {}) {
   if (!snapshot || typeof snapshot !== "object") return;
   const key = sessionKeyFor(game, options);
@@ -423,6 +432,11 @@ function saveGameSession(game, options, snapshot, meta = {}) {
 
 function clearGameSession(game, options = selectedGameOptions(game)) {
   const key = sessionKeyFor(game, options);
+  if (!state.sessions[key]) return;
+  clearGameSessionByKey(key);
+}
+
+function clearGameSessionByKey(key) {
   if (!state.sessions[key]) return;
   const { [key]: _removed, ...rest } = state.sessions;
   state.sessions = rest;
@@ -584,23 +598,9 @@ function resumeSessionByKey(key) {
   launchGame(game, options, true);
 }
 
-function restartRecentGame(gameId, sessionKey = "") {
-  const game = availableGames().find((item) => item.id === gameId);
-  if (!game) return;
-  const session = sessionKey ? state.sessions[sessionKey] : null;
-  const options = {
-    ...selectedGameOptions(game),
-    ...(session?.options || {})
-  };
-  launchGame(game, options, false);
-}
-
 function bindRecentActivityActions(root = app) {
   root.querySelectorAll("[data-resume-session]").forEach((button) => {
     button.addEventListener("click", () => resumeSessionByKey(button.dataset.resumeSession));
-  });
-  root.querySelectorAll("[data-restart-game]").forEach((button) => {
-    button.addEventListener("click", () => restartRecentGame(button.dataset.restartGame, button.dataset.restartSession));
   });
 }
 
@@ -721,8 +721,8 @@ function renderVisualStyleField(game) {
 }
 
 function renderStartActions(game) {
-  const session = sessionFor(game);
-  if (!session) {
+  const sessionItem = sessionItemForGame(game);
+  if (!sessionItem) {
     return `<button class="primary-button wide-button" data-start-game>${icon("play")} 开始</button>`;
   }
 
@@ -730,10 +730,11 @@ function renderStartActions(game) {
     <div class="resume-card">
       <div>
         <span class="modal-label">未完成进度</span>
-        <strong>${sessionSummary(session) || "已有可继续的进度"}</strong>
+        <strong>${sessionSummary(sessionItem.session) || "已有可继续的进度"}</strong>
+        ${sessionItem.matchesOptions ? "" : "<p>继续会恢复上次保存的配置，重开会按当前选择开始。</p>"}
       </div>
-      <button class="primary-button" data-resume-start>${icon("play")} 继续</button>
-      <button class="secondary-button" data-start-game>新开一局</button>
+      <button class="primary-button" data-resume-start-key="${escapeAttr(sessionItem.key)}">${icon("play")} 继续</button>
+      <button class="secondary-button" data-start-game data-restart-session-key="${escapeAttr(sessionItem.key)}">重开</button>
     </div>
   `;
 }
@@ -1043,6 +1044,10 @@ function renderRecentShortcut({ game, progress, sessionItem }) {
   const detail = hasSession
     ? sessionSummary(sessionItem.session) || "已有未完成进度"
     : `最近 ${formatTime(progress.lastPlayed)}`;
+  const gameTitle = escapeAttr(game.title);
+  const continueAttrs = hasSession
+    ? `data-resume-session="${escapeAttr(sessionItem.key)}" aria-label="续玩${gameTitle}"`
+    : `data-prepare-game="${escapeAttr(game.id)}" aria-label="继续游玩${gameTitle}"`;
   return `
     <article class="recent-activity accent-${game.accent}">
       <div class="recent-activity-copy">
@@ -1051,14 +1056,7 @@ function renderRecentShortcut({ game, progress, sessionItem }) {
         <p>${detail}</p>
       </div>
       <div class="recent-actions">
-        ${hasSession ? `<button class="primary-button mini-action" type="button" data-resume-session="${escapeAttr(sessionItem.key)}" aria-label="续玩${game.title}">${icon("play")} 续玩</button>` : ""}
-        <button
-          class="secondary-button mini-action"
-          type="button"
-          data-restart-game="${escapeAttr(game.id)}"
-          data-restart-session="${hasSession ? escapeAttr(sessionItem.key) : ""}"
-          aria-label="${hasSession ? "重开" : "再来一局"}${game.title}"
-        >${hasSession ? "重开" : "再来"}</button>
+        <button class="primary-button mini-action" type="button" ${continueAttrs}>${icon("play")} 继续</button>
       </div>
     </article>
   `;
@@ -1160,6 +1158,10 @@ function renderHistoryItem({ game, progress, sessionItem }) {
     ? sessionSummary(sessionItem.session) || "已有未完成进度"
     : `最近 ${formatTime(progress.lastPlayed)}`;
   const resultText = progress.lastResult ? `上次 ${outcomeLabel(progress.lastResult)}` : "暂无结算";
+  const gameTitle = escapeAttr(game.title);
+  const continueAttrs = hasSession
+    ? `data-resume-session="${escapeAttr(sessionItem.key)}" aria-label="续玩${gameTitle}"`
+    : `data-prepare-game="${escapeAttr(game.id)}" aria-label="继续游玩${gameTitle}"`;
   return `
     <article class="history-row accent-${game.accent}">
       <div class="game-card-icon history-icon" aria-hidden="true">
@@ -1179,14 +1181,7 @@ function renderHistoryItem({ game, progress, sessionItem }) {
         </div>
       </div>
       <div class="history-actions">
-        ${hasSession ? `<button class="primary-button mini-action" type="button" data-resume-session="${escapeAttr(sessionItem.key)}" aria-label="续玩${game.title}">${icon("play")} 续玩</button>` : ""}
-        <button
-          class="secondary-button mini-action"
-          type="button"
-          data-restart-game="${escapeAttr(game.id)}"
-          data-restart-session="${hasSession ? escapeAttr(sessionItem.key) : ""}"
-          aria-label="${hasSession ? "重开" : "再来一局"}${game.title}"
-        >${hasSession ? "重开" : "再来"}</button>
+        <button class="primary-button mini-action" type="button" ${continueAttrs}>${icon("play")} 继续</button>
       </div>
     </article>
   `;
@@ -1212,7 +1207,7 @@ function renderHistoryPage() {
           <div>
             <span class="game-tag">对局历史</span>
             <strong>${activities.length}</strong>
-            <p>最近玩过的游戏集中在这里，有未完成进度的可以直接续玩，也可以重开同配置。</p>
+            <p>最近玩过的游戏集中在这里，有未完成进度的可以直接继续。</p>
           </div>
           <div class="quick-stats">
             <span>存档 ${stats.sessions}</span>
@@ -1228,6 +1223,7 @@ function renderHistoryPage() {
   `;
 
   app.querySelector("[data-view-lobby]")?.addEventListener("click", () => setState({ view: "lobby", modal: "" }));
+  bindGameStartActions();
   bindRecentActivityActions();
   bindShellActions();
   renderModal();
@@ -1437,7 +1433,7 @@ function renderLobbyDashboard() {
         <div class="dashboard-head">
           <div>
             <span class="game-tag">最近</span>
-            <h2>续玩 / 重开</h2>
+            <h2>继续游玩</h2>
           </div>
           <div class="dashboard-head-actions">
             <span>${stats.sessions} 存档 · ${stats.started} 开局</span>
@@ -1756,7 +1752,7 @@ function modalContent() {
       body: `
         <div class="result-panel">
           <strong>稍作停顿</strong>
-          <p>${canSaveSession ? "回到大厅会保存当前进度，之后可在最近对局里续玩或重开。" : "当前游戏会保持在原地，关闭暂停层后继续。"}</p>
+          <p>${canSaveSession ? "回到大厅会保存当前进度，之后可在最近对局里继续。" : "当前游戏会保持在原地，关闭暂停层后继续。"}</p>
           <div class="settings-actions">
             <button class="secondary-button" data-open-modal="rules">查看规则</button>
             <button class="secondary-button" data-open-modal="settings">设置</button>
@@ -1952,11 +1948,14 @@ function renderModal() {
     installPrompt = null;
     render();
   });
-  app.querySelector("[data-start-game]")?.addEventListener("click", () => {
-    startPendingGame(collectSetupValuesFromModal(game));
+  app.querySelectorAll("[data-start-game]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.dataset.restartSessionKey) clearGameSessionByKey(button.dataset.restartSessionKey);
+      startPendingGame(collectSetupValuesFromModal(game));
+    });
   });
-  app.querySelector("[data-resume-start]")?.addEventListener("click", () => {
-    startPendingGame(collectSetupValuesFromModal(game), true);
+  app.querySelector("[data-resume-start-key]")?.addEventListener("click", (event) => {
+    resumeSessionByKey(event.currentTarget.dataset.resumeStartKey);
   });
   app.querySelector("[data-result-close]")?.addEventListener("click", () => {
     state.modal = "";
