@@ -40,11 +40,13 @@ const CAPABILITY_PRESETS = {
 
 const SHARED_PRECACHE = {
   arcade: [
+    "./src/games/arcade/bosses.js",
     "./src/games/arcade/classic-visuals.js",
     "./src/games/arcade/collision.js",
     "./src/games/arcade/controls.js",
     "./src/games/arcade/effects.js",
     "./src/games/arcade/engine.js",
+    "./src/games/arcade/rewards.js",
     "./src/games/arcade/stages.js"
   ]
 };

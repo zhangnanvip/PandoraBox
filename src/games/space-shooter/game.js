@@ -3,6 +3,8 @@ import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collis
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { classicArcade, drawEnemyShip, drawPlayerShip, drawPowerup, drawStarfield } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
+import { bossHealthLabel, bossHealthRatio, createBoss, isBossDefeated, spawnBossOnce } from "../arcade/bosses.js";
+import { addPickup, collectPickups, pickupRect, shouldDropReward, updatePickups } from "../arcade/rewards.js";
 import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } from "../arcade/stages.js";
 
 const W = 300;
@@ -116,8 +118,7 @@ function advanceLevel(state, config, context) {
 
 function spawnPowerup(state, x, y) {
   const types = ["weapon", "shield", "repair", "clear"];
-  const type = types[Math.floor(Math.random() * types.length)];
-  state.powerups.push({ type, x, y, vy: 42, ttl: 9 });
+  addPickup(state.powerups, types, { x, y }, { vy: 42, ttl: 9 });
 }
 
 function applyPowerup(state, item, context) {
@@ -136,7 +137,7 @@ function applyPowerup(state, item, context) {
     state.message = "维修胶囊：生命 +1";
   }
   addBurst(state.effects, item.x, item.y, { count: 18, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 78, radius: 10 });
-  addFloatingText(state.effects, item.x, item.y - 16, item.type === "life" ? "+1" : "BUFF", { color: classicArcade.yellow });
+  addFloatingText(state.effects, item.x, item.y - 16, item.type === "repair" ? "+1" : "BUFF", { color: classicArcade.yellow });
   context.playSound?.("score");
 }
 
@@ -168,19 +169,19 @@ function spawnEnemy(state, config) {
 }
 
 function spawnBoss(state) {
-  if (state.bossSpawned) return;
-  state.bossSpawned = true;
-  state.boss = {
+  spawnBossOnce(state, () => createBoss({
     x: W / 2,
     y: 54,
     vx: 58,
     hp: state.levelConfig.bossHp,
-    maxHp: state.levelConfig.bossHp,
     fire: 0.65
-  };
-  state.message = "Boss 出现：核心战舰";
-  addBurst(state.effects, W / 2, 58, { count: 34, color: classicArcade.red, secondary: classicArcade.magenta, speed: 88, radius: 28 });
-  state.shake = Math.max(state.shake, 5);
+  }), {
+    message: "Boss 出现：核心战舰",
+    onSpawn: () => {
+      addBurst(state.effects, W / 2, 58, { count: 34, color: classicArcade.red, secondary: classicArcade.magenta, speed: 88, radius: 28 });
+      state.shake = Math.max(state.shake, 5);
+    }
+  });
 }
 
 function bossRect(boss) {
@@ -264,13 +265,9 @@ function update(state, config, controls, dt, context) {
     bullet.x += (bullet.vx || 0) * dt;
     bullet.y += bullet.vy * dt;
   });
-  state.powerups.forEach((item) => {
-    item.y += item.vy * dt;
-    item.ttl -= dt;
-  });
   state.bullets = state.bullets.filter((bullet) => bullet.y > -20);
   state.enemyBullets = state.enemyBullets.filter((bullet) => bullet.y < H + 20);
-  state.powerups = state.powerups.filter((item) => item.y < H + 20 && item.ttl > 0);
+  state.powerups = updatePickups(state.powerups, dt, { maxY: H, margin: 20 });
 
   for (const bullet of state.bullets) {
     bullet.x += (bullet.vx || 0) * dt;
@@ -288,14 +285,14 @@ function update(state, config, controls, dt, context) {
         state.message = `第 ${state.level} 关击落 ${state.levelKills}/${state.levelConfig.waves}`;
         state.shake = Math.max(state.shake, 3.4);
         context.playSound?.("score");
-        if (Math.random() < 0.24 || state.levelKills === 3) spawnPowerup(state, hit.x, hit.y);
+        if (shouldDropReward({ rate: 0.24, count: state.levelKills, forceAt: [3] })) spawnPowerup(state, hit.x, hit.y);
       }
     }
     if (bullet.y > -90 && state.boss && overlap(rectFromCenter({ x: bullet.x, y: bullet.y - 2 }, 6, 12), bossRect(state.boss))) {
       state.boss.hp -= 1;
       bullet.y = -99;
       addBurst(state.effects, bullet.x, bullet.y, { count: 7, color: classicArcade.cyan, secondary: classicArcade.white, speed: 48, life: 0.18, radius: 4 });
-      if (state.boss.hp <= 0) {
+      if (isBossDefeated(state.boss)) {
         addBurst(state.effects, state.boss.x, state.boss.y, { count: 42, color: classicArcade.red, secondary: classicArcade.yellow, speed: 118, radius: 28 });
         addFloatingText(state.effects, state.boss.x, state.boss.y - 22, "+1000", { color: classicArcade.yellow, size: 16 });
         state.score += 1000;
@@ -309,11 +306,11 @@ function update(state, config, controls, dt, context) {
   state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
 
   const playerRect = rectFromCenter(player, 24, 26);
-  state.powerups = state.powerups.filter((item) => {
-    const collected = overlap(playerRect, rectFromCenter(item, 20));
-    if (collected) applyPowerup(state, item, context);
-    return !collected;
-  });
+  state.powerups = collectPickups(
+    state.powerups,
+    (item) => overlap(playerRect, pickupRect(item)),
+    (item) => applyPowerup(state, item, context)
+  );
 
   const hitByBullet = state.enemyBullets.some((bullet) => overlap(playerRect, rectFromCenter(bullet, 8)));
   const hitByEnemy = state.enemies.some((enemy) => overlap(playerRect, rectFromCenter(enemy, 26, 22)));
@@ -375,7 +372,7 @@ function draw(state, ctx) {
     ctx.fillStyle = "rgba(255,255,255,.28)";
     ctx.fillRect(48, 10, W - 96, 5);
     ctx.fillStyle = classicArcade.red;
-    ctx.fillRect(48, 10, (W - 96) * Math.max(0, boss.hp / boss.maxHp), 5);
+    ctx.fillRect(48, 10, (W - 96) * bossHealthRatio(boss), 5);
   }
   state.powerups.forEach((item) => drawPowerup(ctx, item));
   ctx.fillStyle = classicArcade.cyan;
@@ -443,7 +440,7 @@ export function mountSpaceShooter(root, context) {
     level.textContent = stageLabel(state);
     lives.textContent = `生命 ${state.player.lives}`;
     score.textContent = `分数 ${state.score}`;
-    kills.textContent = state.boss ? `Boss ${Math.max(0, state.boss.hp)}` : `击落 ${state.levelKills}/${state.levelConfig.waves}`;
+    kills.textContent = state.boss ? bossHealthLabel(state.boss) : `击落 ${state.levelKills}/${state.levelConfig.waves}`;
     const buffs = [
       state.buffs.weapon > 0 ? `火力 ${Math.ceil(state.buffs.weapon)}` : "",
       state.buffs.shield > 0 ? `护盾 ${Math.ceil(state.buffs.shield)}` : ""

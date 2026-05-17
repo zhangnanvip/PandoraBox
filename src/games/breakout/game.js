@@ -3,6 +3,8 @@ import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collis
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawPaddle, drawPowerup } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
+import { bossHealthLabel, bossHealthRatio, createBoss, isBossDefeated, spawnBossOnce } from "../arcade/bosses.js";
+import { addPickup, collectPickups, pickupRect, shouldDropReward, updatePickups } from "../arcade/rewards.js";
 import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } from "../arcade/stages.js";
 
 const W = 360;
@@ -102,15 +104,11 @@ function sessionMeta(state) {
 }
 
 function spawnPowerup(state, brick) {
-  if (Math.random() > 0.32 && state.bricks.length % 7 !== 0) return;
-  const types = ["expand", "slow", "life"];
-  state.powerups.push({
-    type: types[Math.floor(Math.random() * types.length)],
+  if (!shouldDropReward({ rate: 0.32, count: state.bricks.length, forceEvery: 7 })) return;
+  addPickup(state.powerups, ["expand", "slow", "life"], {
     x: brick.x + brick.w / 2,
-    y: brick.y + brick.h / 2,
-    vy: 58,
-    ttl: 8
-  });
+    y: brick.y + brick.h / 2
+  }, { vy: 58, ttl: 8 });
 }
 
 function applyPowerup(state, item, context) {
@@ -134,20 +132,20 @@ function resetBall(state) {
 }
 
 function spawnBoss(state) {
-  if (state.bossSpawned) return;
-  state.bossSpawned = true;
-  state.boss = {
+  spawnBossOnce(state, () => createBoss({
     x: W / 2,
     y: 74,
     w: 96,
     h: 24,
     vx: 44,
-    hp: state.levelConfig.bossHp,
-    maxHp: state.levelConfig.bossHp
-  };
-  state.message = "Boss 砖核心出现";
-  addBurst(state.effects, W / 2, 86, { count: 34, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 92, radius: 24 });
-  state.shake = Math.max(state.shake, 4.5);
+    hp: state.levelConfig.bossHp
+  }), {
+    message: "Boss 砖核心出现",
+    onSpawn: () => {
+      addBurst(state.effects, W / 2, 86, { count: 34, color: classicArcade.magenta, secondary: classicArcade.yellow, speed: 92, radius: 24 });
+      state.shake = Math.max(state.shake, 4.5);
+    }
+  });
 }
 
 function advanceLevel(state, config, context) {
@@ -195,11 +193,7 @@ function update(state, config, controls, dt, context) {
   const ballDt = dt * (state.buffs.slow > 0 ? 0.72 : 1);
   ball.x += ball.vx * ballDt;
   ball.y += ball.vy * ballDt;
-  state.powerups.forEach((item) => {
-    item.y += item.vy * dt;
-    item.ttl -= dt;
-  });
-  state.powerups = state.powerups.filter((item) => item.y < H + 24 && item.ttl > 0);
+  state.powerups = updatePickups(state.powerups, dt, { maxY: H, margin: 24 });
   if (ball.x < 7 || ball.x > W - 7) {
     ball.x = Math.max(7, Math.min(W - 7, ball.x));
     ball.vx *= -1;
@@ -250,7 +244,7 @@ function update(state, config, controls, dt, context) {
       state.shake = Math.max(state.shake, 3);
       state.message = `Boss 核心 ${Math.max(0, state.boss.hp)}/${state.boss.maxHp}`;
       context.playSound?.("score");
-      if (state.boss.hp <= 0) {
+      if (isBossDefeated(state.boss)) {
         addBurst(state.effects, state.boss.x, state.boss.y, { count: 44, color: classicArcade.red, secondary: classicArcade.yellow, speed: 116, radius: 26 });
         addFloatingText(state.effects, state.boss.x, state.boss.y - 18, "+900", { color: classicArcade.yellow, size: 16 });
         state.score += 900;
@@ -269,11 +263,11 @@ function update(state, config, controls, dt, context) {
   }
 
   const paddleRectForPower = { x: state.paddle.x - state.paddle.w / 2, y: state.paddle.y - 8, w: state.paddle.w, h: 26 };
-  state.powerups = state.powerups.filter((item) => {
-    const collected = overlap(paddleRectForPower, rectFromCenter(item, 20));
-    if (collected) applyPowerup(state, item, context);
-    return !collected;
-  });
+  state.powerups = collectPickups(
+    state.powerups,
+    (item) => overlap(paddleRectForPower, pickupRect(item)),
+    (item) => applyPowerup(state, item, context)
+  );
 
   if (ball.y > H + 10) {
     state.lives -= 1;
@@ -324,7 +318,7 @@ function drawPixelBoss(ctx, boss) {
   ctx.fillStyle = "rgba(255,255,255,.28)";
   ctx.fillRect(50, 14, W - 100, 5);
   ctx.fillStyle = classicArcade.red;
-  ctx.fillRect(50, 14, (W - 100) * Math.max(0, boss.hp / boss.maxHp), 5);
+  ctx.fillRect(50, 14, (W - 100) * bossHealthRatio(boss), 5);
 }
 
 export function mountBreakout(root, context) {
@@ -380,7 +374,7 @@ export function mountBreakout(root, context) {
     level.textContent = stageLabel(state);
     lives.textContent = `生命 ${state.lives}`;
     score.textContent = `分数 ${state.score}`;
-    left.textContent = state.boss ? `Boss ${Math.max(0, state.boss.hp)}` : `砖块 ${state.bricks.length}`;
+    left.textContent = state.boss ? bossHealthLabel(state.boss) : `砖块 ${state.bricks.length}`;
     const buffs = [
       state.buffs.expand > 0 ? `扩板 ${Math.ceil(state.buffs.expand)}` : "",
       state.buffs.slow > 0 ? `慢速 ${Math.ceil(state.buffs.slow)}` : ""

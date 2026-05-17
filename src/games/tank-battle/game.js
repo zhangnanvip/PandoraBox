@@ -3,6 +3,8 @@ import { clamp, rectFromCenter, rectsOverlap } from "../arcade/collision.js";
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { classicArcade, drawArcadeBackdrop, drawBase, drawPowerup, drawTankSprite, drawTankWall } from "../arcade/classic-visuals.js";
+import { bossHealthRatio, createBossEnemy } from "../arcade/bosses.js";
+import { addPickup, chooseRewardType, collectPickups, pickupRect, shouldDropReward, updatePickups } from "../arcade/rewards.js";
 import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } from "../arcade/stages.js";
 
 const W = 360;
@@ -309,14 +311,14 @@ function spotBlocked(state, spot) {
 function spawnPowerup(state, forcedType = "") {
   if (state.powerups.length >= 2) return;
   const types = ["rapid", "shield", "repair", "freeze", ...(levelHasTerrain(state, "river") ? ["boat"] : [])];
-  const type = forcedType || types[Math.floor(Math.random() * types.length)];
+  const type = forcedType || chooseRewardType(types);
   const allSpots = powerupSpotsFor(state);
   const spots = type === "boat"
     ? allSpots.filter((spot) => spot.y > (state.map || mapForLevel(state.level)).h * 0.52)
     : allSpots;
   const offset = state.destroyed + state.powerups.length + Math.floor(Math.random() * spots.length);
   const spot = spots.slice(offset).concat(spots.slice(0, offset)).find((candidate) => !spotBlocked(state, candidate)) || spots[0];
-  state.powerups.push({ type, x: spot.x, y: spot.y, ttl: type === "boat" ? 18 : 11 });
+  addPickup(state.powerups, type, spot, { ttl: type === "boat" ? 18 : 11, maxCount: 2 });
 }
 
 function applyPowerup(state, item, context) {
@@ -355,15 +357,15 @@ function spawnEnemy(state) {
   ];
   const spawn = spawns[state.spawned % spawns.length];
   const isBoss = isFinalStage(state) && state.spawned === state.total - 1;
-  state.enemies.push({
+  const enemy = {
     x: spawn.x,
     y: spawn.y,
     dir: "down",
     reload: 0.8 + Math.random() * 0.6,
     turn: 0,
-    hp: isBoss ? 9 + config.active : (state.spawned + state.level) % 4 === 0 ? 2 : 1,
-    boss: isBoss
-  });
+    hp: isBoss ? 9 + config.active : (state.spawned + state.level) % 4 === 0 ? 2 : 1
+  };
+  state.enemies.push(isBoss ? createBossEnemy(enemy) : enemy);
   if (isBoss) state.message = "Boss 出现：重装指挥坦克";
   state.spawned += 1;
 }
@@ -498,7 +500,7 @@ function destroyEnemy(state, hit, context, source = "shot") {
   state.message = hit.boss ? "Boss 已击破" : source === "mine" ? `地雷击毁敌坦 ${state.destroyed}/${state.total}` : `击毁敌坦 ${state.destroyed}/${state.total}`;
   state.shake = Math.max(state.shake, hit.boss ? 6 : 4);
   context.playSound?.("score");
-  if (!hit.boss && (Math.random() < 0.36 || state.destroyed === 2)) spawnPowerup(state);
+  if (!hit.boss && shouldDropReward({ rate: 0.36, count: state.destroyed, forceAt: [2] })) spawnPowerup(state);
 }
 
 function triggerMines(state, tank, context, owner) {
@@ -538,8 +540,7 @@ function update(state, config, controls, dt, context) {
   updateEffects(state.effects, dt);
   state.shake = Math.max(0, state.shake - dt * 16);
   for (const key of Object.keys(state.buffs)) state.buffs[key] = Math.max(0, state.buffs[key] - dt);
-  state.powerups.forEach((item) => { item.ttl -= dt; });
-  state.powerups = state.powerups.filter((item) => item.ttl > 0);
+  state.powerups = updatePickups(state.powerups, dt);
   if (state.over) return;
   if (levelHasTerrain(state, "river") && state.buffs.boat <= 0 && !state.powerups.some((item) => item.type === "boat")) {
     state.boatTimer -= dt;
@@ -566,11 +567,11 @@ function update(state, config, controls, dt, context) {
   }
   if (controls.fire && fire(state, state.player, "player")) context.playSound?.("move");
 
-  state.powerups = state.powerups.filter((item) => {
-    const collected = rectsOverlap(tankRect(state.player), rectFromCenter(item, 22));
-    if (collected) applyPowerup(state, item, context);
-    return !collected;
-  });
+  state.powerups = collectPickups(
+    state.powerups,
+    (item) => rectsOverlap(tankRect(state.player), pickupRect(item, 22)),
+    (item) => applyPowerup(state, item, context)
+  );
 
   const playerHidden = tankInTerrain(state, state.player, "grass");
   for (const enemy of state.enemies) {
@@ -751,7 +752,7 @@ function draw(state, ctx) {
       ctx.lineWidth = 2;
       ctx.strokeRect(enemy.x - 18, enemy.y - 18, 36, 36);
       ctx.fillStyle = classicArcade.red;
-      ctx.fillRect(enemy.x - 16, enemy.y - 24, Math.max(3, enemy.hp * 2), 4);
+      ctx.fillRect(enemy.x - 16, enemy.y - 24, Math.max(3, 32 * bossHealthRatio(enemy)), 4);
     }
   });
   drawTerrain(ctx, state, true);

@@ -3,6 +3,7 @@ import { classicArcade, drawArcadeBackdrop } from "../arcade/classic-visuals.js"
 import { clamp, distance, withinDistance } from "../arcade/collision.js";
 import { bindActionKeys } from "../arcade/controls.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
+import { createBossEnemy } from "../arcade/bosses.js";
 import { advanceWave, createStageState, isFinalWave, restoreStageLevel, stageLabel, stageMeta, totalWaves, waveIndex, waveLabel, waveMeta } from "../arcade/stages.js";
 
 const W = 360;
@@ -106,13 +107,13 @@ function createWave(config, level, wave, nextId) {
     });
   }
   if (isFinalWave({ level, wave, maxLevel: MAX_LEVEL }, WAVES_PER_LEVEL)) {
-    queue.push({
+    queue.push(createBossEnemy({
       id: nextId + queue.length,
       kind: "boss",
       hp: Math.round(520 * config.hp),
       speed: 18 * config.speed,
       reward: 140
-    });
+    }));
   }
   return queue;
 }
