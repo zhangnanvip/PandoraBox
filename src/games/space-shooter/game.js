@@ -4,6 +4,7 @@ import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } fr
 import { classicArcade, drawEnemyShip, drawPlayerShip, drawPowerup, drawStarfield } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { bossHealthLabel, bossHealthRatio, createBoss, isBossDefeated, spawnBossOnce } from "../arcade/bosses.js";
+import { announceStageStart, drawStageTransition, updateStageTransition } from "../arcade/progression.js";
 import { addPickup, collectPickups, pickupRect, shouldDropReward, updatePickups } from "../arcade/rewards.js";
 import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } from "../arcade/stages.js";
 
@@ -64,6 +65,7 @@ function serializeState(state) {
   delete snapshot.levelConfig;
   snapshot.effects = [];
   snapshot.shake = 0;
+  snapshot.transition = null;
   snapshot.over = false;
   snapshot.won = false;
   snapshot.version = 1;
@@ -82,6 +84,7 @@ function restoreState(config, savedState) {
     maxLevel: MAX_LEVEL,
     levelConfig: levelTuning(config, level),
     effects: [],
+    transition: null,
     shake: 0,
     over: false,
     won: false
@@ -110,10 +113,18 @@ function advanceLevel(state, config, context) {
   state.player.x = W / 2;
   state.player.y = H - 45;
   state.player.invuln = 1.3;
-  state.message = isFinalStage(state) ? `第 ${state.maxLevel} 关：穿越 Boss 空域` : `第 ${state.level} 关：敌机加速`;
-  addBurst(state.effects, W / 2, H / 2, { count: 30, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 92, radius: 24 });
-  state.shake = Math.max(state.shake, 3.6);
-  context.playSound?.("start");
+  const bossStage = isFinalStage(state);
+  announceStageStart(state, context, {
+    message: bossStage ? `第 ${state.maxLevel} 关：穿越 Boss 空域` : `第 ${state.level} 关：敌机加速`,
+    transition: {
+      title: `第 ${stageMeta(state)} 关`,
+      subtitle: bossStage ? "Boss 空域" : "敌机加速"
+    },
+    effects: state.effects,
+    position: { x: W / 2, y: H / 2 },
+    burst: { count: 30, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 92, radius: 24 },
+    shake: 3.6
+  });
 }
 
 function spawnPowerup(state, x, y) {
@@ -191,6 +202,7 @@ function bossRect(boss) {
 function update(state, config, controls, dt, context) {
   state.time += dt;
   updateEffects(state.effects, dt);
+  updateStageTransition(state, dt);
   state.shake = Math.max(0, state.shake - dt * 18);
   for (const key of Object.keys(state.buffs)) state.buffs[key] = Math.max(0, state.buffs[key] - dt);
   if (state.over) return;
@@ -385,6 +397,7 @@ function draw(state, ctx) {
   });
   drawEffects(ctx, state.effects);
   ctx.restore();
+  drawStageTransition(ctx, W, H, state.transition);
 }
 
 export function mountSpaceShooter(root, context) {

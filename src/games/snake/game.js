@@ -3,6 +3,7 @@ import { gridCellInBounds, gridKey, sameGridCell } from "../arcade/collision.js"
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { classicArcade, drawFood, drawPixelRect, drawPowerup, drawSnakeArena, drawSnakeSegment } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
+import { announceStageStart, drawStageTransition, updateStageTransition } from "../arcade/progression.js";
 import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } from "../arcade/stages.js";
 
 const SIZE = 18;
@@ -98,6 +99,7 @@ function serializeState(state) {
   delete snapshot.levelConfig;
   snapshot.effects = [];
   snapshot.shake = 0;
+  snapshot.transition = null;
   snapshot.over = false;
   snapshot.won = false;
   snapshot.version = 1;
@@ -116,6 +118,7 @@ function restoreState(config, savedState) {
     maxLevel: MAX_LEVEL,
     levelConfig: levelTuning(config, level),
     effects: [],
+    transition: null,
     shake: 0,
     over: false,
     won: false
@@ -144,10 +147,17 @@ function resetSnakeForLevel(state, config, context) {
   state.eaten = 0;
   state.slow = 0;
   state.shield = 0;
-  state.message = `第 ${state.level} 关：吃到 ${state.levelConfig.target} 个能量豆`;
-  addBurst(state.effects, W / 2, W / 2, { count: 28, color: classicArcade.green, secondary: classicArcade.yellow, speed: 86, radius: 22 });
-  state.shake = Math.max(state.shake, 2.8);
-  context.playSound?.("start");
+  announceStageStart(state, context, {
+    message: `第 ${state.level} 关：吃到 ${state.levelConfig.target} 个能量豆`,
+    transition: {
+      title: `第 ${stageMeta(state)} 关`,
+      subtitle: `目标 ${state.levelConfig.target} 个能量豆`
+    },
+    effects: state.effects,
+    position: { x: W / 2, y: W / 2 },
+    burst: { count: 28, color: classicArcade.green, secondary: classicArcade.yellow, speed: 86, radius: 22 },
+    shake: 2.8
+  });
 }
 
 function advanceLevel(state, config, context) {
@@ -244,6 +254,7 @@ function draw(state, ctx) {
   });
   drawEffects(ctx, state.effects);
   ctx.restore();
+  drawStageTransition(ctx, W, W, state.transition);
 }
 
 export function mountSnake(root, context) {
@@ -311,6 +322,7 @@ export function mountSnake(root, context) {
     update: (dt) => {
       state.time += dt;
       updateEffects(state.effects, dt);
+      updateStageTransition(state, dt);
       state.shake = Math.max(0, state.shake - dt * 18);
       state.slow = Math.max(0, state.slow - dt);
       acc += dt;

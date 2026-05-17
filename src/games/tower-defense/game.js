@@ -4,6 +4,7 @@ import { clamp, distance, withinDistance } from "../arcade/collision.js";
 import { bindActionKeys } from "../arcade/controls.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { createBossEnemy } from "../arcade/bosses.js";
+import { announceStageClear, drawStageTransition, grantProgressRewards, rewardSummary, updateStageTransition } from "../arcade/progression.js";
 import { advanceWave, createStageState, isFinalWave, restoreStageLevel, stageLabel, stageMeta, totalWaves, waveIndex, waveLabel, waveMeta } from "../arcade/stages.js";
 
 const W = 360;
@@ -162,6 +163,7 @@ function restoreState(config, saved) {
     queue: Array.isArray(saved.queue) ? saved.queue : [],
     selectedType: TOWER_TYPES[saved.selectedType] ? saved.selectedType : "arrow",
     selectedTower: saved.selectedTower || null,
+    transition: null,
     over: false,
     resultReported: false,
     message: saved.message || state.message
@@ -169,7 +171,7 @@ function restoreState(config, saved) {
 }
 
 function serializeState(state) {
-  const { effects, resultReported, ...snapshot } = state;
+  const { effects, resultReported, transition, ...snapshot } = state;
   return {
     ...snapshot,
     enemies: state.enemies.map((enemy) => ({ ...enemy })),
@@ -177,7 +179,8 @@ function serializeState(state) {
     shots: state.shots.map((shot) => ({ ...shot })),
     queue: state.queue.map((enemy) => ({ ...enemy })),
     effects: undefined,
-    resultReported: undefined
+    resultReported: undefined,
+    transition: undefined
   };
 }
 
@@ -315,12 +318,31 @@ function startWave(state, config) {
 function completeWave(state, context) {
   if (state.over) return;
   state.waveActive = false;
-  state.gold += 28 + state.level * 5;
-  state.score += 40 + state.level * 15;
-  addBurst(state.effects, W - 20, 4.5 * CELL, { color: classicArcade.green, secondary: classicArcade.yellow, count: 16, speed: 76 });
+  const rewards = {
+    gold: 28 + state.level * 5,
+    score: 40 + state.level * 15
+  };
+  grantProgressRewards(state, rewards, {
+    effects: state.effects,
+    position: { x: W - 20, y: 4.5 * CELL - 10 },
+    labels: { gold: "金币", score: "分数" },
+    color: classicArcade.yellow,
+    size: 12
+  });
   if (isFinalWave(state, WAVES_PER_LEVEL)) {
     state.over = true;
-    state.message = "魔盒防线守住了";
+    announceStageClear(state, context, {
+      message: "魔盒防线守住了",
+      transition: {
+        title: "防守完成",
+        subtitle: rewardSummary(rewards, { gold: "金币", score: "分数" }),
+        duration: 1.25
+      },
+      effects: state.effects,
+      position: { x: W - 20, y: 4.5 * CELL },
+      burst: { color: classicArcade.green, secondary: classicArcade.yellow, count: 16, speed: 76 },
+      shake: 2.8
+    });
     context.clearSession?.();
     context.reportResult?.({
       outcome: "win",
@@ -332,7 +354,18 @@ function completeWave(state, context) {
     return;
   }
   advanceWave(state, WAVES_PER_LEVEL);
-  state.message = `准备第 ${waveMeta(state, WAVES_PER_LEVEL)} 波`;
+  announceStageClear(state, context, {
+    message: `准备第 ${waveMeta(state, WAVES_PER_LEVEL)} 波`,
+    transition: {
+      title: "波次完成",
+      subtitle: rewardSummary(rewards, { gold: "金币", score: "分数" }),
+      duration: 1.1
+    },
+    effects: state.effects,
+    position: { x: W - 20, y: 4.5 * CELL },
+    burst: { color: classicArcade.green, secondary: classicArcade.yellow, count: 16, speed: 76 },
+    shake: 2.3
+  });
 }
 
 function damageEnemy(state, enemy, amount, shot) {
@@ -471,6 +504,7 @@ function update(state, config, dt, context) {
   state.time += dt;
   state.shake = Math.max(0, state.shake - dt * 18);
   updateEffects(state.effects, dt);
+  updateStageTransition(state, dt);
   if (state.spawning) {
     const waveCfg = waveConfig(config, state.level, state.wave);
     state.spawnTimer -= dt;
@@ -613,6 +647,7 @@ function draw(state, ctx) {
   });
   drawEffects(ctx, state.effects);
   ctx.restore();
+  drawStageTransition(ctx, W, H, state.transition);
 }
 
 export function mountTowerDefense(root, context) {

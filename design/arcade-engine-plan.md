@@ -18,7 +18,7 @@
 
 ## 第二阶段
 
-- 抽 `StageManager`：当前已把关卡范围恢复、关卡标签、终关判断、下一关推进、塔防波次编号抽到 `src/games/arcade/stages.js`，并迁移到五个 Canvas 游戏；后续再继续收敛下一关提示。
+- 抽 `StageManager/Progression`：当前已把关卡范围恢复、关卡标签、终关判断、下一关推进、塔防波次编号抽到 `src/games/arcade/stages.js`，并把下一关过场、关卡/波次完成提示、阶段奖励飘字抽到 `src/games/arcade/progression.js`，迁移到五个 Canvas 游戏。
 - 抽 `Boss/Rewards`：当前已把 Boss 生成、Boss 血量显示、拾取物掉落判定、拾取物过期/收集抽到 `src/games/arcade/bosses.js` 与 `src/games/arcade/rewards.js`，并迁移到雷霆战机、打砖块、坦克大战、机关塔防。
 - 抽 `InputManager`：虚拟摇杆、拖动、长按开火、键盘映射、方向滑动。当前已把方向键、动作键、滑动方向抽到 `src/games/arcade/controls.js` 并迁移到五个 Canvas 游戏。
 - 抽 `Collision`：当前已把 `clamp`、矩形碰撞、中心矩形、圆形碰撞、距离/范围、网格坐标判定抽到 `src/games/arcade/collision.js`，并迁移到坦克大战、雷霆战机、贪吃蛇、打砖块、机关塔防。
