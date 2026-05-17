@@ -3,6 +3,7 @@ import { classicArcade, drawArcadeBackdrop } from "../arcade/classic-visuals.js"
 import { clamp, distance, withinDistance } from "../arcade/collision.js";
 import { bindActionKeys } from "../arcade/controls.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
+import { advanceWave, createStageState, isFinalWave, restoreStageLevel, stageLabel, stageMeta, totalWaves, waveIndex, waveLabel, waveMeta } from "../arcade/stages.js";
 
 const W = 360;
 const H = 360;
@@ -69,11 +70,11 @@ function towerInvestment(tower) {
 }
 
 function waveNumber(state) {
-  return (state.level - 1) * WAVES_PER_LEVEL + state.wave;
+  return waveIndex(state, WAVES_PER_LEVEL);
 }
 
 function waveConfig(config, level, wave) {
-  const totalWave = (level - 1) * WAVES_PER_LEVEL + wave;
+  const totalWave = waveIndex({ level, wave }, WAVES_PER_LEVEL);
   return {
     count: Math.max(4, 5 + level * 2 + wave * 2 + config.count),
     hp: Math.round((30 + level * 18 + wave * 10) * config.hp),
@@ -86,7 +87,7 @@ function waveConfig(config, level, wave) {
 
 function wavePreview(config, level, wave) {
   const next = waveConfig(config, level, wave);
-  const boss = level === MAX_LEVEL && wave === WAVES_PER_LEVEL ? " · Boss" : "";
+  const boss = isFinalWave({ level, wave, maxLevel: MAX_LEVEL }, WAVES_PER_LEVEL) ? " · Boss" : "";
   return `${next.count}${boss} 敌 · HP ${next.hp}`;
 }
 
@@ -104,7 +105,7 @@ function createWave(config, level, wave, nextId) {
       reward: waveCfg.reward + (runner ? 1 : armored ? 4 : 0)
     });
   }
-  if (level === MAX_LEVEL && wave === WAVES_PER_LEVEL) {
+  if (isFinalWave({ level, wave, maxLevel: MAX_LEVEL }, WAVES_PER_LEVEL)) {
     queue.push({
       id: nextId + queue.length,
       kind: "boss",
@@ -118,9 +119,8 @@ function createWave(config, level, wave, nextId) {
 
 function initialState(config) {
   return {
-    level: 1,
+    ...createStageState(MAX_LEVEL),
     wave: 1,
-    maxLevel: MAX_LEVEL,
     lives: config.lives,
     gold: config.gold,
     score: 0,
@@ -146,9 +146,14 @@ function initialState(config) {
 function restoreState(config, saved) {
   const state = initialState(config);
   if (!saved || typeof saved !== "object") return state;
+  const level = restoreStageLevel(saved.level, MAX_LEVEL);
+  const wave = clamp(Number(saved.wave) || 1, 1, WAVES_PER_LEVEL);
   return {
     ...state,
     ...saved,
+    level,
+    wave,
+    maxLevel: MAX_LEVEL,
     effects: [],
     towers: Array.isArray(saved.towers) ? saved.towers : [],
     enemies: Array.isArray(saved.enemies) ? saved.enemies : [],
@@ -177,8 +182,8 @@ function serializeState(state) {
 
 function sessionMeta(state) {
   return {
-    level: `${state.level}/${state.maxLevel}`,
-    stage: `第 ${waveNumber(state)}/${MAX_LEVEL * WAVES_PER_LEVEL} 波`,
+    level: stageMeta(state),
+    stage: `第 ${waveMeta(state, WAVES_PER_LEVEL)} 波`,
     score: state.score
   };
 }
@@ -303,7 +308,7 @@ function startWave(state, config) {
   state.waveActive = true;
   state.spawning = true;
   state.spawnTimer = 0.2;
-  state.message = `第 ${waveNumber(state)}/${MAX_LEVEL * WAVES_PER_LEVEL} 波来袭`;
+  state.message = `第 ${waveMeta(state, WAVES_PER_LEVEL)} 波来袭`;
 }
 
 function completeWave(state, context) {
@@ -312,7 +317,7 @@ function completeWave(state, context) {
   state.gold += 28 + state.level * 5;
   state.score += 40 + state.level * 15;
   addBurst(state.effects, W - 20, 4.5 * CELL, { color: classicArcade.green, secondary: classicArcade.yellow, count: 16, speed: 76 });
-  if (state.level === MAX_LEVEL && state.wave === WAVES_PER_LEVEL) {
+  if (isFinalWave(state, WAVES_PER_LEVEL)) {
     state.over = true;
     state.message = "魔盒防线守住了";
     context.clearSession?.();
@@ -325,13 +330,8 @@ function completeWave(state, context) {
     state.resultReported = true;
     return;
   }
-  if (state.wave < WAVES_PER_LEVEL) {
-    state.wave += 1;
-  } else {
-    state.level += 1;
-    state.wave = 1;
-  }
-  state.message = `准备第 ${waveNumber(state)}/${MAX_LEVEL * WAVES_PER_LEVEL} 波`;
+  advanceWave(state, WAVES_PER_LEVEL);
+  state.message = `准备第 ${waveMeta(state, WAVES_PER_LEVEL)} 波`;
 }
 
 function damageEnemy(state, enemy, amount, shot) {
@@ -622,11 +622,11 @@ export function mountTowerDefense(root, context) {
     <section class="game-panel game-status">
       <div>
         <strong data-status>${state.message}</strong>
-        <p class="game-note" data-note>${context.labels.difficulty} · ${MAX_LEVEL} 关 · ${MAX_LEVEL * WAVES_PER_LEVEL} 波</p>
+        <p class="game-note" data-note>${context.labels.difficulty} · ${MAX_LEVEL} 关 · ${totalWaves(state, WAVES_PER_LEVEL)} 波</p>
       </div>
       <div class="mini-stats">
         <span data-level>关卡 1/${MAX_LEVEL}</span>
-        <span data-wave>波次 1/${MAX_LEVEL * WAVES_PER_LEVEL}</span>
+        <span data-wave>波次 1/${totalWaves(state, WAVES_PER_LEVEL)}</span>
         <span data-lives>核心 ${state.lives}</span>
         <span data-gold>金币 ${state.gold}</span>
         <span data-score>分数 ${state.score}</span>
@@ -668,8 +668,8 @@ export function mountTowerDefense(root, context) {
       ? `场上 ${state.enemies.length + state.queue.length} 敌`
       : `下一波 ${wavePreview(config, state.level, state.wave)}`;
     note.textContent = `${context.labels.difficulty} · ${selectedText} · ${waveText}`;
-    level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
-    wave.textContent = `波次 ${waveNumber(state)}/${MAX_LEVEL * WAVES_PER_LEVEL}`;
+    level.textContent = stageLabel(state);
+    wave.textContent = waveLabel(state, WAVES_PER_LEVEL);
     lives.textContent = `核心 ${Math.max(0, state.lives)}`;
     gold.textContent = `金币 ${state.gold}`;
     score.textContent = `分数 ${state.score}`;

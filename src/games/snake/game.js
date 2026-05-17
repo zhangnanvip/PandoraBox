@@ -1,8 +1,9 @@
 import { bindActionKeys, bindSwipeDirection, bindVirtualJoystick, joystickMarkup } from "../arcade/controls.js";
-import { clamp, gridCellInBounds, gridKey, sameGridCell } from "../arcade/collision.js";
+import { gridCellInBounds, gridKey, sameGridCell } from "../arcade/collision.js";
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { classicArcade, drawFood, drawPixelRect, drawPowerup, drawSnakeArena, drawSnakeSegment } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
+import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } from "../arcade/stages.js";
 
 const SIZE = 18;
 const CELL = 20;
@@ -107,7 +108,7 @@ function restoreState(config, savedState) {
   if (!savedState || savedState.version !== 1 || savedState.over) return initialState(config);
   const fallback = initialState(config);
   const snapshot = clonePlain(savedState);
-  const level = clamp(Number(snapshot.level) || 1, 1, MAX_LEVEL);
+  const level = restoreStageLevel(snapshot.level, MAX_LEVEL);
   return {
     ...fallback,
     ...snapshot,
@@ -123,7 +124,7 @@ function restoreState(config, savedState) {
 
 function sessionMeta(state) {
   return {
-    level: `${state.level}/${state.maxLevel}`,
+    level: stageMeta(state),
     score: state.score
   };
 }
@@ -150,7 +151,7 @@ function resetSnakeForLevel(state, config, context) {
 }
 
 function advanceLevel(state, config, context) {
-  state.level += 1;
+  advanceStage(state);
   resetSnakeForLevel(state, config, context);
 }
 
@@ -215,7 +216,7 @@ function step(state, config, context) {
     state.food = randomFood(state.snake, state.obstacles);
     context.playSound?.("score");
     if (state.eaten >= state.levelConfig.target) {
-      if (state.level >= state.maxLevel) finish(state, true, context);
+      if (isFinalStage(state)) finish(state, true, context);
       else advanceLevel(state, config, context);
     }
   } else {
@@ -297,8 +298,8 @@ export function mountSnake(root, context) {
 
   function refreshHud() {
     status.textContent = state.message;
-    note.textContent = `${context.labels.difficulty} · 第 ${state.level}/${state.maxLevel} 关 · 障碍 ${state.levelConfig.obstacles}`;
-    level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
+    note.textContent = `${context.labels.difficulty} · 第 ${stageMeta(state)} 关 · 障碍 ${state.levelConfig.obstacles}`;
+    level.textContent = stageLabel(state);
     score.textContent = `分数 ${state.score}`;
     length.textContent = `任务 ${state.eaten}/${state.levelConfig.target}`;
     power.textContent = [state.slow > 0 ? `慢速 ${Math.ceil(state.slow)}` : "", state.shield > 0 ? "护盾 1" : ""].filter(Boolean).join(" · ") || "道具 无";

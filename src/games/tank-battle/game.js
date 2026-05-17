@@ -3,6 +3,7 @@ import { clamp, rectFromCenter, rectsOverlap } from "../arcade/collision.js";
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
 import { classicArcade, drawArcadeBackdrop, drawBase, drawPowerup, drawTankSprite, drawTankWall } from "../arcade/classic-visuals.js";
+import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } from "../arcade/stages.js";
 
 const W = 360;
 const H = 360;
@@ -230,7 +231,7 @@ function restoreState(config, savedState) {
   if (!savedState || savedState.version !== 2 || savedState.over) return initialState(config);
   const fallback = initialState(config);
   const snapshot = clonePlain(savedState);
-  const level = clamp(Number(snapshot.level) || 1, 1, MAX_LEVEL);
+  const level = restoreStageLevel(snapshot.level, MAX_LEVEL);
   const map = mapForLevel(level);
   const playerSpawn = playerSpawnFor(map);
   return {
@@ -254,13 +255,13 @@ function restoreState(config, savedState) {
 
 function sessionMeta(state) {
   return {
-    level: `${state.level}/${state.maxLevel}`,
+    level: stageMeta(state),
     score: state.score
   };
 }
 
 function advanceLevel(state, config, context) {
-  state.level += 1;
+  advanceStage(state);
   state.map = mapForLevel(state.level);
   state.levelConfig = levelTuning(config, state.level);
   state.enemies = [];
@@ -279,7 +280,7 @@ function advanceLevel(state, config, context) {
   state.player.dir = "up";
   state.player.invuln = 1.2;
   state.boatTimer = 0;
-  state.message = state.level === MAX_LEVEL ? `第 ${MAX_LEVEL} 关：重装指挥坦克来袭` : `第 ${state.level} 关：${state.map.title}`;
+  state.message = isFinalStage(state) ? `第 ${state.maxLevel} 关：重装指挥坦克来袭` : `第 ${state.level} 关：${state.map.title}`;
   if (levelHasTerrain(state, "river")) spawnPowerup(state, "boat");
   addBurst(state.effects, state.map.w / 2, state.map.h / 2, { count: 28, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 92, radius: 22 });
   state.shake = Math.max(state.shake, 3.5);
@@ -353,7 +354,7 @@ function spawnEnemy(state) {
     { x: map.w * 0.75, y: 58 }
   ];
   const spawn = spawns[state.spawned % spawns.length];
-  const isBoss = state.level === MAX_LEVEL && state.spawned === state.total - 1;
+  const isBoss = isFinalStage(state) && state.spawned === state.total - 1;
   state.enemies.push({
     x: spawn.x,
     y: spawn.y,
@@ -628,7 +629,7 @@ function update(state, config, controls, dt, context) {
 
   if (state.player.lives <= 0) finish(state, false, context);
   if (state.destroyed >= state.total && !state.enemies.length) {
-    if (state.level >= state.maxLevel) finish(state, true, context);
+    if (isFinalStage(state)) finish(state, true, context);
     else advanceLevel(state, config, context);
   }
 }
@@ -812,7 +813,7 @@ export function mountTankBattle(root, context) {
   function refreshHud() {
     status.textContent = state.message;
     note.textContent = `${context.labels.difficulty} · ${state.map.cols}x${state.map.rows} 地图 · ${state.map.feature}`;
-    level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
+    level.textContent = stageLabel(state);
     lives.textContent = `生命 ${state.player.lives}`;
     score.textContent = `分数 ${state.score}`;
     left.textContent = `敌军 ${Math.max(0, state.total - state.destroyed)}`;

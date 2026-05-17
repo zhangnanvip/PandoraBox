@@ -3,6 +3,7 @@ import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collis
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { classicArcade, drawEnemyShip, drawPlayerShip, drawPowerup, drawStarfield } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
+import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } from "../arcade/stages.js";
 
 const W = 300;
 const H = 400;
@@ -71,7 +72,7 @@ function restoreState(config, savedState) {
   if (!savedState || savedState.version !== 1 || savedState.over) return initialState(config);
   const fallback = initialState(config);
   const snapshot = clonePlain(savedState);
-  const level = clamp(Number(snapshot.level) || 1, 1, MAX_LEVEL);
+  const level = restoreStageLevel(snapshot.level, MAX_LEVEL);
   return {
     ...fallback,
     ...snapshot,
@@ -87,13 +88,13 @@ function restoreState(config, savedState) {
 
 function sessionMeta(state) {
   return {
-    level: `${state.level}/${state.maxLevel}`,
+    level: stageMeta(state),
     score: state.score
   };
 }
 
 function advanceLevel(state, config, context) {
-  state.level += 1;
+  advanceStage(state);
   state.levelConfig = levelTuning(config, state.level);
   state.enemies = [];
   state.boss = null;
@@ -107,7 +108,7 @@ function advanceLevel(state, config, context) {
   state.player.x = W / 2;
   state.player.y = H - 45;
   state.player.invuln = 1.3;
-  state.message = state.level === MAX_LEVEL ? "第 5 关：穿越 Boss 空域" : `第 ${state.level} 关：敌机加速`;
+  state.message = isFinalStage(state) ? `第 ${state.maxLevel} 关：穿越 Boss 空域` : `第 ${state.level} 关：敌机加速`;
   addBurst(state.effects, W / 2, H / 2, { count: 30, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 92, radius: 24 });
   state.shake = Math.max(state.shake, 3.6);
   context.playSound?.("start");
@@ -230,7 +231,7 @@ function update(state, config, controls, dt, context) {
       enemy.fire = 0.9 + Math.random() * 0.85;
     }
   }
-  if (state.spawned >= state.levelConfig.waves && !state.enemies.length && state.level === state.maxLevel && !state.bossSpawned) {
+  if (state.spawned >= state.levelConfig.waves && !state.enemies.length && isFinalStage(state) && !state.bossSpawned) {
     spawnBoss(state);
   }
   if (state.boss) {
@@ -337,8 +338,8 @@ function update(state, config, controls, dt, context) {
 
   if (player.lives <= 0) finish(state, false, context);
   if (state.spawned >= state.levelConfig.waves && !state.enemies.length && !state.boss) {
-    if (state.level >= state.maxLevel && state.bossSpawned) finish(state, true, context);
-    else if (state.level < state.maxLevel) advanceLevel(state, config, context);
+    if (isFinalStage(state) && state.bossSpawned) finish(state, true, context);
+    else if (!isFinalStage(state)) advanceLevel(state, config, context);
   }
 }
 
@@ -438,8 +439,8 @@ export function mountSpaceShooter(root, context) {
 
   function refreshHud() {
     status.textContent = state.message;
-    note.textContent = `${context.labels.difficulty} · 第 ${state.level}/${state.maxLevel} 关 · ${state.level === state.maxLevel ? "Boss 空域" : "敌机波次"}`;
-    level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
+    note.textContent = `${context.labels.difficulty} · 第 ${stageMeta(state)} 关 · ${isFinalStage(state) ? "Boss 空域" : "敌机波次"}`;
+    level.textContent = stageLabel(state);
     lives.textContent = `生命 ${state.player.lives}`;
     score.textContent = `分数 ${state.score}`;
     kills.textContent = state.boss ? `Boss ${Math.max(0, state.boss.hp)}` : `击落 ${state.levelKills}/${state.levelConfig.waves}`;

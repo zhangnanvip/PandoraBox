@@ -44,7 +44,8 @@ const SHARED_PRECACHE = {
     "./src/games/arcade/collision.js",
     "./src/games/arcade/controls.js",
     "./src/games/arcade/effects.js",
-    "./src/games/arcade/engine.js"
+    "./src/games/arcade/engine.js",
+    "./src/games/arcade/stages.js"
   ]
 };
 

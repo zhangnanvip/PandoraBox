@@ -1,6 +1,6 @@
 import { precacheAssets } from "./src/games/catalog.js";
 
-const CACHE_NAME = "pandora-box-v59";
+const CACHE_NAME = "pandora-box-v60";
 const SCOPE_URL = new URL(self.registration.scope);
 
 const CORE_SHELL = [
@@ -28,6 +28,7 @@ const CORE_SHELL = [
   "./src/games/catalog.js",
   "./src/games/arcade/collision.js",
   "./src/games/arcade/effects.js",
+  "./src/games/arcade/stages.js",
   "./public/skins/guofeng/textures/paper.svg",
   "./public/skins/guofeng/textures/wood.svg",
   "./public/skins/guofeng/ornaments/cloud-corner.svg",

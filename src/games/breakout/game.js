@@ -3,6 +3,7 @@ import { clamp, rectFromCenter, rectsOverlap as overlap } from "../arcade/collis
 import { addBurst, addFloatingText, drawEffects, shakeOffset, updateEffects } from "../arcade/effects.js";
 import { classicArcade, drawBall, drawBreakoutBackdrop, drawBreakoutBrick, drawPaddle, drawPowerup } from "../arcade/classic-visuals.js";
 import { bindShellRestart, createArcadeLoop } from "../arcade/engine.js";
+import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } from "../arcade/stages.js";
 
 const W = 360;
 const H = 360;
@@ -79,7 +80,7 @@ function restoreState(config, savedState) {
   if (!savedState || savedState.version !== 1 || savedState.over) return initialState(config);
   const fallback = initialState(config);
   const snapshot = clonePlain(savedState);
-  const level = clamp(Number(snapshot.level) || 1, 1, MAX_LEVEL);
+  const level = restoreStageLevel(snapshot.level, MAX_LEVEL);
   return {
     ...fallback,
     ...snapshot,
@@ -95,7 +96,7 @@ function restoreState(config, savedState) {
 
 function sessionMeta(state) {
   return {
-    level: `${state.level}/${state.maxLevel}`,
+    level: stageMeta(state),
     score: state.score
   };
 }
@@ -150,7 +151,7 @@ function spawnBoss(state) {
 }
 
 function advanceLevel(state, config, context) {
-  state.level += 1;
+  advanceStage(state);
   state.levelConfig = levelTuning(config, state.level);
   state.paddle = { x: W / 2, y: H - 34, w: state.levelConfig.paddle, baseW: state.levelConfig.paddle };
   state.bricks = makeBricks(state.levelConfig.rows, state.level);
@@ -159,7 +160,7 @@ function advanceLevel(state, config, context) {
   state.powerups = [];
   state.buffs = { expand: 0, slow: 0 };
   resetBall(state);
-  state.message = state.level === MAX_LEVEL ? "第 5 关：Boss 砖阵" : `第 ${state.level} 关：砖阵加固`;
+  state.message = isFinalStage(state) ? `第 ${state.maxLevel} 关：Boss 砖阵` : `第 ${state.level} 关：砖阵加固`;
   addBurst(state.effects, W / 2, H / 2, { count: 28, color: classicArcade.cyan, secondary: classicArcade.yellow, speed: 84, radius: 22 });
   state.shake = Math.max(state.shake, 2.8);
   context.playSound?.("start");
@@ -285,7 +286,7 @@ function update(state, config, controls, dt, context) {
     }
   }
   if (!state.bricks.length && !state.boss && !state.over) {
-    if (state.level < state.maxLevel) advanceLevel(state, config, context);
+    if (!isFinalStage(state)) advanceLevel(state, config, context);
     else if (!state.bossSpawned) spawnBoss(state);
   }
 }
@@ -375,8 +376,8 @@ export function mountBreakout(root, context) {
 
   function refreshHud() {
     status.textContent = state.message;
-    note.textContent = `${context.labels.difficulty} · 第 ${state.level}/${state.maxLevel} 关 · ${state.boss ? "Boss 砖核心" : "砖阵"}`;
-    level.textContent = `关卡 ${state.level}/${state.maxLevel}`;
+    note.textContent = `${context.labels.difficulty} · 第 ${stageMeta(state)} 关 · ${state.boss ? "Boss 砖核心" : "砖阵"}`;
+    level.textContent = stageLabel(state);
     lives.textContent = `生命 ${state.lives}`;
     score.textContent = `分数 ${state.score}`;
     left.textContent = state.boss ? `Boss ${Math.max(0, state.boss.hp)}` : `砖块 ${state.bricks.length}`;
