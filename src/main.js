@@ -32,6 +32,7 @@ const state = {
   modal: "",
   pendingGame: "",
   pendingPluginSource: "",
+  view: "lobby",
   activeCategory: "all",
   progress: savedProgress && typeof savedProgress === "object" ? savedProgress : {},
   sessions: savedSessions && typeof savedSessions === "object" ? savedSessions : {},
@@ -45,6 +46,7 @@ const state = {
 
 let cleanupGame = null;
 let gameLoadToken = 0;
+let renderedGameId = "";
 let installPrompt = null;
 
 function externalGameRegistrations() {
@@ -205,7 +207,8 @@ function setState(patch) {
 function openModal(name, patch = {}) {
   Object.assign(state, patch);
   state.modal = name;
-  render();
+  if (state.currentGame) renderModal();
+  else render();
 }
 
 function closeModal() {
@@ -213,7 +216,8 @@ function closeModal() {
   state.pendingGame = "";
   state.pendingPluginSource = "";
   state.resultSummary = null;
-  render();
+  if (state.currentGame) renderModal();
+  else render();
 }
 
 async function refreshPluginSources(options = {}) {
@@ -354,6 +358,7 @@ function sessionSummary(session) {
   const meta = session.meta || {};
   return [
     meta.level ? `关卡 ${meta.level}` : "",
+    meta.stage ? meta.stage : "",
     Number.isFinite(meta.score) ? `分数 ${meta.score}` : "",
     session.updatedAt ? `保存 ${formatTime(session.updatedAt)}` : ""
   ].filter(Boolean).join(" · ");
@@ -470,6 +475,7 @@ function icon(name) {
     play: '<path d="M8 5v14l11-7L8 5Z"/>',
     pause: '<path d="M7 5h3v14H7V5Z"/><path d="M14 5h3v14h-3V5Z"/>',
     star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>',
+    trophy: '<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 3"/><path d="M17 6h3a3 3 0 0 1-3 3"/><path d="M9 17h6"/>',
     sound: '<path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9.5a4 4 0 0 1 0 5"/>',
     offline: '<path d="M6 19h12a4 4 0 0 0 .6-7.96A6.5 6.5 0 0 0 6 9.2 4.9 4.9 0 0 0 6 19Z"/><path d="m9 14 2.2 2.2L16 11"/>'
   };
@@ -927,6 +933,46 @@ function renderAchievementList() {
   `;
 }
 
+function renderAchievementPage() {
+  const achievements = achievementStates();
+  const unlocked = achievements.filter((achievement) => achievement.unlocked);
+  const stats = totalStats();
+  app.innerHTML = `
+    <main class="app-frame lobby-frame">
+      <header class="app-topbar">
+        <div class="brand-lockup">
+          <button class="icon-button top-icon" data-view-lobby aria-label="返回大厅">${icon("back")}</button>
+          <div>
+            <h1>成就中心</h1>
+          </div>
+        </div>
+        <button class="icon-button top-icon" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
+      </header>
+
+      <section class="achievement-page">
+        <div class="achievement-hero">
+          <div>
+            <span class="game-tag">收集进度</span>
+            <strong>${unlocked.length}/${achievements.length}</strong>
+            <p>记录开局、结算、胜利、收藏和多类型游玩进度。</p>
+          </div>
+          <div class="quick-stats">
+            <span>开局 ${stats.started}</span>
+            <span>完成 ${stats.completed}</span>
+            <span>胜利 ${stats.wins}</span>
+            <span>收藏 ${stats.favorites}</span>
+          </div>
+        </div>
+        ${renderAchievementList()}
+      </section>
+    </main>
+  `;
+
+  app.querySelector("[data-view-lobby]")?.addEventListener("click", () => setState({ view: "lobby", modal: "" }));
+  bindShellActions();
+  renderModal();
+}
+
 function pluginSourceById(sourceId) {
   const sources = state.pluginSources.sources || DEFAULT_PLUGIN_SOURCE_STATE.sources;
   return sources.find((source) => source.id === sourceId) || null;
@@ -1052,16 +1098,16 @@ function renderPluginSourceList() {
 
 function renderLobbyDashboard() {
   const sessions = sessionsList().slice(0, 2);
-  const recent = recentGames(4);
+  const recent = recentGames(2);
   const stats = totalStats();
-  const favoriteGames = state.favorites.slice(0, 4);
+  const favoriteGames = state.favorites.slice(0, 2);
   return `
     <section class="lobby-dashboard" aria-label="游戏进度概览">
-      <div class="dashboard-panel dashboard-primary">
+      <div class="dashboard-panel dashboard-primary compact-dashboard">
         <div class="dashboard-head">
           <div>
             <span class="game-tag">续玩</span>
-            <h2>接着上次玩</h2>
+            <h2>未完成</h2>
           </div>
           <span>${stats.sessions} 个存档</span>
         </div>
@@ -1069,24 +1115,29 @@ function renderLobbyDashboard() {
           ${sessions.length ? sessions.map(renderSessionShortcut).join("") : "<p class=\"empty-note\">暂无未完成游戏。</p>"}
         </div>
       </div>
-      <div class="dashboard-panel">
+      <div class="dashboard-panel compact-dashboard">
         <div class="dashboard-head">
           <div>
-            <span class="game-tag">记录</span>
-            <h2>最近与收藏</h2>
+            <span class="game-tag">最近</span>
+            <h2>刚玩过</h2>
           </div>
           <span>${stats.started} 次开局</span>
-        </div>
-        <div class="quick-stats">
-          <span>完成 ${stats.completed}</span>
-          <span>胜利 ${stats.wins}</span>
-          ${stats.bestScore ? `<span>最高 ${stats.bestScore}</span>` : ""}
         </div>
         <div class="recent-list">
           ${recent.length ? recent.map(renderRecentShortcut).join("") : "<p class=\"empty-note\">开始一局后会出现在这里。</p>"}
         </div>
-        ${favoriteGames.length ? `<div class="recent-list favorites-strip">${favoriteGames.map(renderFavoriteShortcut).join("")}</div>` : ""}
-        ${renderAchievementSummary()}
+      </div>
+      <div class="dashboard-panel compact-dashboard">
+        <div class="dashboard-head">
+          <div>
+            <span class="game-tag">收藏</span>
+            <h2>常玩</h2>
+          </div>
+          <span>${state.favorites.length} 款</span>
+        </div>
+        <div class="recent-list favorites-strip">
+          ${favoriteGames.length ? favoriteGames.map(renderFavoriteShortcut).join("") : "<p class=\"empty-note\">点亮卡片星标后会出现在这里。</p>"}
+        </div>
       </div>
     </section>
   `;
@@ -1149,7 +1200,10 @@ function renderLobby() {
             <h1>潘多拉魔盒游戏大厅</h1>
           </div>
         </div>
-        <button class="icon-button top-icon" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
+        <div class="header-actions">
+          <button class="icon-button top-icon" data-open-achievements aria-label="成就">${icon("trophy")}</button>
+          <button class="icon-button top-icon" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
+        </div>
       </header>
 
       <section class="lobby-hero">
@@ -1178,6 +1232,7 @@ function renderLobby() {
   app.querySelectorAll("[data-category]").forEach((button) => {
     button.addEventListener("click", () => setState({ activeCategory: button.dataset.category }));
   });
+  app.querySelector("[data-open-achievements]")?.addEventListener("click", () => setState({ view: "achievements", modal: "" }));
   app.querySelectorAll("[data-prepare-game]").forEach((button) => {
     button.addEventListener("click", () => {
       openModal("start", { pendingGame: button.dataset.prepareGame });
@@ -1432,12 +1487,9 @@ function modalContent() {
           <span class="modal-label">插件源</span>
           ${renderPluginSourceList()}
         </div>
-        <div>
-          <span class="modal-label">基础成就</span>
-          ${renderAchievementList()}
-        </div>
         <div class="settings-actions">
           <button class="secondary-button" data-open-modal="offline">${icon("offline")} 离线状态</button>
+          <button class="secondary-button" data-open-achievements>${icon("trophy")} 成就中心</button>
           <button class="secondary-button" data-install-app ${installPrompt ? "" : "disabled"}>安装到设备</button>
         </div>
       </div>
@@ -1489,6 +1541,13 @@ function renderModal() {
   app.querySelectorAll(".modal-panel [data-open-modal]").forEach((button) => {
     button.addEventListener("click", () => openModal(button.dataset.openModal));
   });
+  app.querySelectorAll(".modal-panel [data-open-achievements]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.modal = "";
+      state.view = "achievements";
+      render();
+    });
+  });
   app.querySelectorAll(".modal-panel [data-review-plugin-source]").forEach((button) => {
     button.addEventListener("click", () => openModal("plugin-source", { pendingPluginSource: button.dataset.reviewPluginSource }));
   });
@@ -1528,15 +1587,28 @@ function renderModal() {
 }
 
 function render() {
-  gameLoadToken += 1;
+  document.documentElement.dataset.theme = state.theme;
+  document.documentElement.dataset.skin = state.theme;
+  if (state.currentGame) {
+    if (renderedGameId !== state.currentGame || !cleanupGame) {
+      gameLoadToken += 1;
+      if (cleanupGame) cleanupGame();
+      cleanupGame = null;
+      renderedGameId = state.currentGame;
+      renderGame();
+    } else {
+      renderModal();
+    }
+    return;
+  }
+
   if (cleanupGame) {
+    gameLoadToken += 1;
     cleanupGame();
     cleanupGame = null;
   }
-
-  document.documentElement.dataset.theme = state.theme;
-  document.documentElement.dataset.skin = state.theme;
-  if (state.currentGame) renderGame();
+  renderedGameId = "";
+  if (state.view === "achievements") renderAchievementPage();
   else renderLobby();
 }
 

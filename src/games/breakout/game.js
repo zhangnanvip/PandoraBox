@@ -445,6 +445,7 @@ export function mountBreakout(root, context) {
   raf = requestAnimationFrame(loop);
 
   return () => {
+    if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
     disposed = true;
     cancelAnimationFrame(raf);
     cleanupJoystick();

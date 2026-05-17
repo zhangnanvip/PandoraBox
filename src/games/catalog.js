@@ -347,7 +347,7 @@ const registrations = [
       complexity: "简单",
       modeSupport: ["solo"],
       progressType: "score",
-      ...gamePluginMeta("2048", "number"),
+      ...gamePluginMeta("2048", "number", { sessionSave: true }),
       ...gameVisualStyle("classicNumber"),
       setupFields: [
         {

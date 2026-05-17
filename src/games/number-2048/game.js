@@ -63,6 +63,17 @@ function cloneState(state) {
   };
 }
 
+function serializeState(state) {
+  return JSON.parse(JSON.stringify(state));
+}
+
+function sessionMeta(state) {
+  return {
+    score: state.score,
+    stage: state.presetLabel
+  };
+}
+
 function restore(state, snapshot) {
   Object.assign(state, snapshot, { grid: [...snapshot.grid] });
 }
@@ -153,7 +164,7 @@ function tileClass(value) {
 export function mount2048(root, context) {
   const preset = presetFor(context.options?.boardSize);
   const storageKey = `2048:${context.difficulty}:${preset.size}`;
-  let state = loadState(storageKey, initialState(context.difficulty, preset));
+  let state = context.savedState || loadState(storageKey, initialState(context.difficulty, preset));
   if (!isValidState(state, preset) || state.target !== targetFor(context.difficulty, preset)) state = initialState(context.difficulty, preset);
 
   let startX = 0;
@@ -164,6 +175,8 @@ export function mount2048(root, context) {
   function save() {
     saveState(storageKey, state);
     saveState(`2048:best:${preset.size}`, state.best);
+    if (!state.over) context.saveSession?.(serializeState(state), sessionMeta(state));
+    else context.clearSession?.();
   }
 
   function reportResult(outcome) {
@@ -202,7 +215,9 @@ export function mount2048(root, context) {
     state = initialState(context.difficulty, preset);
     resultReported = false;
     removeState(storageKey);
-    save();
+    context.clearSession?.();
+    saveState(storageKey, state);
+    saveState(`2048:best:${preset.size}`, state.best);
     render();
   }
 
@@ -267,6 +282,7 @@ export function mount2048(root, context) {
   render();
 
   return () => {
+    save();
     window.removeEventListener("keydown", handleKeydown);
   };
 }

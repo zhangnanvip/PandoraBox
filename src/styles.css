@@ -161,16 +161,19 @@ select:focus-visible {
 
 .lobby-dashboard {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-  gap: 12px;
-  margin-top: 14px;
+  grid-template-columns: repeat(3, minmax(146px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
 .dashboard-panel {
   display: grid;
-  gap: 12px;
+  align-content: start;
+  gap: 8px;
   min-width: 0;
-  padding: 14px;
+  padding: 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background:
@@ -189,7 +192,7 @@ select:focus-visible {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 
 .dashboard-head h2 {
@@ -206,15 +209,15 @@ select:focus-visible {
 .shortcut-list,
 .recent-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .shortcut-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
   align-items: center;
-  padding: 12px;
+  padding: 9px;
   border: 1px solid rgba(31, 95, 74, 0.18);
   border-radius: var(--radius);
   background: rgba(255, 250, 240, 0.72);
@@ -228,7 +231,7 @@ select:focus-visible {
 .shortcut-card p,
 .empty-note {
   color: var(--muted);
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   line-height: 1.45;
 }
 
@@ -256,15 +259,15 @@ select:focus-visible {
 }
 
 .recent-list {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .recent-chip {
   display: grid;
   gap: 2px;
   justify-items: start;
-  min-height: 46px;
-  padding: 8px 10px;
+  min-height: 40px;
+  padding: 7px 9px;
   border: 1px solid rgba(31, 95, 74, 0.16);
   border-radius: var(--radius);
   background: rgba(255, 250, 240, 0.62);
@@ -275,6 +278,7 @@ select:focus-visible {
 
 .recent-chip span {
   font-weight: 900;
+  font-size: 0.9rem;
 }
 
 .recent-chip small {
@@ -308,6 +312,39 @@ select:focus-visible {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.achievement-page {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.achievement-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(215, 157, 56, 0.24);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(120deg, rgba(215, 157, 56, 0.14), rgba(255, 250, 240, 0.8)),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.achievement-hero strong {
+  display: block;
+  color: var(--gold);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.achievement-hero p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .hero-panel,
@@ -2357,7 +2394,7 @@ input[type="range"] {
   }
 
   .lobby-dashboard {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(146px, 1fr));
   }
 
   .shortcut-card,
@@ -2373,6 +2410,10 @@ input[type="range"] {
 
   .shortcut-card .primary-button {
     width: 100%;
+  }
+
+  .achievement-hero {
+    grid-template-columns: 1fr;
   }
 
   .game-status {
