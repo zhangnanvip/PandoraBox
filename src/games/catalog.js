@@ -23,6 +23,7 @@ const GAME_ENTRIES = {
   flying: "./src/games/flying/game.js",
   sudoku: "./src/games/sudoku/game.js",
   klotski: "./src/games/klotski/game.js",
+  match3: "./src/games/match3/game.js",
   "2048": "./src/games/number-2048/game.js",
   "tower-defense": "./src/games/tower-defense/game.js",
   "tank-battle": "./src/games/tank-battle/game.js",
@@ -342,6 +343,33 @@ const registrations = [
       ]
     },
     () => import("./klotski/game.js").then((module) => module.mountKlotski)
+  ),
+  defineLocalGame(
+    {
+      id: "match3",
+      title: "宝石消除",
+      subtitle: "交换宝石连线消除，完成关卡目标",
+      tag: "三消闯关",
+      category: "puzzle",
+      secondaryCategories: ["quick", "number"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("match3", "puzzle", { sessionSave: true, staged: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "sky",
+      icon: "./public/games/puzzle/icons/match3.svg",
+      assets: ["./public/games/puzzle/icons/match3.svg"],
+      rules: [
+        "点击或滑动交换相邻宝石，形成横向或纵向 3 个及以上相同宝石即可消除。",
+        "游戏采用 30 关闯关模式，每关都有目标分数、目标宝石和步数限制。",
+        "后续关卡会增加更多宝石颜色和障碍石；障碍石可通过旁边的消除击碎。",
+        "提示会标出一组可交换宝石，洗牌会消耗 1 步并重新排列当前棋盘。",
+        "难度会影响步数、目标分、目标数量、颜色数量和障碍数量。"
+      ]
+    },
+    () => import("./match3/game.js").then((module) => module.mountMatch3)
   ),
   defineLocalGame(
     {

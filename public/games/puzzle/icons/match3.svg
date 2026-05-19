@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="宝石消除">
+  <defs>
+    <linearGradient id="bg" x1="16" y1="12" x2="82" y2="86" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f9fbff"/>
+      <stop offset="1" stop-color="#dceff5"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#15343a" flood-opacity=".22"/>
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="80" height="80" rx="18" fill="url(#bg)" stroke="#1f5f4a" stroke-width="3"/>
+  <g filter="url(#shadow)" stroke="#fffaf0" stroke-width="2" stroke-linejoin="round">
+    <path d="M28 18l14 11-5 17H19l-5-17z" fill="#d94a5f"/>
+    <path d="M58 17l16 12-7 18H49l-7-18z" fill="#42a7ff"/>
+    <path d="M48 38l15 10-6 18H39l-6-18z" fill="#37b978"/>
+    <path d="M23 54h21l7 12-11 15H25L14 66z" fill="#ffb43b"/>
+    <path d="M61 57l17 9-4 17H52l-4-17z" fill="#9a6cff"/>
+  </g>
+  <path d="M27 30h10M56 30h13M43 49h14M25 66h15M59 68h13" stroke="#fffaf0" stroke-width="3" stroke-linecap="round" opacity=".82"/>
+</svg>

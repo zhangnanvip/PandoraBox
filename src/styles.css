@@ -2911,6 +2911,131 @@ input[type="range"] {
 .tile-2048,
 .tile-4096 { background: #1f5f4a; color: #fffaf0; }
 
+.match3-status .game-note {
+  max-width: min(100%, 520px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match3-board {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+  width: min(94vw, 500px);
+  aspect-ratio: 1;
+  padding: 10px;
+  border: 1px solid rgba(50, 119, 183, 0.34);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(66, 167, 255, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(15, 118, 105, 0.12), rgba(82, 58, 134, 0.12)),
+    rgba(255, 250, 240, 0.78);
+  box-shadow: var(--shadow);
+  touch-action: none;
+}
+
+.play-frame:not(.arcade-play-frame) .match3-board {
+  width: min(94vw, 500px, calc(100dvh - 250px));
+}
+
+.match3-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid rgba(50, 119, 183, 0.16);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(222, 238, 236, 0.62));
+  padding: 0;
+  overflow: hidden;
+}
+
+.match3-cell.is-selected {
+  outline: 3px solid #1f5f4a;
+  outline-offset: -3px;
+  background: rgba(220, 234, 223, 0.86);
+}
+
+.match3-cell.is-hint {
+  outline: 3px solid #d79d38;
+  outline-offset: -3px;
+}
+
+.match3-cell.is-stone {
+  background:
+    linear-gradient(135deg, rgba(47, 60, 78, 0.86), rgba(99, 110, 124, 0.78));
+}
+
+.match3-gem,
+.match3-stone {
+  position: relative;
+  display: block;
+  width: 70%;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 5px 5px rgba(20, 36, 32, 0.18));
+}
+
+.match3-gem::after,
+.match3-stone::after {
+  content: "";
+  position: absolute;
+  inset: 17% 22% auto 22%;
+  height: 14%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.gem-ruby {
+  clip-path: polygon(50% 2%, 94% 35%, 76% 96%, 24% 96%, 6% 35%);
+  background: linear-gradient(145deg, #ff6b7f, #b82e49 68%);
+}
+
+.gem-jade {
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d8fff0 0 15%, #2bd092 34%, #0a8b62 100%);
+}
+
+.gem-amber {
+  border-radius: 12px;
+  transform: rotate(45deg) scale(0.86);
+  background: linear-gradient(145deg, #ffe081, #d48718 74%);
+}
+
+.gem-sapphire {
+  clip-path: polygon(50% 0, 98% 50%, 50% 100%, 2% 50%);
+  background: linear-gradient(145deg, #7bd4ff, #1f6fd1 74%);
+}
+
+.gem-violet {
+  clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%);
+  background: linear-gradient(145deg, #cf9bff, #7943c8 76%);
+}
+
+.gem-emerald {
+  border-radius: 34% 66% 36% 64%;
+  background: linear-gradient(145deg, #9affb5, #17a65b 76%);
+}
+
+.gem-sun {
+  clip-path: polygon(50% 0, 62% 28%, 94% 18%, 76% 48%, 100% 66%, 66% 68%, 60% 100%, 42% 72%, 10% 88%, 28% 56%, 0 38%, 36% 34%);
+  background: linear-gradient(145deg, #fff4a8, #e08922 78%);
+}
+
+.match3-stone {
+  width: 76%;
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.2), transparent 35%),
+    linear-gradient(145deg, #a6afbb, #4d5868);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.18),
+    inset 0 -8px 0 rgba(0,0,0,.16);
+}
+
 .number-help {
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -3880,6 +4005,7 @@ input[type="range"] {
 .play-frame:not(.arcade-play-frame) .flying-board,
 .play-frame:not(.arcade-play-frame) .draughts-board,
 .play-frame:not(.arcade-play-frame) .number-board,
+.play-frame:not(.arcade-play-frame) .match3-board,
 .play-frame:not(.arcade-play-frame) .tictactoe-board,
 .play-frame:not(.arcade-play-frame) .sudoku-board,
 .play-frame:not(.arcade-play-frame) .klotski-board {
@@ -3903,6 +4029,8 @@ input[type="range"] {
 .play-frame:not(.arcade-play-frame) .flying-board button,
 .play-frame:not(.arcade-play-frame) .draughts-board,
 .play-frame:not(.arcade-play-frame) .draughts-cell,
+.play-frame:not(.arcade-play-frame) .match3-board,
+.play-frame:not(.arcade-play-frame) .match3-cell,
 .play-frame:not(.arcade-play-frame) .sudoku-board,
 .play-frame:not(.arcade-play-frame) .sudoku-cell,
 .play-frame:not(.arcade-play-frame) .klotski-board,
