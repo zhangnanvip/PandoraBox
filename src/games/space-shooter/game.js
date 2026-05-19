@@ -15,7 +15,7 @@ const PLAYER_MIN_Y = 86;
 const BOSS_Y = 92;
 const MAX_LEVEL = 160;
 const BOSS_INTERVAL = 10;
-const CONFIG = { lives: 3, enemyEvery: 0.74, enemySpeed: 70, bulletSpeed: 118 };
+const CONFIG = { lives: 3, enemyEvery: 0.68, enemySpeed: 74, bulletSpeed: 124 };
 
 const CHAPTERS = [
   { from: 1, name: "曙光边境", subtitle: "基础机群" },
@@ -30,12 +30,12 @@ const CHAPTERS = [
 
 const ENEMY_TYPES = {
   grunt: { unlock: 1, hp: 1, score: 80, speed: 1, fire: 1, bullet: "single", color: classicArcade.magenta, weight: 7 },
-  scout: { unlock: 3, hp: 1, score: 75, speed: 1.45, fire: 1.28, bullet: "single", color: classicArcade.cyan, weight: 4 },
-  armored: { unlock: 7, hp: 3, score: 135, speed: 0.78, fire: 0.95, bullet: "single", color: classicArcade.red, weight: 3 },
-  scatter: { unlock: 14, hp: 2, score: 155, speed: 0.94, fire: 0.82, bullet: "spread", color: classicArcade.orange, weight: 3 },
-  rusher: { unlock: 24, hp: 2, score: 125, speed: 1.62, fire: 1.4, bullet: "none", color: classicArcade.yellow, weight: 3 },
-  laser: { unlock: 35, hp: 2, score: 175, speed: 0.88, fire: 0.72, bullet: "laser", color: classicArcade.blue, weight: 2 },
-  splitter: { unlock: 50, hp: 3, score: 195, speed: 0.86, fire: 0.9, bullet: "single", color: classicArcade.green, weight: 2 },
+  scout: { unlock: 2, hp: 1, score: 75, speed: 1.45, fire: 1.28, bullet: "single", color: classicArcade.cyan, weight: 4 },
+  armored: { unlock: 4, hp: 3, score: 135, speed: 0.78, fire: 0.95, bullet: "single", color: classicArcade.red, weight: 3 },
+  scatter: { unlock: 8, hp: 2, score: 155, speed: 0.94, fire: 0.82, bullet: "spread", color: classicArcade.orange, weight: 3 },
+  rusher: { unlock: 14, hp: 2, score: 125, speed: 1.62, fire: 1.4, bullet: "none", color: classicArcade.yellow, weight: 3 },
+  laser: { unlock: 22, hp: 2, score: 175, speed: 0.88, fire: 0.72, bullet: "laser", color: classicArcade.blue, weight: 2 },
+  splitter: { unlock: 35, hp: 3, score: 195, speed: 0.86, fire: 0.9, bullet: "single", color: classicArcade.green, weight: 2 },
   shield: { unlock: 70, hp: 4, score: 235, speed: 0.76, fire: 0.76, bullet: "spread", color: "#f8fbff", weight: 2 },
   carrier: { unlock: 95, hp: 5, score: 280, speed: 0.7, fire: 0.68, bullet: "burst", color: "#d45cff", weight: 1.5 },
   commander: { unlock: 130, hp: 6, score: 360, speed: 0.68, fire: 0.56, bullet: "command", color: "#ff4d5e", weight: 1 }
@@ -53,7 +53,7 @@ function levelTuning(level) {
   const chapter = chapterFor(level);
   const rank = (level - 1) / (MAX_LEVEL - 1);
   const chapterIndex = Math.floor((level - 1) / 20);
-  const scoreTarget = Math.round(380 + level * 42 + Math.pow(level, 1.13) * 14 + chapterIndex * 120);
+  const scoreTarget = Math.round(640 + level * 62 + Math.pow(level, 1.13) * 22 + chapterIndex * 180);
   return {
     chapter,
     scoreTarget,
@@ -61,7 +61,7 @@ function levelTuning(level) {
     enemySpeed: CONFIG.enemySpeed + rank * 86 + chapterIndex * 2,
     bulletSpeed: CONFIG.bulletSpeed + rank * 118 + chapterIndex * 4,
     bossHp: Math.round(36 + level * 4.9 + chapterIndex * 18),
-    maxEnemyCount: 5 + Math.min(7, chapterIndex),
+    maxEnemyCount: 6 + Math.min(7, chapterIndex),
     bossStage: isBossLevel(level)
   };
 }

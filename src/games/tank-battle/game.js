@@ -19,7 +19,7 @@ const DIRS = {
   right: { x: 1, y: 0 }
 };
 
-const CONFIG = { total: 7, active: 3, enemySpeed: 42, enemyFire: 1.35, playerLives: 3 };
+const CONFIG = { total: 11, active: 3, enemySpeed: 44, enemyFire: 1.16, playerLives: 3 };
 const LEVEL_PROFILES = [
   { cols: 12, rows: 12, title: "训练防线", feature: "砖墙阵地" },
   { cols: 12, rows: 12, title: "草丛伏击", feature: "草地遮蔽" },
@@ -84,7 +84,7 @@ function wantedDirection(controls) {
 function levelTuning(config, level) {
   const bossStage = level % BOSS_INTERVAL === 0 || level >= MAX_LEVEL;
   return {
-    total: Math.max(5, config.total + Math.floor((level - 1) * 1.45) + (bossStage ? 3 : 0)),
+    total: Math.max(8, config.total + Math.floor((level - 1) * 1.55) + (bossStage ? 4 : 0)),
     active: Math.min(7, config.active + Math.floor((level - 1) / 5)),
     enemySpeed: config.enemySpeed + (level - 1) * 2.6,
     enemyFire: Math.max(0.44, config.enemyFire - (level - 1) * 0.035),

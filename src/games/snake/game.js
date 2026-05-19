@@ -10,7 +10,7 @@ import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } 
 const SIZE = 18;
 const CELL = 20;
 const W = SIZE * CELL;
-const CONFIG = { tick: 0.14, target: 14, obstacles: 1 };
+const CONFIG = { tick: 0.138, target: 18, obstacles: 2 };
 const MAX_LEVEL = 30;
 const DIRS = {
   up: { x: 0, y: -1 },
@@ -51,8 +51,8 @@ function makeObstacles(count, snake) {
 function levelTuning(config, level) {
   const chapter = Math.floor((level - 1) / 6);
   return {
-    tick: Math.max(0.062, config.tick - (level - 1) * 0.0036 - chapter * 0.004),
-    target: Math.min(34, Math.max(5, Math.round(config.target * 0.36) + level + chapter * 2)),
+    tick: Math.max(0.062, config.tick - (level - 1) * 0.0034 - chapter * 0.004),
+    target: Math.min(42, Math.max(10, Math.round(config.target * 0.5) + level + chapter * 2)),
     obstacles: Math.min(22, config.obstacles + Math.floor((level - 1) * 0.72) + chapter)
   };
 }

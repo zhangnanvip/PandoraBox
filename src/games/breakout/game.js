@@ -11,7 +11,7 @@ import { advanceStage, isFinalStage, restoreStageLevel, stageLabel, stageMeta } 
 
 const W = 360;
 const H = 360;
-const CONFIG = { rows: 5, speed: 158, paddle: 78, lives: 3 };
+const CONFIG = { rows: 6, speed: 156, paddle: 76, lives: 3 };
 const MAX_LEVEL = 30;
 const BOSS_INTERVAL = 5;
 
@@ -22,7 +22,7 @@ function isBossLevel(level) {
 function levelTuning(config, level) {
   const chapter = Math.floor((level - 1) / BOSS_INTERVAL);
   return {
-    rows: Math.min(8, Math.max(4, Math.round(config.rows * 0.72)) + Math.floor((level - 1) / 2)),
+    rows: Math.min(8, Math.max(5, Math.round(config.rows * 0.82)) + Math.floor((level - 1) / 2)),
     speed: config.speed + (level - 1) * 5 + chapter * 4,
     paddle: Math.max(48, config.paddle - Math.floor((level - 1) / 3) * 2),
     bossHp: 24 + level * 4 + chapter * 12
@@ -36,7 +36,7 @@ function makeBricks(rows, level = 1) {
   const bw = (W - 32 - gap * (cols - 1)) / cols;
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < cols; x += 1) {
-      const hp = y + Math.floor(level / 4) < 4 ? 1 : level >= 18 && y % 3 === 0 ? 3 : 2;
+      const hp = y < 3 && level < 4 ? 1 : level >= 12 && y % 3 === 0 ? 3 : 2;
       bricks.push({ x: 16 + x * (bw + gap), y: 34 + y * 18, w: bw, h: 13, hp, row: y });
     }
   }
