@@ -12,8 +12,9 @@ const W = 360;
 const H = 360;
 const CELL = 30;
 const GRID = 12;
-const MAX_LEVEL = 5;
-const WAVES_PER_LEVEL = 3;
+const MAX_LEVEL = 12;
+const WAVES_PER_LEVEL = 4;
+const MAP_VERSION = 2;
 
 const DIFFICULTY = {
   easy: { lives: 22, gold: 230, hp: 0.85, speed: 0.86, count: -1 },
@@ -30,6 +31,71 @@ const TOWER_TYPES = {
 };
 
 const TOWER_ORDER = ["arrow", "cannon", "frost", "spark"];
+
+const ENEMY_TRAITS = {
+  grunt: { label: "杂兵", unlock: 1, hp: 1, speed: 1, reward: 0, penalty: 1 },
+  runner: { label: "快怪", unlock: 2, hp: 0.72, speed: 1.42, reward: 1, penalty: 1 },
+  armored: { label: "重甲", unlock: 3, hp: 1.72, speed: 0.76, reward: 4, penalty: 1 },
+  swarm: { label: "蜂群", unlock: 6, hp: 0.52, speed: 1.76, reward: -1, penalty: 1 },
+  splitter: { label: "分裂", unlock: 9, hp: 1.18, speed: 0.96, reward: 3, penalty: 1, split: 2 },
+  shield: { label: "护盾", unlock: 14, hp: 2.35, speed: 0.66, reward: 7, penalty: 2 },
+  boss: { label: "守门兽", unlock: 4, hp: 1, speed: 1, reward: 0, penalty: 5 }
+};
+
+const MAPS = [
+  {
+    name: "回廊试炼",
+    feature: "基础折返",
+    cells: [
+      [0, 5], [1, 5], [2, 5], [3, 5],
+      [3, 4], [3, 3], [3, 2], [4, 2], [5, 2], [6, 2],
+      [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8],
+      [7, 8], [8, 8], [9, 8], [9, 7], [9, 6], [9, 5], [9, 4],
+      [10, 4], [11, 4]
+    ]
+  },
+  {
+    name: "双折回廊",
+    feature: "长线压迫",
+    cells: [
+      [0, 2], [1, 2], [2, 2], [2, 3], [2, 4], [2, 5],
+      [3, 5], [4, 5], [5, 5], [5, 4], [5, 3], [6, 3],
+      [7, 3], [8, 3], [8, 4], [8, 5], [8, 6], [7, 6],
+      [6, 6], [5, 6], [5, 7], [5, 8], [6, 8], [7, 8],
+      [8, 8], [9, 8], [10, 8], [11, 8]
+    ]
+  },
+  {
+    name: "蛇形矿道",
+    feature: "前后夹击",
+    cells: [
+      [0, 8], [1, 8], [2, 8], [3, 8], [3, 7], [3, 6],
+      [3, 5], [2, 5], [1, 5], [1, 4], [1, 3], [2, 3],
+      [3, 3], [4, 3], [5, 3], [5, 4], [5, 5], [5, 6],
+      [6, 6], [7, 6], [7, 5], [7, 4], [8, 4], [9, 4],
+      [9, 3], [9, 2], [10, 2], [11, 2]
+    ]
+  },
+  {
+    name: "核心环线",
+    feature: "近核转弯",
+    cells: [
+      [0, 6], [1, 6], [2, 6], [2, 7], [2, 8], [3, 8],
+      [4, 8], [4, 7], [4, 6], [4, 5], [4, 4], [5, 4],
+      [6, 4], [7, 4], [7, 5], [7, 6], [8, 6], [9, 6],
+      [9, 7], [9, 8], [10, 8], [10, 7], [10, 6], [10, 5],
+      [10, 4], [11, 4]
+    ]
+  }
+].map((map) => ({
+  ...map,
+  pathSet: new Set(map.cells.map(([x, y]) => `${x}:${y}`)),
+  waypoints: [
+    { x: -CELL / 2, y: map.cells[0][1] * CELL + CELL / 2 },
+    ...map.cells.map(([x, y]) => ({ x: x * CELL + CELL / 2, y: y * CELL + CELL / 2 })),
+    { x: W + CELL / 2, y: map.cells[map.cells.length - 1][1] * CELL + CELL / 2 }
+  ]
+}));
 
 function towerIconSvg(type) {
   if (type === "cannon") {
@@ -68,20 +134,22 @@ function actionIconSvg(type) {
   return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 17h15l-5 6 10-9H11l5-6z"/></svg>`;
 }
 
-const PATH_CELLS = [
-  [0, 5], [1, 5], [2, 5], [3, 5],
-  [3, 4], [3, 3], [3, 2], [4, 2], [5, 2], [6, 2],
-  [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8],
-  [7, 8], [8, 8], [9, 8], [9, 7], [9, 6], [9, 5], [9, 4],
-  [10, 4], [11, 4]
-];
+function mapForLevel(level) {
+  return MAPS[((Math.max(1, level) - 1) % MAPS.length)];
+}
 
-const PATH_SET = new Set(PATH_CELLS.map(([x, y]) => `${x}:${y}`));
-const WAYPOINTS = [
-  { x: -CELL / 2, y: 5.5 * CELL },
-  ...PATH_CELLS.map(([x, y]) => ({ x: x * CELL + CELL / 2, y: y * CELL + CELL / 2 })),
-  { x: W + CELL / 2, y: 4.5 * CELL }
-];
+function waypointsForLevel(level) {
+  return mapForLevel(level).waypoints;
+}
+
+function startPointForLevel(level) {
+  return waypointsForLevel(level)[0];
+}
+
+function endpointForLevel(level) {
+  const waypoints = waypointsForLevel(level);
+  return waypoints[waypoints.length - 1];
+}
 
 function towerStats(tower) {
   const base = TOWER_TYPES[tower.type] || TOWER_TYPES.arrow;
@@ -118,42 +186,69 @@ function waveNumber(state) {
 function waveConfig(config, level, wave) {
   const totalWave = waveIndex({ level, wave }, WAVES_PER_LEVEL);
   return {
-    count: Math.max(4, 5 + level * 2 + wave * 2 + config.count),
-    hp: Math.round((30 + level * 18 + wave * 10) * config.hp),
-    speed: (24 + level * 2 + wave) * config.speed,
+    count: Math.max(6, 6 + level * 2 + wave * 2 + Math.floor(totalWave / 5) + config.count),
+    hp: Math.round((34 + level * 18 + wave * 11 + Math.floor(totalWave / 4) * 5) * config.hp),
+    speed: (24 + level * 2.2 + wave * 1.2 + Math.floor(totalWave / 8)) * config.speed,
     reward: 8 + level,
-    interval: Math.max(0.36, 0.72 - level * 0.04),
+    interval: Math.max(0.32, 0.72 - level * 0.026 - wave * 0.012),
     totalWave
   };
 }
 
+function isBossWave(level, wave) {
+  return wave >= WAVES_PER_LEVEL;
+}
+
+function unlockedEnemyLabels(totalWave) {
+  return Object.entries(ENEMY_TRAITS)
+    .filter(([kind, trait]) => kind !== "boss" && trait.unlock === totalWave)
+    .map(([, trait]) => trait.label)
+    .join("/");
+}
+
 function wavePreview(config, level, wave) {
   const next = waveConfig(config, level, wave);
-  const boss = isFinalWave({ level, wave, maxLevel: MAX_LEVEL }, WAVES_PER_LEVEL) ? " · Boss" : "";
-  return `${next.count}${boss} 敌 · HP ${next.hp}`;
+  const boss = isBossWave(level, wave) ? " · 守门兽" : "";
+  const unlock = unlockedEnemyLabels(next.totalWave);
+  return `${next.count}${boss} 敌 · HP ${next.hp}${unlock ? ` · 新${unlock}` : ""}`;
+}
+
+function enemyKindAt(index, totalWave) {
+  if (totalWave >= ENEMY_TRAITS.shield.unlock && index % 13 === 9) return "shield";
+  if (totalWave >= ENEMY_TRAITS.splitter.unlock && index % 11 === 6) return "splitter";
+  if (totalWave >= ENEMY_TRAITS.swarm.unlock && index % 6 === 2) return "swarm";
+  if (totalWave >= ENEMY_TRAITS.armored.unlock && index % 7 === 5) return "armored";
+  if (totalWave >= ENEMY_TRAITS.runner.unlock && index % 5 === 3) return "runner";
+  return "grunt";
+}
+
+function createEnemyTemplate(kind, id, waveCfg) {
+  const trait = ENEMY_TRAITS[kind] || ENEMY_TRAITS.grunt;
+  return {
+    id,
+    kind,
+    hp: Math.max(1, Math.round(waveCfg.hp * trait.hp)),
+    speed: waveCfg.speed * trait.speed,
+    reward: Math.max(2, waveCfg.reward + trait.reward)
+  };
 }
 
 function createWave(config, level, wave, nextId) {
   const waveCfg = waveConfig(config, level, wave);
   const queue = [];
   for (let i = 0; i < waveCfg.count; i += 1) {
-    const runner = i % 5 === 3;
-    const armored = i % 7 === 5;
-    queue.push({
-      id: nextId + i,
-      kind: runner ? "runner" : (armored ? "armored" : "grunt"),
-      hp: Math.round(waveCfg.hp * (runner ? 0.72 : armored ? 1.72 : 1)),
-      speed: waveCfg.speed * (runner ? 1.38 : armored ? 0.76 : 1),
-      reward: waveCfg.reward + (runner ? 1 : armored ? 4 : 0)
-    });
+    queue.push(createEnemyTemplate(enemyKindAt(i, waveCfg.totalWave), nextId + i, waveCfg));
   }
-  if (isFinalWave({ level, wave, maxLevel: MAX_LEVEL }, WAVES_PER_LEVEL)) {
+  if (isBossWave(level, wave)) {
+    const finalBoss = isFinalWave({ level, wave, maxLevel: MAX_LEVEL }, WAVES_PER_LEVEL);
     queue.push(createBossEnemy({
       id: nextId + queue.length,
       kind: "boss",
-      hp: Math.round(520 * config.hp),
-      speed: 18 * config.speed,
-      reward: 140
+      name: finalBoss ? "终局魔盒攻城兽" : `${mapForLevel(level).name}守门兽`,
+      hp: Math.round((220 + level * 72 + waveCfg.hp * 2.1) * config.hp * (finalBoss ? 1.8 : 1)),
+      speed: (16 + level * 0.8) * config.speed,
+      reward: finalBoss ? 220 : 80 + level * 8,
+      penalty: finalBoss ? 8 : 4
     }));
   }
   return queue;
@@ -162,6 +257,7 @@ function createWave(config, level, wave, nextId) {
 function initialState(config) {
   return {
     ...createStageState(MAX_LEVEL),
+    mapVersion: MAP_VERSION,
     wave: 1,
     lives: config.lives,
     gold: config.gold,
@@ -190,24 +286,31 @@ function restoreState(config, saved) {
   if (!saved || typeof saved !== "object") return state;
   const level = restoreStageLevel(saved.level, MAX_LEVEL);
   const wave = clamp(Number(saved.wave) || 1, 1, WAVES_PER_LEVEL);
+  const mapCompatible = saved.mapVersion === MAP_VERSION;
+  const savedTowers = Array.isArray(saved.towers) && mapCompatible
+    ? saved.towers.filter((tower) => !isPathCell({ x: tower.cellX, y: tower.cellY }, level))
+    : [];
   return {
     ...state,
     ...saved,
+    mapVersion: MAP_VERSION,
     level,
     wave,
     maxLevel: MAX_LEVEL,
     effects: [],
-    towers: Array.isArray(saved.towers) ? saved.towers : [],
-    enemies: Array.isArray(saved.enemies) ? saved.enemies : [],
-    shots: Array.isArray(saved.shots) ? saved.shots : [],
-    queue: Array.isArray(saved.queue) ? saved.queue : [],
+    towers: savedTowers,
+    enemies: Array.isArray(saved.enemies) && mapCompatible ? saved.enemies : [],
+    shots: Array.isArray(saved.shots) && mapCompatible ? saved.shots : [],
+    queue: Array.isArray(saved.queue) && mapCompatible ? saved.queue : [],
     selectedType: TOWER_TYPES[saved.selectedType] ? saved.selectedType : "arrow",
-    selectedTower: saved.selectedTower || null,
+    selectedTower: savedTowers.some((tower) => tower.id === saved.selectedTower) ? saved.selectedTower : null,
+    waveActive: mapCompatible ? Boolean(saved.waveActive) : false,
+    spawning: mapCompatible ? Boolean(saved.spawning) : false,
     transition: null,
     feedback: null,
     over: false,
     resultReported: false,
-    message: saved.message || state.message
+    message: mapCompatible ? (saved.message || state.message) : "路线已更新，重新部署防线"
   };
 }
 
@@ -245,8 +348,8 @@ function isInsideCell(cell) {
   return cell.x >= 0 && cell.x < GRID && cell.y >= 0 && cell.y < GRID;
 }
 
-function isPathCell(cell) {
-  return PATH_SET.has(`${cell.x}:${cell.y}`);
+function isPathCell(cell, level = 1) {
+  return mapForLevel(level).pathSet.has(`${cell.x}:${cell.y}`);
 }
 
 function towerAt(state, cell) {
@@ -256,7 +359,7 @@ function towerAt(state, cell) {
 function buildTower(state, cell) {
   if (state.over || state.spawning) return;
   if (!isInsideCell(cell)) return;
-  if (isPathCell(cell)) {
+  if (isPathCell(cell, state.level)) {
     state.message = "道路上不能建塔";
     return;
   }
@@ -330,7 +433,7 @@ function sellSelectedTower(state) {
 }
 
 function spawnEnemy(state, template, context) {
-  const start = WAYPOINTS[0];
+  const start = startPointForLevel(state.level);
   const enemy = {
     ...template,
     maxHp: template.hp,
@@ -343,9 +446,9 @@ function spawnEnemy(state, template, context) {
   state.enemies.push(enemy);
   if (enemy.kind === "boss") {
     announceBossIntro(state, context, enemy, {
-      message: "Boss 出现：魔盒攻城兽",
+      message: `Boss 出现：${enemy.name || "魔盒攻城兽"}`,
       title: "Boss 波来袭",
-      subtitle: "魔盒攻城兽",
+      subtitle: enemy.name || "魔盒攻城兽",
       effects: state.effects,
       position: { x: 26, y: start.y },
       burst: { count: 32, color: classicArcade.red, secondary: classicArcade.yellow, speed: 92, radius: 20 },
@@ -375,13 +478,14 @@ function startWave(state, config) {
 function completeWave(state, context) {
   if (state.over) return;
   state.waveActive = false;
+  const endpoint = endpointForLevel(state.level);
   const rewards = {
-    gold: 28 + state.level * 5,
-    score: 40 + state.level * 15
+    gold: 30 + state.level * 6 + state.wave * 3,
+    score: 46 + state.level * 16 + state.wave * 4
   };
   grantProgressRewards(state, rewards, {
     effects: state.effects,
-    position: { x: W - 20, y: 4.5 * CELL - 10 },
+    position: { x: endpoint.x - 10, y: endpoint.y - 10 },
     labels: { gold: "金币", score: "分数" },
     color: classicArcade.yellow,
     size: 12
@@ -396,7 +500,7 @@ function completeWave(state, context) {
         duration: 1.25
       },
       effects: state.effects,
-      position: { x: W - 20, y: 4.5 * CELL },
+      position: { x: endpoint.x - 10, y: endpoint.y },
       burst: { color: classicArcade.green, secondary: classicArcade.yellow, count: 16, speed: 76 },
       shake: 2.8
     });
@@ -410,16 +514,29 @@ function completeWave(state, context) {
     state.resultReported = true;
     return;
   }
-  advanceWave(state, WAVES_PER_LEVEL);
+  const progressType = advanceWave(state, WAVES_PER_LEVEL);
+  let redeployRefund = 0;
+  if (progressType === "stage") {
+    redeployRefund = Math.round(state.towers.reduce((sum, tower) => sum + towerInvestment(tower), 0) * 0.72);
+    if (redeployRefund > 0) {
+      state.gold += redeployRefund;
+      addFloatingText(state.effects, W / 2, H / 2, `换防返还 +${redeployRefund}`, { color: classicArcade.green, size: 13 });
+    }
+    state.towers = [];
+    state.shots = [];
+    state.selectedTower = null;
+  }
   announceStageClear(state, context, {
-    message: `准备第 ${waveMeta(state, WAVES_PER_LEVEL)} 波`,
+    message: progressType === "stage"
+      ? `进入${mapForLevel(state.level).name}，重新部署防线`
+      : `准备第 ${waveMeta(state, WAVES_PER_LEVEL)} 波`,
     transition: {
-      title: "波次完成",
-      subtitle: rewardSummary(rewards, { gold: "金币", score: "分数" }),
+      title: progressType === "stage" ? "区域推进" : "波次完成",
+      subtitle: rewardSummary({ ...rewards, ...(redeployRefund ? { redeploy: redeployRefund } : {}) }, { gold: "金币", score: "分数", redeploy: "返还" }),
       duration: 1.1
     },
     effects: state.effects,
-    position: { x: W - 20, y: 4.5 * CELL },
+    position: { x: endpoint.x - 10, y: endpoint.y },
     burst: { color: classicArcade.green, secondary: classicArcade.yellow, count: 16, speed: 76 },
     shake: 2.3
   });
@@ -433,8 +550,28 @@ function damageEnemy(state, enemy, amount, shot) {
   }
   if (enemy.hp <= 0) {
     state.gold += enemy.reward;
-    state.score += enemy.kind === "boss" ? 360 : 18 + enemy.reward;
+    state.score += enemy.kind === "boss" ? 360 + state.level * 18 : 18 + enemy.reward;
     if (enemy.kind === "boss") triggerHitStop(state, 0.1, 0.36);
+    if (ENEMY_TRAITS[enemy.kind]?.split && !enemy.splitChild) {
+      for (let i = 0; i < ENEMY_TRAITS[enemy.kind].split; i += 1) {
+        const dir = i % 2 === 0 ? -1 : 1;
+        const hp = Math.max(3, Math.round(enemy.maxHp * 0.22));
+        state.enemies.push({
+          id: state.nextId++,
+          kind: "swarm",
+          hp,
+          maxHp: hp,
+          x: clamp(enemy.x + dir * 8, 8, W - 8),
+          y: enemy.y,
+          pathIndex: enemy.pathIndex,
+          slowTimer: 0,
+          slowFactor: 1,
+          speed: enemy.speed * 1.16,
+          reward: Math.max(2, Math.round(enemy.reward * 0.34)),
+          splitChild: true
+        });
+      }
+    }
     addBurst(state.effects, enemy.x, enemy.y, {
       color: enemy.kind === "boss" ? classicArcade.red : classicArcade.orange,
       secondary: classicArcade.yellow,
@@ -449,10 +586,11 @@ function damageEnemy(state, enemy, amount, shot) {
 }
 
 function updateEnemies(state, dt) {
+  const waypoints = waypointsForLevel(state.level);
   for (const enemy of state.enemies) {
     if (enemy.slowTimer > 0) enemy.slowTimer -= dt;
     else enemy.slowFactor = 1;
-    const target = WAYPOINTS[enemy.pathIndex + 1];
+    const target = waypoints[enemy.pathIndex + 1];
     if (!target) {
       enemy.reached = true;
       continue;
@@ -466,18 +604,20 @@ function updateEnemies(state, dt) {
       enemy.x = target.x;
       enemy.y = target.y;
       enemy.pathIndex += 1;
-      if (enemy.pathIndex >= WAYPOINTS.length - 1) enemy.reached = true;
+      if (enemy.pathIndex >= waypoints.length - 1) enemy.reached = true;
     } else {
       enemy.x += (dx / distance) * step;
       enemy.y += (dy / distance) * step;
     }
   }
+  const endpoint = endpointForLevel(state.level);
   for (let i = state.enemies.length - 1; i >= 0; i -= 1) {
     if (!state.enemies[i].reached) continue;
-    const penalty = state.enemies[i].kind === "boss" ? 5 : 1;
+    const enemy = state.enemies[i];
+    const penalty = enemy.penalty || ENEMY_TRAITS[enemy.kind]?.penalty || (enemy.kind === "boss" ? 5 : 1);
     state.lives -= penalty;
     state.shake = Math.max(state.shake, 7);
-    addBurst(state.effects, W - 8, 4.5 * CELL, { color: classicArcade.red, secondary: classicArcade.white, count: 12, speed: 88 });
+    addBurst(state.effects, endpoint.x - 8, endpoint.y, { color: classicArcade.red, secondary: classicArcade.white, count: 12, speed: 88 });
     state.enemies.splice(i, 1);
   }
 }
@@ -518,9 +658,9 @@ function updateShots(state, dt) {
     }
     const dx = target.x - shot.x;
     const dy = target.y - shot.y;
-    const distance = Math.hypot(dx, dy);
+    const targetDistance = Math.hypot(dx, dy);
     const step = shot.speed * dt;
-    if (distance <= step + 4) {
+    if (targetDistance <= step + 4) {
       shot.done = true;
       if (shot.splash) {
         for (let i = state.enemies.length - 1; i >= 0; i -= 1) {
@@ -549,8 +689,8 @@ function updateShots(state, dt) {
       }
       addBurst(state.effects, target.x, target.y, { color: shot.color, secondary: classicArcade.white, count: 5, speed: 40, life: 0.18 });
     } else {
-      shot.x += (dx / distance) * step;
-      shot.y += (dy / distance) * step;
+      shot.x += (dx / targetDistance) * step;
+      shot.y += (dy / targetDistance) * step;
     }
   }
   for (let i = state.shots.length - 1; i >= 0; i -= 1) {
@@ -628,13 +768,14 @@ function fillPath(ctx, points) {
   ctx.fill();
 }
 
-function drawPath(ctx) {
+function drawPath(ctx, state) {
+  const waypoints = waypointsForLevel(state.level);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.strokeStyle = "rgba(2, 7, 16, .58)";
   ctx.lineWidth = 29;
   ctx.beginPath();
-  WAYPOINTS.forEach((point, index) => {
+  waypoints.forEach((point, index) => {
     if (index === 0) ctx.moveTo(point.x, point.y);
     else ctx.lineTo(point.x, point.y);
   });
@@ -647,8 +788,8 @@ function drawPath(ctx) {
   ctx.setLineDash([8, 10]);
   ctx.stroke();
   ctx.setLineDash([]);
-  for (let i = 1; i < WAYPOINTS.length - 1; i += 4) {
-    const point = WAYPOINTS[i];
+  for (let i = 1; i < waypoints.length - 1; i += 4) {
+    const point = waypoints[i];
     ctx.fillStyle = "rgba(248,251,255,.16)";
     ctx.beginPath();
     ctx.arc(point.x, point.y, 2.6, 0, Math.PI * 2);
@@ -751,9 +892,12 @@ function drawEnemy(ctx, enemy) {
     grunt: classicArcade.magenta,
     runner: classicArcade.cyan,
     armored: classicArcade.orange,
+    swarm: classicArcade.green,
+    splitter: classicArcade.yellow,
+    shield: classicArcade.blue,
     boss: classicArcade.red
   };
-  const radius = enemy.kind === "boss" ? 15 : enemy.kind === "armored" ? 11 : 9;
+  const radius = enemy.kind === "boss" ? 15 : (enemy.kind === "armored" || enemy.kind === "shield") ? 11 : enemy.kind === "swarm" ? 7 : 9;
   ctx.save();
   ctx.translate(enemy.x, enemy.y);
   ctx.fillStyle = classicArcade.shadow;
@@ -774,10 +918,35 @@ function drawEnemy(ctx, enemy) {
     ctx.beginPath();
     ctx.arc(0, -3, 5, 0, Math.PI * 2);
     ctx.fill();
+  } else if (enemy.kind === "shield") {
+    ctx.beginPath();
+    ctx.arc(0, 0, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(248,251,255,.16)";
+    ctx.beginPath();
+    ctx.arc(0, 0, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = classicArcade.cyan;
+    fillPath(ctx, [[0, -12], [9, -2], [5, 10], [-5, 10], [-9, -2]]);
   } else if (enemy.kind === "armored") {
     fillPath(ctx, [[0, -15], [13, -8], [11, 10], [0, 16], [-11, 10], [-13, -8]]);
     ctx.fillStyle = "rgba(0,0,0,.28)";
     fillPath(ctx, [[0, -9], [8, -4], [7, 6], [0, 10], [-7, 6], [-8, -4]]);
+  } else if (enemy.kind === "splitter") {
+    fillPath(ctx, [[0, -15], [12, -2], [6, 14], [0, 10], [-6, 14], [-12, -2]]);
+    ctx.fillStyle = "rgba(0,0,0,.22)";
+    ctx.fillRect(-2, -10, 4, 20);
+    ctx.fillStyle = colors.splitter;
+    ctx.beginPath();
+    ctx.arc(-5, -2, 3, 0, Math.PI * 2);
+    ctx.arc(5, -2, 3, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (enemy.kind === "swarm") {
+    fillPath(ctx, [[0, -11], [7, 5], [2, 3], [0, 12], [-2, 3], [-7, 5]]);
+    ctx.strokeStyle = "rgba(93,255,139,.55)";
+    ctx.lineWidth = 1.5;
+    strokePath(ctx, [[-8, 2], [-15, 6]]);
+    strokePath(ctx, [[8, 2], [15, 6]]);
   } else if (enemy.kind === "runner") {
     fillPath(ctx, [[0, -15], [14, 7], [5, 4], [0, 15], [-5, 4], [-14, 7]]);
     ctx.strokeStyle = "rgba(66,242,255,.48)";
@@ -860,16 +1029,16 @@ function draw(state, ctx) {
   drawArcadeBackdrop(ctx, W, H, state.time, { top: "#071527", bottom: "#14213b", grid: "rgba(66,242,255,.08)", gridSize: CELL });
   ctx.save();
   ctx.translate(offset.x, offset.y);
-  drawPath(ctx);
+  drawPath(ctx, state);
   for (let y = 0; y < GRID; y += 1) {
     for (let x = 0; x < GRID; x += 1) {
-      if (isPathCell({ x, y })) continue;
+      if (isPathCell({ x, y }, state.level)) continue;
       ctx.strokeStyle = "rgba(248,251,255,.07)";
       ctx.strokeRect(x * CELL + 4.5, y * CELL + 4.5, CELL - 9, CELL - 9);
     }
   }
-  drawTowerEndpoint(ctx, 12, 5.5 * CELL, classicArcade.green, "入");
-  drawTowerEndpoint(ctx, W - 12, 4.5 * CELL, classicArcade.red, "核");
+  drawTowerEndpoint(ctx, 12, startPointForLevel(state.level).y, classicArcade.green, "入");
+  drawTowerEndpoint(ctx, W - 12, endpointForLevel(state.level).y, classicArcade.red, "核");
   state.towers.forEach((tower) => drawTower(ctx, tower, tower.id === state.selectedTower));
   state.enemies.forEach((enemy) => drawEnemy(ctx, enemy));
   state.shots.forEach((shot) => drawShot(ctx, shot));
@@ -886,7 +1055,7 @@ export function mountTowerDefense(root, context) {
     <section class="game-panel game-status">
       <div>
         <strong data-status>${state.message}</strong>
-        <p class="game-note" data-note>${context.labels.difficulty} · ${MAX_LEVEL} 关 · ${totalWaves(state, WAVES_PER_LEVEL)} 波</p>
+        <p class="game-note" data-note>${context.labels.difficulty} · ${MAX_LEVEL} 关 · ${totalWaves(state, WAVES_PER_LEVEL)} 波 · ${MAPS.length} 套路线</p>
       </div>
       <div class="mini-stats">
         <span data-level>关卡 1/${MAX_LEVEL}</span>
@@ -942,12 +1111,13 @@ export function mountTowerDefense(root, context) {
 
   function refreshHud() {
     status.textContent = state.message;
+    const map = mapForLevel(state.level);
     const selectedTower = state.towers.find((tower) => tower.id === state.selectedTower);
     const selectedText = selectedTower ? `选中 ${TOWER_TYPES[selectedTower.type].label} Lv.${selectedTower.level}` : `${TOWER_TYPES[state.selectedType].label} ${TOWER_TYPES[state.selectedType].cost} 金币`;
     const waveText = state.waveActive
       ? `场上 ${state.enemies.length + state.queue.length} 敌`
       : `下一波 ${wavePreview(config, state.level, state.wave)}`;
-    note.textContent = `${context.labels.difficulty} · ${selectedText} · ${waveText}`;
+    note.textContent = `${context.labels.difficulty} · ${map.name}/${map.feature} · ${selectedText} · ${waveText}`;
     level.textContent = stageLabel(state);
     wave.textContent = waveLabel(state, WAVES_PER_LEVEL);
     lives.textContent = `核心 ${Math.max(0, state.lives)}`;
