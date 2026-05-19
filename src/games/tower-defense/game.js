@@ -23,11 +23,50 @@ const DIFFICULTY = {
 };
 
 const TOWER_TYPES = {
-  arrow: { label: "弩塔", cost: 60, damage: 17, range: 74, cooldown: 0.52, speed: 255, color: classicArcade.cyan },
-  cannon: { label: "炮塔", cost: 92, damage: 31, range: 65, cooldown: 1.05, speed: 210, splash: 30, color: classicArcade.orange },
-  frost: { label: "冰塔", cost: 76, damage: 9, range: 68, cooldown: 0.86, speed: 225, slow: 0.48, slowTime: 1.45, color: classicArcade.blue },
-  spark: { label: "电塔", cost: 108, damage: 14, range: 86, cooldown: 0.74, speed: 290, chain: 2, color: classicArcade.yellow }
+  arrow: { label: "弩塔", role: "高速单体", cost: 60, damage: 17, range: 74, cooldown: 0.52, speed: 255, color: classicArcade.cyan },
+  cannon: { label: "炮塔", role: "范围爆破", cost: 92, damage: 31, range: 65, cooldown: 1.05, speed: 210, splash: 30, color: classicArcade.orange },
+  frost: { label: "冰塔", role: "减速控场", cost: 76, damage: 9, range: 68, cooldown: 0.86, speed: 225, slow: 0.48, slowTime: 1.45, color: classicArcade.blue },
+  spark: { label: "电塔", role: "连锁电击", cost: 108, damage: 14, range: 86, cooldown: 0.74, speed: 290, chain: 2, color: classicArcade.yellow }
 };
+
+const TOWER_ORDER = ["arrow", "cannon", "frost", "spark"];
+
+function towerIconSvg(type) {
+  if (type === "cannon") {
+    return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M16 39h30v10H16z"/><path d="M30 22h24v12H30z"/><circle cx="24" cy="44" r="10"/><circle cx="24" cy="44" r="4" class="cut"/><path d="M45 18l8 5v10l-8-3z"/></svg>`;
+  }
+  if (type === "frost") {
+    return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8l16 12v24L32 56 16 44V20z"/><path d="M32 16v32M18 24l28 16M46 24L18 40" class="line"/><circle cx="32" cy="32" r="7" class="cut"/></svg>`;
+  }
+  if (type === "spark") {
+    return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M35 6L14 36h16l-3 22 23-33H34z"/><path d="M20 51h24M17 57h30" class="line"/></svg>`;
+  }
+  return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8v42"/><path d="M14 28c10-14 26-14 36 0"/><path d="M14 28c10 11 26 11 36 0"/><path d="M26 36h12v14H26z"/><path d="M20 54h24" class="line"/></svg>`;
+}
+
+function towerButtonMarkup(type) {
+  const tower = TOWER_TYPES[type];
+  return `
+    <button type="button" class="tower-card" data-tower="${type}" style="--tower-color: ${tower.color}">
+      <span class="tower-card-icon">${towerIconSvg(type)}</span>
+      <span class="tower-card-copy">
+        <strong>${tower.label}</strong>
+        <small>${tower.role}</small>
+      </span>
+      <span class="tower-card-cost">${tower.cost}</span>
+    </button>
+  `;
+}
+
+function actionIconSvg(type) {
+  if (type === "upgrade") {
+    return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5l8 9h-5v12h-6V14H8z"/></svg>`;
+  }
+  if (type === "sell") {
+    return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 10h18l-2 16H9z"/><path d="M11 10V7h10v3M12 15h8M12 20h8"/></svg>`;
+  }
+  return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 17h15l-5 6 10-9H11l5-6z"/></svg>`;
+}
 
 const PATH_CELLS = [
   [0, 5], [1, 5], [2, 5], [3, 5],
@@ -555,24 +594,71 @@ function update(state, config, dt, context, rawDt = dt) {
   }
 }
 
+function drawRoundedRect(ctx, x, y, w, h, radius = 4) {
+  const r = Math.min(radius, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function strokePath(ctx, points) {
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    if (index === 0) ctx.moveTo(point[0], point[1]);
+    else ctx.lineTo(point[0], point[1]);
+  });
+  ctx.stroke();
+}
+
+function fillPath(ctx, points) {
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    if (index === 0) ctx.moveTo(point[0], point[1]);
+    else ctx.lineTo(point[0], point[1]);
+  });
+  ctx.closePath();
+  ctx.fill();
+}
+
 function drawPath(ctx) {
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.strokeStyle = "#25324a";
-  ctx.lineWidth = 23;
+  ctx.strokeStyle = "rgba(2, 7, 16, .58)";
+  ctx.lineWidth = 29;
   ctx.beginPath();
   WAYPOINTS.forEach((point, index) => {
     if (index === 0) ctx.moveTo(point.x, point.y);
     else ctx.lineTo(point.x, point.y);
   });
   ctx.stroke();
-  ctx.strokeStyle = "rgba(255,255,255,.08)";
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#263a58";
+  ctx.lineWidth = 23;
   ctx.stroke();
+  ctx.strokeStyle = "rgba(66,242,255,.18)";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 10]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  for (let i = 1; i < WAYPOINTS.length - 1; i += 4) {
+    const point = WAYPOINTS[i];
+    ctx.fillStyle = "rgba(248,251,255,.16)";
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 function drawTower(ctx, tower, selected = false) {
   const stats = towerStats(tower);
+  const def = TOWER_TYPES[tower.type] || TOWER_TYPES.arrow;
   if (selected) {
     ctx.fillStyle = "rgba(66, 242, 255, .08)";
     ctx.beginPath();
@@ -581,38 +667,83 @@ function drawTower(ctx, tower, selected = false) {
     ctx.strokeStyle = "rgba(66, 242, 255, .34)";
     ctx.stroke();
   }
+  ctx.save();
+  ctx.translate(tower.x, tower.y);
   ctx.fillStyle = classicArcade.shadow;
-  ctx.fillRect(tower.x - 12, tower.y - 9, 24, 22);
+  drawRoundedRect(ctx, -14, -8, 28, 22, 5);
+  ctx.fill();
+  ctx.fillStyle = "#111a2c";
+  drawRoundedRect(ctx, -13, -11, 26, 23, 5);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(248,251,255,.25)";
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
   ctx.fillStyle = stats.color;
-  ctx.fillRect(tower.x - 11, tower.y - 13, 22, 22);
+  ctx.globalAlpha = 0.22;
+  ctx.beginPath();
+  ctx.arc(0, 0, 15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = stats.color;
   ctx.strokeStyle = classicArcade.white;
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(tower.x - 10.5, tower.y - 12.5, 21, 21);
-  ctx.fillStyle = classicArcade.bg;
+  ctx.lineWidth = 2;
   if (tower.type === "cannon") {
-    ctx.fillRect(tower.x - 4, tower.y - 23, 8, 14);
+    ctx.save();
+    ctx.rotate(-0.18);
+    drawRoundedRect(ctx, -3, -23, 18, 9, 3);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(0, -3, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#101629";
+    ctx.beginPath();
+    ctx.arc(0, -3, 4, 0, Math.PI * 2);
+    ctx.fill();
   } else if (tower.type === "frost") {
-    ctx.beginPath();
-    ctx.arc(tower.x, tower.y - 2, 6, 0, Math.PI * 2);
-    ctx.fill();
+    fillPath(ctx, [[0, -22], [12, -7], [8, 8], [0, 16], [-8, 8], [-12, -7]]);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(248,251,255,.8)";
+    ctx.lineWidth = 1.5;
+    strokePath(ctx, [[0, -16], [0, 10]]);
+    strokePath(ctx, [[-8, -6], [8, 6]]);
+    strokePath(ctx, [[8, -6], [-8, 6]]);
   } else if (tower.type === "spark") {
-    ctx.beginPath();
-    ctx.moveTo(tower.x, tower.y - 11);
-    ctx.lineTo(tower.x + 7, tower.y - 2);
-    ctx.lineTo(tower.x + 1, tower.y - 1);
-    ctx.lineTo(tower.x + 7, tower.y + 9);
-    ctx.lineTo(tower.x - 7, tower.y - 4);
-    ctx.lineTo(tower.x - 1, tower.y - 4);
-    ctx.closePath();
-    ctx.fill();
+    fillPath(ctx, [[4, -24], [-11, 0], [-1, 0], [-7, 18], [13, -9], [2, -8]]);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.75)";
+    ctx.lineWidth = 1.4;
+    strokePath(ctx, [[-12, 15], [12, 15]]);
+    strokePath(ctx, [[-8, 20], [8, 20]]);
   } else {
-    ctx.fillRect(tower.x - 2, tower.y - 23, 4, 17);
+    ctx.lineCap = "round";
+    strokePath(ctx, [[0, -23], [0, 10]]);
+    ctx.beginPath();
+    ctx.arc(0, -6, 16, Math.PI * 1.14, Math.PI * 1.86);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, -6, 16, Math.PI * 0.14, Math.PI * 0.86);
+    ctx.stroke();
+    ctx.fillStyle = stats.color;
+    fillPath(ctx, [[0, -25], [4, -14], [0, -17], [-4, -14]]);
   }
+  ctx.fillStyle = classicArcade.bg;
+  ctx.globalAlpha = 0.78;
+  drawRoundedRect(ctx, -12, 12, 24, 9, 4);
+  ctx.fill();
+  ctx.globalAlpha = 1;
   ctx.fillStyle = classicArcade.white;
-  ctx.font = "bold 10px system-ui, sans-serif";
+  ctx.font = "900 8px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(String(tower.level), tower.x, tower.y + 15);
+  ctx.fillText(`Lv${tower.level}`, 0, 16.8);
+  if (def.role) {
+    ctx.fillStyle = stats.color;
+    ctx.fillRect(-8, 23, 16 * (tower.level / 3), 2);
+  }
+  ctx.restore();
 }
 
 function drawEnemy(ctx, enemy) {
@@ -623,23 +754,105 @@ function drawEnemy(ctx, enemy) {
     boss: classicArcade.red
   };
   const radius = enemy.kind === "boss" ? 15 : enemy.kind === "armored" ? 11 : 9;
+  ctx.save();
+  ctx.translate(enemy.x, enemy.y);
   ctx.fillStyle = classicArcade.shadow;
   ctx.beginPath();
-  ctx.arc(enemy.x + 2, enemy.y + 2, radius, 0, Math.PI * 2);
+  ctx.ellipse(2, 4, radius + 3, radius * 0.82, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = colors[enemy.kind] || classicArcade.magenta;
-  ctx.beginPath();
-  ctx.arc(enemy.x, enemy.y, radius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = enemy.slowTimer > 0 ? classicArcade.blue : "rgba(255,255,255,.38)";
+  if (enemy.kind === "boss") {
+    fillPath(ctx, [[0, -20], [17, -10], [21, 8], [10, 19], [-10, 19], [-21, 8], [-17, -10]]);
+    ctx.fillStyle = "#6a1929";
+    fillPath(ctx, [[-18, -12], [-27, -20], [-20, 0]]);
+    fillPath(ctx, [[18, -12], [27, -20], [20, 0]]);
+    ctx.fillStyle = colors.boss;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 14, 17, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = classicArcade.yellow;
+    ctx.beginPath();
+    ctx.arc(0, -3, 5, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (enemy.kind === "armored") {
+    fillPath(ctx, [[0, -15], [13, -8], [11, 10], [0, 16], [-11, 10], [-13, -8]]);
+    ctx.fillStyle = "rgba(0,0,0,.28)";
+    fillPath(ctx, [[0, -9], [8, -4], [7, 6], [0, 10], [-7, 6], [-8, -4]]);
+  } else if (enemy.kind === "runner") {
+    fillPath(ctx, [[0, -15], [14, 7], [5, 4], [0, 15], [-5, 4], [-14, 7]]);
+    ctx.strokeStyle = "rgba(66,242,255,.48)";
+    ctx.lineWidth = 1.5;
+    strokePath(ctx, [[-17, 1], [-25, 1]]);
+    strokePath(ctx, [[17, 1], [25, 1]]);
+  } else {
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 10, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, -10, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = colors.grunt;
+    ctx.lineWidth = 2;
+    strokePath(ctx, [[-8, 1], [-15, -5]]);
+    strokePath(ctx, [[8, 1], [15, -5]]);
+  }
+  ctx.strokeStyle = enemy.slowTimer > 0 ? classicArcade.blue : "rgba(255,255,255,.45)";
   ctx.lineWidth = 2;
   ctx.stroke();
+  ctx.fillStyle = classicArcade.bg;
+  ctx.fillRect(-4, -5, 3, 4);
+  ctx.fillRect(2, -5, 3, 4);
+  ctx.fillStyle = "rgba(248,251,255,.72)";
+  ctx.fillRect(-3, -4, 1.5, 1.5);
+  ctx.fillRect(3, -4, 1.5, 1.5);
+  ctx.restore();
   if (enemy.flash) drawCirclePulse(ctx, enemy, radius + 5, enemy.flash * 20, { color: classicArcade.yellow, alpha: 0.52, growth: 3 });
   const barW = radius * 2;
   ctx.fillStyle = "rgba(0,0,0,.45)";
   ctx.fillRect(enemy.x - radius, enemy.y - radius - 7, barW, 4);
   ctx.fillStyle = classicArcade.green;
   ctx.fillRect(enemy.x - radius, enemy.y - radius - 7, barW * clamp(enemy.hp / enemy.maxHp, 0, 1), 4);
+}
+
+function drawTowerEndpoint(ctx, x, y, color, label) {
+  ctx.fillStyle = classicArcade.shadow;
+  drawRoundedRect(ctx, x - 13, y - 13, 26, 26, 6);
+  ctx.fill();
+  ctx.fillStyle = color;
+  drawRoundedRect(ctx, x - 11, y - 11, 22, 22, 6);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(248,251,255,.7)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = classicArcade.bg;
+  ctx.font = "900 10px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, x, y + 0.5);
+}
+
+function drawShot(ctx, shot) {
+  ctx.save();
+  ctx.translate(shot.x, shot.y);
+  ctx.fillStyle = shot.color;
+  ctx.strokeStyle = "rgba(248,251,255,.72)";
+  ctx.lineWidth = 1.4;
+  if (shot.kind === "cannon") {
+    ctx.beginPath();
+    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else if (shot.kind === "frost") {
+    fillPath(ctx, [[0, -6], [6, 0], [0, 6], [-6, 0]]);
+    ctx.stroke();
+  } else if (shot.kind === "spark") {
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = "round";
+    strokePath(ctx, [[-6, 4], [-1, -2], [3, 1], [7, -5]]);
+  } else {
+    fillPath(ctx, [[0, -7], [4, 3], [0, 1], [-4, 3]]);
+  }
+  ctx.restore();
 }
 
 function draw(state, ctx) {
@@ -655,18 +868,11 @@ function draw(state, ctx) {
       ctx.strokeRect(x * CELL + 4.5, y * CELL + 4.5, CELL - 9, CELL - 9);
     }
   }
-  ctx.fillStyle = classicArcade.green;
-  ctx.fillRect(2, 5 * CELL + 6, 18, 18);
-  ctx.fillStyle = classicArcade.red;
-  ctx.fillRect(W - 20, 4 * CELL + 6, 18, 18);
+  drawTowerEndpoint(ctx, 12, 5.5 * CELL, classicArcade.green, "入");
+  drawTowerEndpoint(ctx, W - 12, 4.5 * CELL, classicArcade.red, "核");
   state.towers.forEach((tower) => drawTower(ctx, tower, tower.id === state.selectedTower));
   state.enemies.forEach((enemy) => drawEnemy(ctx, enemy));
-  state.shots.forEach((shot) => {
-    ctx.fillStyle = shot.color;
-    ctx.beginPath();
-    ctx.arc(shot.x, shot.y, shot.kind === "cannon" ? 4 : 3, 0, Math.PI * 2);
-    ctx.fill();
-  });
+  state.shots.forEach((shot) => drawShot(ctx, shot));
   drawEffects(ctx, state.effects);
   ctx.restore();
   drawStageTransition(ctx, W, H, state.transition);
@@ -694,14 +900,24 @@ export function mountTowerDefense(root, context) {
       <div class="arcade-stage"><canvas class="arcade-canvas" width="${W}" height="${H}" aria-label="机关塔防"></canvas></div>
       <div class="arcade-controls tower-defense-controls">
         <div class="tower-controls">
-          <button data-tower="arrow">弩塔</button>
-          <button data-tower="cannon">炮塔</button>
-          <button data-tower="frost">冰塔</button>
-          <button data-tower="spark">电塔</button>
-          <button data-action="upgrade">升级</button>
-          <button data-action="wave">出怪</button>
-          <button data-action="sell">出售</button>
-          <button data-action="restart">重开</button>
+          ${TOWER_ORDER.map((type) => towerButtonMarkup(type)).join("")}
+        </div>
+        <div class="tower-action-row">
+          <button type="button" class="tower-action tower-action-wave" data-action="wave">
+            <span>${actionIconSvg("wave")}</span>
+            <strong>出怪</strong>
+            <small data-wave-tip>下一波</small>
+          </button>
+          <button type="button" class="tower-action" data-action="upgrade">
+            <span>${actionIconSvg("upgrade")}</span>
+            <strong>升级</strong>
+            <small data-upgrade-tip>选中塔</small>
+          </button>
+          <button type="button" class="tower-action" data-action="sell">
+            <span>${actionIconSvg("sell")}</span>
+            <strong>出售</strong>
+            <small data-sell-tip>回收</small>
+          </button>
         </div>
       </div>
     </section>
@@ -717,6 +933,12 @@ export function mountTowerDefense(root, context) {
   const gold = root.querySelector("[data-gold]");
   const score = root.querySelector("[data-score]");
   const towerButtons = [...root.querySelectorAll("[data-tower]")];
+  const waveButton = root.querySelector("[data-action='wave']");
+  const upgradeButton = root.querySelector("[data-action='upgrade']");
+  const sellButton = root.querySelector("[data-action='sell']");
+  const waveTip = root.querySelector("[data-wave-tip]");
+  const upgradeTip = root.querySelector("[data-upgrade-tip]");
+  const sellTip = root.querySelector("[data-sell-tip]");
 
   function refreshHud() {
     status.textContent = state.message;
@@ -731,7 +953,20 @@ export function mountTowerDefense(root, context) {
     lives.textContent = `核心 ${Math.max(0, state.lives)}`;
     gold.textContent = `金币 ${state.gold}`;
     score.textContent = `分数 ${state.score}`;
-    towerButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.tower === state.selectedType));
+    towerButtons.forEach((button) => {
+      const def = TOWER_TYPES[button.dataset.tower];
+      button.classList.toggle("is-active", button.dataset.tower === state.selectedType);
+      button.classList.toggle("is-unavailable", Boolean(def && state.gold < def.cost && button.dataset.tower !== state.selectedType));
+    });
+    waveButton.disabled = state.over || state.spawning || state.enemies.length > 0;
+    waveTip.textContent = state.waveActive ? `场上 ${state.enemies.length}` : wavePreview(config, state.level, state.wave);
+    const upgradeCostValue = selectedTower ? upgradeCost(selectedTower) : 0;
+    upgradeButton.disabled = !selectedTower || selectedTower.level >= 3 || state.gold < upgradeCostValue;
+    upgradeTip.textContent = selectedTower
+      ? (selectedTower.level >= 3 ? "满级" : `${upgradeCostValue} 金币`)
+      : "选中塔";
+    sellButton.disabled = !selectedTower;
+    sellTip.textContent = selectedTower ? `+${Math.max(20, Math.round(towerInvestment(selectedTower) * 0.62))}` : "回收";
   }
 
   function toCanvasPoint(event) {
@@ -801,7 +1036,7 @@ export function mountTowerDefense(root, context) {
     KeyR: "restart"
   }, handleKeyAction);
   const cleanupShellRestart = bindShellRestart(root, context, restart);
-  root.querySelector("[data-action='restart']").addEventListener("click", restart);
+  root.querySelector("[data-action='restart']")?.addEventListener("click", restart);
   canvas.addEventListener("pointerdown", onPointerDown);
   loop.start();
 
