@@ -24,6 +24,7 @@ const GAME_ENTRIES = {
   sudoku: "./src/games/sudoku/game.js",
   klotski: "./src/games/klotski/game.js",
   match3: "./src/games/match3/game.js",
+  "mahjong-connect": "./src/games/mahjong-connect/game.js",
   "2048": "./src/games/number-2048/game.js",
   "tower-defense": "./src/games/tower-defense/game.js",
   "tank-battle": "./src/games/tank-battle/game.js",
@@ -370,6 +371,33 @@ const registrations = [
       ]
     },
     () => import("./match3/game.js").then((module) => module.mountMatch3)
+  ),
+  defineLocalGame(
+    {
+      id: "mahjong-connect",
+      title: "麻将连连看",
+      subtitle: "两折以内连通相同麻将牌即可消除",
+      tag: "麻将消除",
+      category: "puzzle",
+      secondaryCategories: ["quick", "classic"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("mahjong-connect", "puzzle", { sessionSave: true, staged: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "jade",
+      icon: "./public/games/puzzle/icons/mahjong-connect.svg",
+      assets: ["./public/games/puzzle/icons/mahjong-connect.svg"],
+      rules: [
+        "点击两张相同麻将牌，如果连接路径最多转弯两次且中间无遮挡，就会消除。",
+        "游戏采用 30 关闯关模式，后续关卡会增加牌数、牌面种类和障碍。",
+        "提示会标出一组可消除牌，洗牌会重新排列当前剩余牌。",
+        "牌局没有可消除组合时会自动尝试洗牌，保持可继续推进。",
+        "难度会影响初始牌数、障碍数量、提示次数和洗牌次数。"
+      ]
+    },
+    () => import("./mahjong-connect/game.js").then((module) => module.mountMahjongConnect)
   ),
   defineLocalGame(
     {
