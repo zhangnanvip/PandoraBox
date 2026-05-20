@@ -23,6 +23,7 @@ const GAME_ENTRIES = {
   flying: "./src/games/flying/game.js",
   sudoku: "./src/games/sudoku/game.js",
   klotski: "./src/games/klotski/game.js",
+  minesweeper: "./src/games/minesweeper/game.js",
   match3: "./src/games/match3/game.js",
   "mahjong-connect": "./src/games/mahjong-connect/game.js",
   "2048": "./src/games/number-2048/game.js",
@@ -371,6 +372,32 @@ const registrations = [
       ]
     },
     () => import("./match3/game.js").then((module) => module.mountMatch3)
+  ),
+  defineLocalGame(
+    {
+      id: "minesweeper",
+      title: "扫雷",
+      subtitle: "数字推理，避开隐藏雷区",
+      tag: "经典推理",
+      category: "puzzle",
+      secondaryCategories: ["quick", "number"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("minesweeper", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "cinnabar",
+      icon: "./public/games/puzzle/icons/minesweeper.svg",
+      assets: ["./public/games/puzzle/icons/minesweeper.svg"],
+      rules: [
+        "点击格子翻开数字，数字表示周围八格内的地雷数量。",
+        "首次点击一定安全；移动端可长按插旗，也可开启标记模式。",
+        "插旗用于标记疑似地雷，翻开所有非雷格即获胜。",
+        "难度会影响棋盘尺寸和地雷数量，魔鬼难度提供 16x16 大雷区。"
+      ]
+    },
+    () => import("./minesweeper/game.js").then((module) => module.mountMinesweeper)
   ),
   defineLocalGame(
     {
