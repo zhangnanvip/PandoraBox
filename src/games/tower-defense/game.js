@@ -1079,21 +1079,63 @@ function fillPath(ctx, points) {
   ctx.fill();
 }
 
+function cellHash(x, y, level) {
+  return Math.abs((x * 97 + y * 151 + level * 211) % 997);
+}
+
+function drawTerrain(ctx, state) {
+  for (let y = 0; y < GRID; y += 1) {
+    for (let x = 0; x < GRID; x += 1) {
+      if (isPathCell({ x, y }, state.level)) continue;
+      const px = x * CELL;
+      const py = y * CELL;
+      const hash = cellHash(x, y, state.level);
+      const occupied = towerAt(state, { x, y });
+      ctx.fillStyle = hash % 2
+        ? "rgba(18, 44, 66, .34)"
+        : "rgba(16, 34, 55, .28)";
+      ctx.fillRect(px + 2, py + 2, CELL - 4, CELL - 4);
+      ctx.strokeStyle = occupied ? "rgba(255,209,102,.16)" : "rgba(248,251,255,.07)";
+      ctx.strokeRect(px + 5.5, py + 5.5, CELL - 11, CELL - 11);
+      ctx.fillStyle = "rgba(66,242,255,.12)";
+      ctx.fillRect(px + 8, py + 7, 5, 1.2);
+      ctx.fillRect(px + 7, py + 8, 1.2, 5);
+      if (!occupied && hash % 11 === 0) {
+        ctx.fillStyle = "rgba(93,255,139,.12)";
+        ctx.beginPath();
+        ctx.arc(px + 21, py + 20, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (!occupied && hash % 17 === 0) {
+        ctx.fillStyle = "rgba(255,209,102,.1)";
+        fillPath(ctx, [[px + 19, py + 7], [px + 24, py + 15], [px + 17, py + 18], [px + 14, py + 11]]);
+      }
+    }
+  }
+}
+
 function drawPath(ctx, state) {
   const waypoints = waypointsForLevel(state.level);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.strokeStyle = "rgba(2, 7, 16, .58)";
-  ctx.lineWidth = 29;
+  ctx.strokeStyle = "rgba(2, 7, 16, .66)";
+  ctx.lineWidth = 31;
   ctx.beginPath();
   waypoints.forEach((point, index) => {
     if (index === 0) ctx.moveTo(point.x, point.y);
     else ctx.lineTo(point.x, point.y);
   });
   ctx.stroke();
-  ctx.strokeStyle = "#263a58";
-  ctx.lineWidth = 23;
+  ctx.strokeStyle = "rgba(95, 73, 49, .92)";
+  ctx.lineWidth = 27;
   ctx.stroke();
+  ctx.strokeStyle = "#273d5d";
+  ctx.lineWidth = 21;
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,209,102,.16)";
+  ctx.lineWidth = 25;
+  ctx.setLineDash([5, 13]);
+  ctx.stroke();
+  ctx.setLineDash([]);
   ctx.strokeStyle = "rgba(66,242,255,.18)";
   ctx.lineWidth = 2;
   ctx.setLineDash([8, 10]);
@@ -1106,35 +1148,75 @@ function drawPath(ctx, state) {
     ctx.arc(point.x, point.y, 2.6, 0, Math.PI * 2);
     ctx.fill();
   }
+  for (let i = 1; i < waypoints.length - 2; i += 5) {
+    const a = waypoints[i];
+    const b = waypoints[i + 1];
+    const angle = Math.atan2(b.y - a.y, b.x - a.x);
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    ctx.save();
+    ctx.translate(midX, midY);
+    ctx.rotate(angle);
+    ctx.fillStyle = "rgba(248,251,255,.18)";
+    fillPath(ctx, [[6, 0], [-4, -5], [-1, 0], [-4, 5]]);
+    ctx.restore();
+  }
 }
 
 function drawTower(ctx, tower, selected = false) {
   const stats = towerStats(tower);
   const def = TOWER_TYPES[tower.type] || TOWER_TYPES.arrow;
   if (selected) {
-    ctx.fillStyle = "rgba(66, 242, 255, .08)";
+    ctx.fillStyle = "rgba(66, 242, 255, .075)";
     ctx.beginPath();
     ctx.arc(tower.x, tower.y, stats.range, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = "rgba(66, 242, 255, .34)";
     ctx.stroke();
+    ctx.strokeStyle = "rgba(255,209,102,.38)";
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([6, 8]);
+    ctx.beginPath();
+    ctx.arc(tower.x, tower.y, stats.range - 6, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
   ctx.save();
   ctx.translate(tower.x, tower.y);
   ctx.fillStyle = classicArcade.shadow;
-  drawRoundedRect(ctx, -14, -8, 28, 22, 5);
+  ctx.beginPath();
+  ctx.ellipse(0, 9, 18, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#0b1223";
+  drawRoundedRect(ctx, -16, -8, 32, 24, 6);
   ctx.fill();
   ctx.fillStyle = "#111a2c";
-  drawRoundedRect(ctx, -13, -11, 26, 23, 5);
+  drawRoundedRect(ctx, -13, -12, 26, 24, 5);
   ctx.fill();
+  ctx.fillStyle = "rgba(248,251,255,.09)";
+  ctx.fillRect(-10, -9, 20, 2);
+  ctx.fillStyle = "rgba(0,0,0,.2)";
+  ctx.fillRect(-11, 8, 22, 3);
   ctx.strokeStyle = "rgba(248,251,255,.25)";
   ctx.lineWidth = 1.4;
   ctx.stroke();
+  ctx.strokeStyle = "rgba(66,242,255,.15)";
+  ctx.lineWidth = 1;
+  strokePath(ctx, [[-15, 3], [-22, 8]]);
+  strokePath(ctx, [[15, 3], [22, 8]]);
+  strokePath(ctx, [[-9, 14], [-13, 21]]);
+  strokePath(ctx, [[9, 14], [13, 21]]);
   ctx.fillStyle = stats.color;
   ctx.globalAlpha = 0.22;
   ctx.beginPath();
   ctx.arc(0, 0, 15, 0, Math.PI * 2);
   ctx.fill();
+  ctx.globalAlpha = 0.16;
+  ctx.beginPath();
+  ctx.arc(0, -3, 21, 0, Math.PI * 2);
+  ctx.strokeStyle = stats.color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
   ctx.globalAlpha = 1;
   ctx.fillStyle = stats.color;
   ctx.strokeStyle = classicArcade.white;
@@ -1219,6 +1301,12 @@ function drawTower(ctx, tower, selected = false) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(`Lv${tower.level}`, 0, 16.8);
+  for (let i = 0; i < TOWER_MAX_LEVEL; i += 1) {
+    ctx.fillStyle = i < tower.level ? stats.color : "rgba(248,251,255,.18)";
+    ctx.beginPath();
+    ctx.arc(-8 + i * 4, 23, 1.25, 0, Math.PI * 2);
+    ctx.fill();
+  }
   if (selected) {
     const targetLabel = TARGET_MODES[tower.targetMode || "first"]?.label || TARGET_MODES.first.label;
     ctx.fillStyle = stats.color;
@@ -1227,12 +1315,19 @@ function drawTower(ctx, tower, selected = false) {
   }
   if (def.role) {
     ctx.fillStyle = stats.color;
-    ctx.fillRect(-8, 23, 16 * (tower.level / TOWER_MAX_LEVEL), 2);
+    ctx.fillRect(-8, 26, 16 * (tower.level / TOWER_MAX_LEVEL), 2);
   }
   ctx.restore();
 }
 
-function drawEnemy(ctx, enemy) {
+function enemyHeading(enemy, state) {
+  const waypoints = waypointsForLevel(state.level);
+  const target = waypoints[enemy.pathIndex + 1] || waypoints[enemy.pathIndex];
+  if (!target) return 0;
+  return Math.atan2(target.y - enemy.y, target.x - enemy.x) + Math.PI / 2;
+}
+
+function drawEnemy(ctx, enemy, state) {
   const colors = {
     grunt: classicArcade.magenta,
     runner: classicArcade.cyan,
@@ -1251,6 +1346,7 @@ function drawEnemy(ctx, enemy) {
   const radius = enemy.kind === "boss" ? 15 : (enemy.kind === "juggernaut") ? 13 : (enemy.kind === "armored" || enemy.kind === "shield") ? 11 : enemy.kind === "swarm" ? 7 : 9;
   ctx.save();
   ctx.translate(enemy.x, enemy.y);
+  ctx.rotate(enemyHeading(enemy, state));
   ctx.fillStyle = classicArcade.shadow;
   ctx.beginPath();
   ctx.ellipse(2, 4, radius + 3, radius * 0.82, 0, 0, Math.PI * 2);
@@ -1388,6 +1484,23 @@ function drawEnemy(ctx, enemy) {
   ctx.fillRect(enemy.x - radius, enemy.y - radius - 7, barW, 4);
   ctx.fillStyle = classicArcade.green;
   ctx.fillRect(enemy.x - radius, enemy.y - radius - 7, barW * clamp(enemy.hp / enemy.maxHp, 0, 1), 4);
+  const badges = [
+    enemy.elite ? { text: "E", color: classicArcade.yellow } : null,
+    enemy.armor ? { text: "A", color: classicArcade.blue } : null,
+    enemy.regen || enemy.healAura ? { text: "+", color: classicArcade.green } : null
+  ].filter(Boolean);
+  badges.forEach((badge, index) => {
+    const x = enemy.x - radius + index * 8;
+    const y = enemy.y + radius + 3;
+    ctx.fillStyle = "rgba(5,9,20,.78)";
+    drawRoundedRect(ctx, x, y, 7, 7, 2);
+    ctx.fill();
+    ctx.fillStyle = badge.color;
+    ctx.font = "900 5.5px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(badge.text, x + 3.5, y + 3.8);
+  });
 }
 
 function drawTowerEndpoint(ctx, x, y, color, label) {
@@ -1454,18 +1567,12 @@ function draw(state, ctx) {
   drawArcadeBackdrop(ctx, W, H, state.time, { top: "#071527", bottom: "#14213b", grid: "rgba(66,242,255,.08)", gridSize: CELL });
   ctx.save();
   ctx.translate(offset.x, offset.y);
+  drawTerrain(ctx, state);
   drawPath(ctx, state);
-  for (let y = 0; y < GRID; y += 1) {
-    for (let x = 0; x < GRID; x += 1) {
-      if (isPathCell({ x, y }, state.level)) continue;
-      ctx.strokeStyle = "rgba(248,251,255,.07)";
-      ctx.strokeRect(x * CELL + 4.5, y * CELL + 4.5, CELL - 9, CELL - 9);
-    }
-  }
   drawTowerEndpoint(ctx, 12, startPointForLevel(state.level).y, classicArcade.green, "入");
   drawTowerEndpoint(ctx, W - 12, endpointForLevel(state.level).y, classicArcade.red, "核");
   state.towers.forEach((tower) => drawTower(ctx, tower, tower.id === state.selectedTower));
-  state.enemies.forEach((enemy) => drawEnemy(ctx, enemy));
+  state.enemies.forEach((enemy) => drawEnemy(ctx, enemy, state));
   state.shots.forEach((shot) => drawShot(ctx, shot));
   drawEffects(ctx, state.effects);
   ctx.restore();
