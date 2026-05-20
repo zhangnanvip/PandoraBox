@@ -1954,6 +1954,62 @@ input[type="range"] {
   aspect-ratio: 3 / 4;
 }
 
+.survivor-shell {
+  position: relative;
+}
+
+.survivor-upgrades {
+  position: absolute;
+  left: max(14px, env(safe-area-inset-left));
+  right: max(14px, env(safe-area-inset-right));
+  top: 50%;
+  z-index: 18;
+  display: grid;
+  gap: 10px;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 14px;
+  border: 1px solid rgba(66, 242, 255, 0.28);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(66, 242, 255, 0.14), rgba(56, 210, 124, 0.12)),
+    rgba(9, 13, 28, 0.94);
+  color: #f8fbff;
+  box-shadow: 0 22px 42px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(248, 251, 255, 0.08);
+  transform: translateY(-50%);
+  backdrop-filter: blur(16px);
+}
+
+.survivor-upgrades strong {
+  color: #f8fbff;
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.survivor-upgrades button {
+  display: grid;
+  gap: 3px;
+  min-height: 62px;
+  padding: 10px 12px;
+  border: 1px solid rgba(248, 251, 255, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(66, 242, 255, 0.16), rgba(56, 210, 124, 0.1)),
+    rgba(248, 251, 255, 0.08);
+  color: #f8fbff;
+  text-align: left;
+}
+
+.survivor-upgrades button b {
+  font-size: 0.92rem;
+}
+
+.survivor-upgrades button span {
+  color: rgba(248, 251, 255, 0.72);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
 .arcade-controls {
   display: grid;
   grid-template-columns: 1fr auto;

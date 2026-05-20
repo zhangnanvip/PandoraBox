@@ -32,6 +32,7 @@ const GAME_ENTRIES = {
   "2048": "./src/games/number-2048/game.js",
   "tower-defense": "./src/games/tower-defense/game.js",
   "tank-battle": "./src/games/tank-battle/game.js",
+  survivor: "./src/games/survivor/game.js",
   "space-shooter": "./src/games/space-shooter/game.js",
   snake: "./src/games/snake/game.js",
   breakout: "./src/games/breakout/game.js"
@@ -63,6 +64,7 @@ const MARKET_HEAT = {
   "block-blast": { score: 98, label: "方块爆款", signal: "Block Puzzle 是当前下载热度和长线复玩都很强的混合休闲品类。" },
   "tile-match": { score: 97, label: "Tile热门", signal: "三张入槽消除和麻将纸牌是当前移动端热门且耐玩的解谜方向。" },
   match3: { score: 96, label: "三消长线", signal: "关卡制三消仍是移动端长线留存的核心品类。" },
+  survivor: { score: 95, label: "割草成长", signal: "Survivor-like 依靠局内构筑、怪潮压力和 Boss 节点形成强复玩。" },
   "mahjong-connect": { score: 94, label: "麻将消除", signal: "麻将、Tile 与连连看适合中老年和碎片时间用户。" },
   "tower-defense": { score: 88, label: "策略耐玩", signal: "塔防靠波次、塔组和地图机制形成长期挑战。" },
   "2048": { score: 84, label: "数字常青", signal: "数字合成规则极简，但高分循环和多尺寸玩法耐玩。" },
@@ -638,6 +640,33 @@ const registrations = [
       ]
     },
     () => import("./tank-battle/game.js").then((module) => module.mountTankBattle)
+  ),
+  defineLocalGame(
+    {
+      id: "survivor",
+      title: "割草生存",
+      subtitle: "拖动走位，自动攻击，升级构筑技能",
+      tag: "割草成长",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["medium"],
+      progressType: "score",
+      ...gamePluginMeta("survivor", "arcade", { boss: true }),
+      ...gameVisualStyle("classicArcade"),
+      accent: "jade",
+      icon: "./public/games/arcade/icons/survivor.svg",
+      assets: ["./public/games/arcade/icons/survivor.svg"],
+      rules: [
+        "在画布上拖动角色移动，武器会自动攻击最近敌人。",
+        "拾取经验升级后可从飞刃、灵能环、护身轮、雷链、疾行、体魄和磁吸中选择强化。",
+        "游戏采用 60 关怪潮推进，每 5 关出现 Boss 压力点。",
+        "怪物会逐步解锁高速、远程、重甲、冲锋、护盾和精英类型。",
+        "经验、治疗、清屏炸弹和 Boss 宝箱会形成局内成长节奏。"
+      ]
+    },
+    () => import("./survivor/game.js").then((module) => module.mountSurvivor)
   ),
   defineLocalGame(
     {
