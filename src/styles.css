@@ -59,7 +59,9 @@ body {
 }
 
 button,
-select {
+select,
+input,
+textarea {
   font: inherit;
 }
 
@@ -70,7 +72,9 @@ button {
 }
 
 button:focus-visible,
-select:focus-visible {
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
   outline: 3px solid rgba(31, 95, 74, 0.36);
   outline-offset: 2px;
 }
@@ -1507,6 +1511,42 @@ select {
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.45;
+}
+
+.feedback-form {
+  display: grid;
+  gap: 13px;
+}
+
+.feedback-input,
+.feedback-textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 250, 240, 0.76);
+  color: var(--ink);
+}
+
+.feedback-input {
+  min-height: 42px;
+  padding: 0 11px;
+}
+
+.feedback-textarea {
+  min-height: 132px;
+  padding: 10px 11px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.feedback-notice[data-tone="success"] {
+  color: var(--jade);
+  font-weight: 800;
+}
+
+.feedback-notice[data-tone="error"] {
+  color: var(--cinnabar);
+  font-weight: 800;
 }
 
 .start-preview {

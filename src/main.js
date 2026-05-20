@@ -6,6 +6,8 @@ import { interfaceThemes, themeOrder } from "./theme/skins.js";
 import { loadState, saveState } from "./utils/storage.js";
 
 const app = document.querySelector("#app");
+const FEEDBACK_REPO_URL = "https://github.com/zhangnanvip/PandoraBox";
+const FEEDBACK_ISSUE_URL = `${FEEDBACK_REPO_URL}/issues/new`;
 
 const preferences = loadState("preferences", {
   difficulty: "medium",
@@ -377,6 +379,78 @@ async function clearOfflineCaches() {
   renderModal();
 }
 
+function feedbackContextLines() {
+  const currentGame = state.currentGame ? findAvailableGame(state.currentGame) : null;
+  return [
+    `页面：${location.href}`,
+    `入口：${state.currentGame ? `对局中 / ${currentGame?.title || state.currentGame}` : `大厅 / ${state.view}`}`,
+    `分类：${state.activeCategory}`,
+    `主题：${state.theme}`,
+    `设备：${navigator.userAgent}`,
+    `时间：${new Date().toISOString()}`
+  ];
+}
+
+function feedbackPayload(form) {
+  const data = new FormData(form);
+  const type = String(data.get("type") || "产品建议").trim();
+  const content = String(data.get("content") || "").trim();
+  const contact = String(data.get("contact") || "").trim();
+  const title = `[反馈] ${type}${content ? `：${content.slice(0, 24)}` : ""}`;
+  const body = [
+    "## 反馈内容",
+    content || "（未填写）",
+    "",
+    "## 类型",
+    type,
+    "",
+    "## 联系方式",
+    contact || "未填写",
+    "",
+    "## 环境信息",
+    ...feedbackContextLines().map((line) => `- ${line}`)
+  ].join("\n");
+  const params = new URLSearchParams({ title, body });
+  return {
+    content,
+    text: body,
+    url: `${FEEDBACK_ISSUE_URL}?${params.toString()}`
+  };
+}
+
+function setFeedbackNotice(message, tone = "normal") {
+  const notice = app.querySelector("[data-feedback-notice]");
+  if (!notice) return;
+  notice.textContent = message;
+  notice.dataset.tone = tone;
+}
+
+function submitFeedback(form) {
+  const payload = feedbackPayload(form);
+  if (payload.content.length < 6) {
+    setFeedbackNotice("请至少写 6 个字，方便我们判断要改哪里。", "error");
+    return;
+  }
+  const opened = window.open(payload.url, "_blank");
+  if (opened) opened.opener = null;
+  if (!opened) location.href = payload.url;
+  setFeedbackNotice("已打开 GitHub 反馈页，确认后就会提交给项目。", "success");
+}
+
+async function copyFeedback(form) {
+  const payload = feedbackPayload(form);
+  if (payload.content.length < 6) {
+    setFeedbackNotice("请先写下具体建议，再复制反馈内容。", "error");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(payload.text);
+    setFeedbackNotice("反馈内容已复制，可以手动发给产品或贴到 GitHub Issue。", "success");
+  } catch {
+    setFeedbackNotice("当前浏览器不允许自动复制，可以长按输入内容手动复制。", "error");
+  }
+}
+
 async function setPluginSourceEnabled(sourceId, enabled) {
   state.pluginSourceOverrides = {
     ...state.pluginSourceOverrides,
@@ -662,6 +736,7 @@ function icon(name) {
     history: '<path d="M12 8v5l3 2"/><path d="M3.05 11a9 9 0 1 1 2.64 6.36"/><path d="M3 17v-6h6"/>',
     star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>',
     trophy: '<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 3"/><path d="M17 6h3a3 3 0 0 1-3 3"/><path d="M9 17h6"/>',
+    feedback: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7A2.5 2.5 0 0 1 17.5 15H11l-5 4v-4.2A2.5 2.5 0 0 1 4 12.5v-7Z"/><path d="M8 8h8M8 11h5"/>',
     sound: '<path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9.5a4 4 0 0 1 0 5"/>',
     offline: '<path d="M6 19h12a4 4 0 0 0 .6-7.96A6.5 6.5 0 0 0 6 9.2 4.9 4.9 0 0 0 6 19Z"/><path d="m9 14 2.2 2.2L16 11"/>'
   };
@@ -1549,6 +1624,7 @@ function renderLobby() {
         <div class="header-actions">
           <button class="icon-button top-icon" data-open-history aria-label="最近对局">${icon("history")}</button>
           <button class="icon-button top-icon" data-open-achievements aria-label="成就">${icon("trophy")}</button>
+          <button class="icon-button top-icon" data-open-modal="feedback" aria-label="意见反馈">${icon("feedback")}</button>
           <button class="icon-button top-icon" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
         </div>
       </header>
@@ -1836,6 +1912,40 @@ function modalContent() {
     };
   }
 
+  if (state.modal === "feedback") {
+    return {
+      title: "意见反馈",
+      body: `
+        <form class="feedback-form" data-feedback-form>
+          <p class="settings-note">提交会打开 GitHub Issue 预填页面，确认后项目维护者就能集中跟进。没有 GitHub 账号时，可以先复制内容。</p>
+          <label class="modal-field">
+            <span>反馈类型</span>
+            <select name="type">
+              <option value="产品建议">产品建议</option>
+              <option value="体验问题">体验问题</option>
+              <option value="游戏内容">游戏内容</option>
+              <option value="Bug">Bug</option>
+              <option value="新游戏想法">新游戏想法</option>
+            </select>
+          </label>
+          <label class="modal-field">
+            <span>想说什么</span>
+            <textarea class="feedback-textarea" name="content" rows="6" maxlength="1200" placeholder="比如：哪个游戏哪里不好玩、移动端哪里误触、希望增加什么玩法..."></textarea>
+          </label>
+          <label class="modal-field">
+            <span>联系方式（选填）</span>
+            <input class="feedback-input" name="contact" maxlength="120" placeholder="邮箱、微信或 GitHub ID" />
+          </label>
+          <div class="settings-actions feedback-actions">
+            <button class="secondary-button" type="button" data-copy-feedback>复制内容</button>
+            <button class="primary-button" type="submit">${icon("feedback")} 提交反馈</button>
+          </div>
+          <p class="settings-note feedback-notice" data-feedback-notice>会自动附带当前页面、游戏和设备信息，方便定位问题。</p>
+        </form>
+      `
+    };
+  }
+
   if (state.currentGame) {
     return {
       title: "设置",
@@ -1942,6 +2052,14 @@ function renderModal() {
   });
   app.querySelector("[data-modal-visual-style]")?.addEventListener("change", (event) => updateGameOption(game, { visualStyle: event.target.value }));
   app.querySelector("[data-clear-cache]")?.addEventListener("click", clearOfflineCaches);
+  app.querySelector("[data-feedback-form]")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitFeedback(event.currentTarget);
+  });
+  app.querySelector("[data-copy-feedback]")?.addEventListener("click", () => {
+    const form = app.querySelector("[data-feedback-form]");
+    if (form) copyFeedback(form);
+  });
   app.querySelector("[data-modal-sound]")?.addEventListener("change", (event) => {
     const sound = event.target.checked;
     setState({ sound });
