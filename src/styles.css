@@ -2481,6 +2481,14 @@ input[type="range"] {
   color: #5dff8b;
 }
 
+.tower-action-hero {
+  border-color: rgba(66, 242, 255, 0.52);
+}
+
+.tower-action-hero span {
+  color: #42f2ff;
+}
+
 .tower-action-tactic {
   border-color: color-mix(in srgb, var(--tactic-color, #ffd166) 44%, transparent);
 }

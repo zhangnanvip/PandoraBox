@@ -60,6 +60,14 @@ const TACTICS = {
 
 const TACTIC_ORDER = ["storm", "barricade"];
 
+const HERO = {
+  label: "守卫",
+  role: "机动支援",
+  maxLevel: 5,
+  rallyCooldown: 8,
+  color: classicArcade.cyan
+};
+
 const ENEMY_TRAITS = {
   grunt: { label: "杂兵", unlock: 1, hp: 1, speed: 1, reward: 0, penalty: 1 },
   runner: { label: "快怪", unlock: 2, hp: 0.72, speed: 1.42, reward: 1, penalty: 1 },
@@ -220,6 +228,9 @@ function actionIconSvg(type) {
   if (type === "barricade") {
     return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 11h20v6H6zM8 20h16v6H8z"/><path d="M10 8v21M22 8v21" class="line"/></svg>`;
   }
+  if (type === "hero") {
+    return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4l10 4v7c0 7-4 11-10 14C10 26 6 22 6 15V8z"/><path d="M16 9v13M10 15h12" class="line"/></svg>`;
+  }
   return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 17h15l-5 6 10-9H11l5-6z"/></svg>`;
 }
 
@@ -238,6 +249,69 @@ function startPointForLevel(level) {
 function endpointForLevel(level) {
   const waypoints = waypointsForLevel(level);
   return waypoints[waypoints.length - 1];
+}
+
+function heroHomeForLevel(level) {
+  const waypoints = waypointsForLevel(level);
+  const point = waypoints[Math.min(4, waypoints.length - 2)] || { x: W / 2, y: H / 2 };
+  return {
+    x: clamp(point.x, 24, W - 24),
+    y: clamp(point.y - 34, 24, H - 24)
+  };
+}
+
+function createHero(level = 1) {
+  const home = heroHomeForLevel(level);
+  return {
+    x: home.x,
+    y: home.y,
+    targetX: home.x,
+    targetY: home.y,
+    level: 1,
+    xp: 0,
+    attackTimer: 0,
+    rallyCooldown: 0
+  };
+}
+
+function normalizeHero(hero, level = 1) {
+  const base = createHero(level);
+  if (!hero || typeof hero !== "object") return base;
+  return {
+    ...base,
+    ...hero,
+    level: clamp(Math.round(Number(hero.level) || 1), 1, HERO.maxLevel),
+    xp: Math.max(0, Number(hero.xp) || 0),
+    attackTimer: Math.max(0, Number(hero.attackTimer) || 0),
+    rallyCooldown: Math.max(0, Number(hero.rallyCooldown) || 0),
+    x: clamp(Number(hero.x) || base.x, 12, W - 12),
+    y: clamp(Number(hero.y) || base.y, 12, H - 12),
+    targetX: clamp(Number(hero.targetX) || base.targetX, 12, W - 12),
+    targetY: clamp(Number(hero.targetY) || base.targetY, 12, H - 12)
+  };
+}
+
+function resetHeroForLevel(state) {
+  const home = heroHomeForLevel(state.level);
+  state.hero = {
+    ...normalizeHero(state.hero, state.level),
+    x: home.x,
+    y: home.y,
+    targetX: home.x,
+    targetY: home.y,
+    attackTimer: 0
+  };
+}
+
+function heroStats(hero) {
+  const level = clamp(hero?.level || 1, 1, HERO.maxLevel);
+  return {
+    range: 52 + level * 7,
+    aura: 46 + level * 5,
+    damage: 13 + level * 7,
+    cooldown: Math.max(0.34, 0.78 - level * 0.07),
+    speed: 118 + level * 10
+  };
 }
 
 function towerStats(tower) {
@@ -398,6 +472,7 @@ function initialState(config) {
     enemies: [],
     shots: [],
     fields: [],
+    hero: createHero(1),
     queue: [],
     effects: [],
     tacticCooldowns: Object.fromEntries(TACTIC_ORDER.map((id) => [id, 0])),
@@ -437,6 +512,7 @@ function restoreState(config, saved) {
     enemies: Array.isArray(saved.enemies) && mapCompatible ? saved.enemies : [],
     shots: Array.isArray(saved.shots) && mapCompatible ? saved.shots : [],
     fields: Array.isArray(saved.fields) && mapCompatible ? saved.fields : [],
+    hero: mapCompatible ? normalizeHero(saved.hero, level) : createHero(level),
     queue: Array.isArray(saved.queue) && mapCompatible ? saved.queue : [],
     tacticCooldowns: { ...state.tacticCooldowns, ...(saved.tacticCooldowns || {}) },
     selectedType: TOWER_TYPES[saved.selectedType] ? saved.selectedType : "arrow",
@@ -460,6 +536,7 @@ function serializeState(state) {
     towers: state.towers.map((tower) => ({ ...tower })),
     shots: state.shots.map((shot) => ({ ...shot })),
     fields: state.fields.map((field) => ({ ...field })),
+    hero: { ...state.hero },
     queue: state.queue.map((enemy) => ({ ...enemy })),
     effects: undefined,
     resultReported: undefined,
@@ -791,6 +868,50 @@ function castTactic(state, id) {
   else if (id === "barricade") deployBarricade(state);
 }
 
+function heroXpForLevel(level) {
+  return 52 + level * 34;
+}
+
+function grantHeroXp(state, amount, position = state.hero) {
+  const hero = state.hero;
+  if (!hero || hero.level >= HERO.maxLevel) return;
+  hero.xp += amount;
+  let threshold = heroXpForLevel(hero.level);
+  while (hero.xp >= threshold && hero.level < HERO.maxLevel) {
+    hero.xp -= threshold;
+    hero.level += 1;
+    threshold = heroXpForLevel(hero.level);
+    state.message = `${HERO.label} 升到 Lv.${hero.level}`;
+    addBurst(state.effects, position.x, position.y, { color: HERO.color, secondary: classicArcade.yellow, count: 18, speed: 78, radius: 15 });
+    addFloatingText(state.effects, position.x, position.y - 22, `守卫 Lv.${hero.level}`, { color: HERO.color, size: 14 });
+  }
+}
+
+function heroRallyTarget(state) {
+  const enemy = enemyClusterTarget(state, 70);
+  if (enemy) return { x: clamp(enemy.x, 24, W - 24), y: clamp(enemy.y - 28, 24, H - 24) };
+  const waypoints = waypointsForLevel(state.level);
+  const point = waypoints[Math.min(7, waypoints.length - 2)] || heroHomeForLevel(state.level);
+  return { x: clamp(point.x, 24, W - 24), y: clamp(point.y - 34, 24, H - 24) };
+}
+
+function rallyHero(state) {
+  const hero = state.hero;
+  if (!hero) return;
+  if (hero.rallyCooldown > 0) {
+    state.message = `守卫调度冷却 ${Math.ceil(hero.rallyCooldown)}s`;
+    return;
+  }
+  const target = heroRallyTarget(state);
+  hero.targetX = target.x;
+  hero.targetY = target.y;
+  hero.rallyCooldown = HERO.rallyCooldown;
+  clearPendingAction(state);
+  state.message = `${HERO.label} 正在前往交战点`;
+  addBurst(state.effects, hero.x, hero.y, { color: HERO.color, secondary: classicArcade.white, count: 12, speed: 58, radius: 10 });
+  addFloatingText(state.effects, hero.x, hero.y - 18, "调度", { color: HERO.color, size: 12 });
+}
+
 function spawnEnemy(state, template, context) {
   const start = startPointForLevel(state.level);
   const enemy = {
@@ -887,6 +1008,7 @@ function completeWave(state, context) {
     state.shots = [];
     state.fields = [];
     state.selectedTower = null;
+    resetHeroForLevel(state);
   }
   announceStageClear(state, context, {
     message: progressType === "stage"
@@ -1040,11 +1162,20 @@ function targetCompare(tower, a, b) {
   return b.pathIndex - a.pathIndex || a.hp - b.hp;
 }
 
+function heroBoostsTower(state, tower) {
+  if (!state.hero) return false;
+  return withinDistance(state.hero, tower, heroStats(state.hero).aura);
+}
+
 function updateTowers(state, dt) {
   for (const tower of state.towers) {
     tower.cooldown = Math.max(0, tower.cooldown - dt);
     if (tower.cooldown > 0) continue;
-    const stats = towerStats(tower);
+    const boosted = heroBoostsTower(state, tower);
+    const baseStats = towerStats(tower);
+    const stats = boosted
+      ? { ...baseStats, damage: Math.round(baseStats.damage * 1.12), cooldown: baseStats.cooldown * 0.94 }
+      : baseStats;
     const target = state.enemies
       .filter((enemy) => !enemy.defeated && withinDistance(tower, enemy, stats.range))
       .sort((a, b) => targetCompare(tower, a, b))[0];
@@ -1069,6 +1200,42 @@ function updateTowers(state, dt) {
   }
 }
 
+function updateHero(state, dt) {
+  const hero = state.hero;
+  if (!hero) return;
+  hero.rallyCooldown = Math.max(0, (hero.rallyCooldown || 0) - dt);
+  hero.attackTimer = Math.max(0, (hero.attackTimer || 0) - dt);
+  const dx = hero.targetX - hero.x;
+  const dy = hero.targetY - hero.y;
+  const remaining = Math.hypot(dx, dy);
+  const stats = heroStats(hero);
+  if (remaining > 1) {
+    const step = Math.min(remaining, stats.speed * dt);
+    hero.x += (dx / remaining) * step;
+    hero.y += (dy / remaining) * step;
+  }
+  if (hero.attackTimer > 0) return;
+  const target = state.enemies
+    .filter((enemy) => !enemy.defeated && withinDistance(hero, enemy, stats.range))
+    .sort((a, b) => b.pathIndex - a.pathIndex || a.hp - b.hp)[0];
+  if (!target) return;
+  hero.attackTimer = stats.cooldown;
+  state.shots.push({
+    id: state.nextId++,
+    x: hero.x,
+    y: hero.y,
+    targetId: target.id,
+    kind: "hero",
+    damage: stats.damage,
+    speed: 320,
+    splash: hero.level >= 4 ? 18 : 0,
+    chain: 0,
+    slow: 1,
+    slowTime: 0,
+    color: HERO.color
+  });
+}
+
 function updateShots(state, dt) {
   for (const shot of state.shots) {
     const target = state.enemies.find((enemy) => enemy.id === shot.targetId && !enemy.defeated);
@@ -1087,6 +1254,7 @@ function updateShots(state, dt) {
           const enemy = state.enemies[i];
           if (!withinDistance(enemy, target, shot.splash)) continue;
           const killed = damageEnemy(state, enemy, shot.damage * (enemy === target ? 1 : 0.62), shot);
+          if (killed && shot.kind === "hero") grantHeroXp(state, enemy.kind === "boss" ? 30 : 10 + (enemy.elite ? 8 : 0), enemy);
           if (killed) state.enemies.splice(i, 1);
         }
       } else if (shot.chain) {
@@ -1101,10 +1269,12 @@ function updateShots(state, dt) {
         for (const hit of hits) {
           if (!state.enemies.includes(hit.enemy)) continue;
           const killed = damageEnemy(state, hit.enemy, hit.damage, shot);
+          if (killed && shot.kind === "hero") grantHeroXp(state, hit.enemy.kind === "boss" ? 30 : 10 + (hit.enemy.elite ? 8 : 0), hit.enemy);
           if (killed) state.enemies.splice(state.enemies.indexOf(hit.enemy), 1);
         }
       } else {
         const killed = damageEnemy(state, target, shot.damage, shot);
+        if (killed && shot.kind === "hero") grantHeroXp(state, target.kind === "boss" ? 30 : 10 + (target.elite ? 8 : 0), target);
         if (killed) state.enemies.splice(state.enemies.indexOf(target), 1);
       }
       addBurst(state.effects, target.x, target.y, { color: shot.color, secondary: classicArcade.white, count: 5, speed: 40, life: 0.18 });
@@ -1149,6 +1319,7 @@ function update(state, config, dt, context, rawDt = dt) {
     if (!state.queue.length) state.spawning = false;
   }
   updateEnemies(state, dt);
+  updateHero(state, dt);
   updateTowers(state, dt);
   updateShots(state, dt);
   if (state.waveActive && !state.spawning && !state.queue.length && !state.enemies.length) {
@@ -1474,6 +1645,55 @@ function drawTower(ctx, tower, selected = false) {
   ctx.restore();
 }
 
+function drawHero(ctx, state) {
+  const hero = state.hero;
+  if (!hero) return;
+  const stats = heroStats(hero);
+  ctx.save();
+  ctx.fillStyle = "rgba(66,242,255,.045)";
+  ctx.beginPath();
+  ctx.arc(hero.x, hero.y, stats.aura, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(66,242,255,.16)";
+  ctx.setLineDash([5, 9]);
+  ctx.beginPath();
+  ctx.arc(hero.x, hero.y, stats.range, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = "rgba(255,209,102,.34)";
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(hero.x, hero.y);
+  ctx.lineTo(hero.targetX, hero.targetY);
+  ctx.stroke();
+  ctx.translate(hero.x, hero.y);
+  ctx.fillStyle = classicArcade.shadow;
+  ctx.beginPath();
+  ctx.ellipse(0, 10, 16, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#0d2033";
+  fillPath(ctx, [[0, -21], [15, -9], [12, 10], [0, 19], [-12, 10], [-15, -9]]);
+  ctx.fillStyle = HERO.color;
+  fillPath(ctx, [[0, -17], [10, -7], [8, 7], [0, 14], [-8, 7], [-10, -7]]);
+  ctx.fillStyle = "#f8fbff";
+  ctx.beginPath();
+  ctx.arc(0, -6, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = classicArcade.yellow;
+  ctx.lineWidth = 2;
+  strokePath(ctx, [[-11, 1], [-20, -4]]);
+  strokePath(ctx, [[11, 1], [20, -4]]);
+  ctx.fillStyle = "rgba(5,9,20,.82)";
+  drawRoundedRect(ctx, -13, 16, 26, 9, 4);
+  ctx.fill();
+  ctx.fillStyle = classicArcade.white;
+  ctx.font = "900 7px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(`Lv${hero.level}`, 0, 20.5);
+  ctx.restore();
+}
+
 function enemyHeading(enemy, state) {
   const waypoints = waypointsForLevel(state.level);
   const target = waypoints[enemy.pathIndex + 1] || waypoints[enemy.pathIndex];
@@ -1726,6 +1946,7 @@ function draw(state, ctx) {
   drawTacticalFields(ctx, state);
   drawTowerEndpoint(ctx, 12, startPointForLevel(state.level).y, classicArcade.green, "入");
   drawTowerEndpoint(ctx, W - 12, endpointForLevel(state.level).y, classicArcade.red, "核");
+  drawHero(ctx, state);
   state.towers.forEach((tower) => drawTower(ctx, tower, tower.id === state.selectedTower));
   state.enemies.forEach((enemy) => drawEnemy(ctx, enemy, state));
   state.shots.forEach((shot) => drawShot(ctx, shot));
@@ -1763,6 +1984,11 @@ export function mountTowerDefense(root, context) {
             <span>${actionIconSvg("wave")}</span>
             <strong>出怪</strong>
             <small data-wave-tip>下一波</small>
+          </button>
+          <button type="button" class="tower-action tower-action-hero" data-action="hero">
+            <span>${actionIconSvg("hero")}</span>
+            <strong>守卫</strong>
+            <small data-hero-tip>Lv.1</small>
           </button>
           <button type="button" class="tower-action" data-action="upgrade">
             <span>${actionIconSvg("upgrade")}</span>
@@ -1813,11 +2039,13 @@ export function mountTowerDefense(root, context) {
   const score = root.querySelector("[data-score]");
   const towerButtons = [...root.querySelectorAll("[data-tower]")];
   const waveButton = root.querySelector("[data-action='wave']");
+  const heroButton = root.querySelector("[data-action='hero']");
   const upgradeButton = root.querySelector("[data-action='upgrade']");
   const targetButton = root.querySelector("[data-action='target']");
   const sellButton = root.querySelector("[data-action='sell']");
   const tacticButtons = Object.fromEntries(TACTIC_ORDER.map((id) => [id, root.querySelector(`[data-action='${id}']`)]));
   const waveTip = root.querySelector("[data-wave-tip]");
+  const heroTip = root.querySelector("[data-hero-tip]");
   const upgradeTip = root.querySelector("[data-upgrade-tip]");
   const targetTip = root.querySelector("[data-target-tip]");
   const sellTip = root.querySelector("[data-sell-tip]");
@@ -1850,6 +2078,9 @@ export function mountTowerDefense(root, context) {
     });
     waveButton.disabled = state.over || state.spawning || state.enemies.length > 0;
     waveTip.textContent = state.waveActive ? `场上 ${state.enemies.length}` : wavePreview(config, state.level, state.wave);
+    const heroReady = (state.hero?.rallyCooldown || 0) <= 0;
+    heroButton.disabled = state.over || !heroReady;
+    heroTip.textContent = heroReady ? `Lv.${state.hero?.level || 1}` : `${Math.ceil(state.hero.rallyCooldown)}s`;
     const upgradeCostValue = selectedTower ? upgradeCost(selectedTower) : 0;
     upgradeButton.disabled = !selectedTower || selectedTower.level >= TOWER_MAX_LEVEL || state.gold < upgradeCostValue;
     upgradeTip.textContent = selectedTower
@@ -1920,6 +2151,8 @@ export function mountTowerDefense(root, context) {
       state.message = `选择${TOWER_TYPES[state.selectedType].label}`;
     } else if (action === "wave") {
       startWave(state, config);
+    } else if (action === "hero") {
+      rallyHero(state);
     } else if (action === "upgrade") {
       upgradeSelectedTower(state);
     } else if (action === "target") {
@@ -1950,6 +2183,7 @@ export function mountTowerDefense(root, context) {
     clearPendingAction(state);
     state.message = "已取消操作";
   });
+  root.querySelector("[data-action='hero']").addEventListener("click", () => rallyHero(state));
   root.querySelector("[data-action='upgrade']").addEventListener("click", () => upgradeSelectedTower(state));
   root.querySelector("[data-action='target']").addEventListener("click", () => cycleSelectedTowerTarget(state));
   root.querySelector("[data-action='wave']").addEventListener("click", () => startWave(state, config));
@@ -1965,6 +2199,7 @@ export function mountTowerDefense(root, context) {
     Digit5: "venom",
     Digit6: "mortar",
     Space: "wave",
+    KeyE: "hero",
     KeyU: "upgrade",
     KeyT: "target",
     KeyX: "sell",
