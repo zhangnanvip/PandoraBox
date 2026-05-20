@@ -35,6 +35,34 @@ const TOWER_TYPES = {
 };
 
 const TOWER_ORDER = ["arrow", "cannon", "frost", "spark", "venom", "mortar"];
+const SPECIALIZE_LEVEL = 3;
+
+const TOWER_SPECIALIZATIONS = {
+  arrow: [
+    { id: "sniper", label: "鹰眼", detail: "射程和强敌伤害提升" },
+    { id: "volley", label: "连弩", detail: "攻速提升，适合补刀" }
+  ],
+  cannon: [
+    { id: "shrapnel", label: "霰爆", detail: "爆炸范围扩大" },
+    { id: "breaker", label: "破甲", detail: "克制护甲和首领" }
+  ],
+  frost: [
+    { id: "deepFreeze", label: "深寒", detail: "减速更强更久" },
+    { id: "cryoPulse", label: "冰脉", detail: "更快脉冲小范围伤害" }
+  ],
+  spark: [
+    { id: "overload", label: "过载", detail: "连锁更多目标" },
+    { id: "surge", label: "涌流", detail: "伤害和射程提升" }
+  ],
+  venom: [
+    { id: "plague", label: "瘟疫", detail: "毒伤和持续时间提升" },
+    { id: "corrosive", label: "腐蚀", detail: "扩大毒雾并削弱护甲" }
+  ],
+  mortar: [
+    { id: "siege", label: "攻城", detail: "重击首领和重甲" },
+    { id: "cluster", label: "集束", detail: "更大爆炸范围" }
+  ]
+};
 
 const TARGET_MODES = {
   first: { label: "前线", detail: "优先攻击最靠近核心的敌人" },
@@ -216,6 +244,9 @@ function actionIconSvg(type) {
   if (type === "upgrade") {
     return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5l8 9h-5v12h-6V14H8z"/></svg>`;
   }
+  if (type === "specialize") {
+    return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l3.6 8 8.7.8-6.5 5.8 1.9 8.5L16 21.6 8.3 26.1l1.9-8.5-6.5-5.8 8.7-.8z"/><path d="M16 9v8M12 15h8" class="line"/></svg>`;
+  }
   if (type === "sell") {
     return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 10h18l-2 16H9z"/><path d="M11 10V7h10v3M12 15h8M12 20h8"/></svg>`;
   }
@@ -314,10 +345,29 @@ function heroStats(hero) {
   };
 }
 
+function specializationOptions(type) {
+  return TOWER_SPECIALIZATIONS[type] || [];
+}
+
+function activeSpecialization(tower) {
+  return specializationOptions(tower.type).find((specialization) => specialization.id === tower.specialization) || null;
+}
+
+function nextSpecialization(tower) {
+  const options = specializationOptions(tower.type);
+  if (!options.length) return null;
+  const currentIndex = options.findIndex((specialization) => specialization.id === tower.specialization);
+  return options[(currentIndex + 1) % options.length];
+}
+
+function specializationLabel(tower) {
+  return activeSpecialization(tower)?.label || "未专精";
+}
+
 function towerStats(tower) {
   const base = TOWER_TYPES[tower.type] || TOWER_TYPES.arrow;
   const boost = tower.level - 1;
-  return {
+  const stats = {
     ...base,
     damage: Math.round(base.damage * (1 + boost * 0.42)),
     range: base.range + boost * 8,
@@ -328,6 +378,66 @@ function towerStats(tower) {
     poisonTime: base.poisonTime ? base.poisonTime + boost * 0.32 : 0,
     chain: base.chain ? base.chain + Math.floor(boost / 2) : 0
   };
+  switch (tower.specialization) {
+    case "sniper":
+      stats.damage = Math.round(stats.damage * 1.28);
+      stats.range += 22;
+      stats.cooldown *= 1.08;
+      stats.bossDamage = 1.12;
+      break;
+    case "volley":
+      stats.damage = Math.round(stats.damage * 0.86);
+      stats.cooldown = Math.max(0.16, stats.cooldown * 0.72);
+      break;
+    case "shrapnel":
+      stats.damage = Math.round(stats.damage * 0.92);
+      stats.splash += 22;
+      break;
+    case "breaker":
+      stats.damage = Math.round(stats.damage * 1.18);
+      stats.armorBreak = 0.18;
+      stats.bossDamage = 1.18;
+      break;
+    case "deepFreeze":
+      stats.range += 8;
+      stats.slow = Math.max(0.25, (stats.slow || 0.5) * 0.72);
+      stats.slowTime = (stats.slowTime || 1.2) + 0.7;
+      break;
+    case "cryoPulse":
+      stats.damage = Math.round(stats.damage * 1.12);
+      stats.cooldown = Math.max(0.18, stats.cooldown * 0.72);
+      stats.splash = Math.max(stats.splash || 0, 18);
+      break;
+    case "overload":
+      stats.chain = (stats.chain || 0) + 2;
+      stats.cooldown *= 1.06;
+      break;
+    case "surge":
+      stats.damage = Math.round(stats.damage * 1.35);
+      stats.range += 12;
+      break;
+    case "plague":
+      stats.poison = (stats.poison || 0) + 8;
+      stats.poisonTime = (stats.poisonTime || 2.2) + 1.4;
+      break;
+    case "corrosive":
+      stats.splash += 14;
+      stats.armorBreak = 0.12;
+      break;
+    case "siege":
+      stats.damage = Math.round(stats.damage * 1.26);
+      stats.cooldown *= 1.08;
+      stats.armorBreak = 0.12;
+      stats.bossDamage = 1.25;
+      break;
+    case "cluster":
+      stats.damage = Math.round(stats.damage * 0.9);
+      stats.splash += 24;
+      break;
+    default:
+      break;
+  }
+  return stats;
 }
 
 function upgradeCost(tower) {
@@ -498,7 +608,14 @@ function restoreState(config, saved) {
   const wave = clamp(Number(saved.wave) || 1, 1, WAVES_PER_LEVEL);
   const mapCompatible = saved.mapVersion === MAP_VERSION;
   const savedTowers = Array.isArray(saved.towers) && mapCompatible
-    ? saved.towers.filter((tower) => !isPathCell({ x: tower.cellX, y: tower.cellY }, level))
+    ? saved.towers
+      .filter((tower) => !isPathCell({ x: tower.cellX, y: tower.cellY }, level))
+      .map((tower) => ({
+        ...tower,
+        level: clamp(Math.round(Number(tower.level) || 1), 1, TOWER_MAX_LEVEL),
+        targetMode: TARGET_ORDER.includes(tower.targetMode) ? tower.targetMode : "first",
+        specialization: specializationOptions(tower.type).some((item) => item.id === tower.specialization) ? tower.specialization : null
+      }))
     : [];
   return {
     ...state,
@@ -621,6 +738,7 @@ function placeTower(state, cell, towerType) {
     type,
     level: 1,
     targetMode: "first",
+    specialization: null,
     cellX: cell.x,
     cellY: cell.y,
     x: cell.x * CELL + CELL / 2,
@@ -768,6 +886,29 @@ function cycleSelectedTowerTarget(state) {
   tower.targetMode = next;
   state.message = `${TOWER_TYPES[tower.type].label} 目标：${TARGET_MODES[next].label}`;
   addFloatingText(state.effects, tower.x, tower.y - 14, TARGET_MODES[next].label, { color: TOWER_TYPES[tower.type].color, size: 11 });
+}
+
+function cycleSelectedTowerSpecialization(state) {
+  const tower = state.towers.find((item) => item.id === state.selectedTower);
+  if (!tower) {
+    state.message = "先点击一座塔";
+    return;
+  }
+  if (tower.level < SPECIALIZE_LEVEL) {
+    state.message = `Lv.${SPECIALIZE_LEVEL} 后可选择专精`;
+    return;
+  }
+  const next = nextSpecialization(tower);
+  if (!next) {
+    state.message = "这座塔暂无专精";
+    return;
+  }
+  clearPendingAction(state);
+  tower.specialization = next.id;
+  const label = TOWER_TYPES[tower.type]?.label || "防御塔";
+  state.message = `${label} 专精：${next.label} · ${next.detail}`;
+  addBurst(state.effects, tower.x, tower.y, { color: TOWER_TYPES[tower.type].color, secondary: classicArcade.yellow, count: 10, speed: 52, radius: 12 });
+  addFloatingText(state.effects, tower.x, tower.y - 18, next.label, { color: classicArcade.yellow, size: 12 });
 }
 
 function confirmPendingAction(state) {
@@ -1039,8 +1180,10 @@ function damageEnemy(state, enemy, amount, shot) {
   }
   let finalAmount = amount;
   if (enemy.armor && !["spark", "venom", "venom-dot"].includes(shotKind)) {
-    finalAmount *= Math.max(0.35, 1 - enemy.armor);
+    const effectiveArmor = Math.max(0, enemy.armor - (shot?.armorBreak || 0));
+    finalAmount *= Math.max(0.35, 1 - effectiveArmor);
   }
+  if (enemy.kind === "boss" && shot?.bossDamage) finalAmount *= shot.bossDamage;
   if (enemy.kind === "juggernaut" && shotKind === "mortar") finalAmount *= 1.18;
   if (enemy.kind === "phantom" && shotKind === "spark") finalAmount *= 1.22;
   enemy.hp -= finalAmount;
@@ -1195,6 +1338,9 @@ function updateTowers(state, dt) {
       poison: stats.poison || 0,
       poisonTime: stats.poisonTime || 0,
       chain: stats.chain || 0,
+      armorBreak: stats.armorBreak || 0,
+      bossDamage: stats.bossDamage || 0,
+      specialization: tower.specialization || null,
       color: stats.color
     });
   }
@@ -1632,11 +1778,26 @@ function drawTower(ctx, tower, selected = false) {
     ctx.arc(-8 + i * 4, 23, 1.25, 0, Math.PI * 2);
     ctx.fill();
   }
+  const specialization = activeSpecialization(tower);
+  if (specialization) {
+    ctx.fillStyle = "rgba(5,9,20,.84)";
+    drawRoundedRect(ctx, 7, -18, 16, 12, 4);
+    ctx.fill();
+    ctx.strokeStyle = classicArcade.yellow;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.fillStyle = classicArcade.yellow;
+    fillPath(ctx, [[15, -16], [17, -12], [21, -12], [18, -9], [19, -5], [15, -7], [11, -5], [12, -9], [9, -12], [13, -12]]);
+  }
   if (selected) {
     const targetLabel = TARGET_MODES[tower.targetMode || "first"]?.label || TARGET_MODES.first.label;
     ctx.fillStyle = stats.color;
     ctx.font = "900 6.5px system-ui, sans-serif";
     ctx.fillText(targetLabel, 0, -30);
+    if (specialization) {
+      ctx.fillStyle = classicArcade.yellow;
+      ctx.fillText(specialization.label, 0, 34);
+    }
   }
   if (def.role) {
     ctx.fillStyle = stats.color;
@@ -1995,6 +2156,11 @@ export function mountTowerDefense(root, context) {
             <strong>升级</strong>
             <small data-upgrade-tip>选中塔</small>
           </button>
+          <button type="button" class="tower-action tower-action-specialize" data-action="specialize">
+            <span>${actionIconSvg("specialize")}</span>
+            <strong>专精</strong>
+            <small data-specialize-tip>Lv.${SPECIALIZE_LEVEL}</small>
+          </button>
           <button type="button" class="tower-action" data-action="target">
             <span>${actionIconSvg("target")}</span>
             <strong>目标</strong>
@@ -2041,12 +2207,14 @@ export function mountTowerDefense(root, context) {
   const waveButton = root.querySelector("[data-action='wave']");
   const heroButton = root.querySelector("[data-action='hero']");
   const upgradeButton = root.querySelector("[data-action='upgrade']");
+  const specializeButton = root.querySelector("[data-action='specialize']");
   const targetButton = root.querySelector("[data-action='target']");
   const sellButton = root.querySelector("[data-action='sell']");
   const tacticButtons = Object.fromEntries(TACTIC_ORDER.map((id) => [id, root.querySelector(`[data-action='${id}']`)]));
   const waveTip = root.querySelector("[data-wave-tip]");
   const heroTip = root.querySelector("[data-hero-tip]");
   const upgradeTip = root.querySelector("[data-upgrade-tip]");
+  const specializeTip = root.querySelector("[data-specialize-tip]");
   const targetTip = root.querySelector("[data-target-tip]");
   const sellTip = root.querySelector("[data-sell-tip]");
   const tacticTips = Object.fromEntries(TACTIC_ORDER.map((id) => [id, root.querySelector(`[data-tactic-tip='${id}']`)]));
@@ -2061,7 +2229,9 @@ export function mountTowerDefense(root, context) {
     const map = mapForLevel(state.level);
     const selectedTower = state.towers.find((tower) => tower.id === state.selectedTower);
     const targetMode = selectedTower ? TARGET_MODES[selectedTower.targetMode || "first"] : null;
-    const selectedText = selectedTower ? `选中 ${TOWER_TYPES[selectedTower.type].label} Lv.${selectedTower.level} · ${targetMode?.label || "前线"}` : `${TOWER_TYPES[state.selectedType].label} ${TOWER_TYPES[state.selectedType].cost} 金币`;
+    const selectedText = selectedTower
+      ? `选中 ${TOWER_TYPES[selectedTower.type].label} Lv.${selectedTower.level} · ${targetMode?.label || "前线"} · ${specializationLabel(selectedTower)}`
+      : `${TOWER_TYPES[state.selectedType].label} ${TOWER_TYPES[state.selectedType].cost} 金币`;
     const waveText = state.waveActive
       ? `场上 ${state.enemies.length + state.queue.length} 敌`
       : `下一波 ${wavePreview(config, state.level, state.wave)}`;
@@ -2085,6 +2255,11 @@ export function mountTowerDefense(root, context) {
     upgradeButton.disabled = !selectedTower || selectedTower.level >= TOWER_MAX_LEVEL || state.gold < upgradeCostValue;
     upgradeTip.textContent = selectedTower
       ? (selectedTower.level >= TOWER_MAX_LEVEL ? "满级" : `${upgradeCostValue} 金币`)
+      : "选中塔";
+    const canSpecialize = selectedTower && selectedTower.level >= SPECIALIZE_LEVEL;
+    specializeButton.disabled = !canSpecialize;
+    specializeTip.textContent = selectedTower
+      ? (canSpecialize ? specializationLabel(selectedTower) : `Lv.${SPECIALIZE_LEVEL}`)
       : "选中塔";
     targetButton.disabled = !selectedTower;
     targetTip.textContent = selectedTower ? (targetMode?.label || "前线") : "选中塔";
@@ -2155,6 +2330,8 @@ export function mountTowerDefense(root, context) {
       rallyHero(state);
     } else if (action === "upgrade") {
       upgradeSelectedTower(state);
+    } else if (action === "specialize") {
+      cycleSelectedTowerSpecialization(state);
     } else if (action === "target") {
       cycleSelectedTowerTarget(state);
     } else if (action === "sell") {
@@ -2185,6 +2362,7 @@ export function mountTowerDefense(root, context) {
   });
   root.querySelector("[data-action='hero']").addEventListener("click", () => rallyHero(state));
   root.querySelector("[data-action='upgrade']").addEventListener("click", () => upgradeSelectedTower(state));
+  root.querySelector("[data-action='specialize']").addEventListener("click", () => cycleSelectedTowerSpecialization(state));
   root.querySelector("[data-action='target']").addEventListener("click", () => cycleSelectedTowerTarget(state));
   root.querySelector("[data-action='wave']").addEventListener("click", () => startWave(state, config));
   root.querySelector("[data-action='sell']").addEventListener("click", () => sellSelectedTower(state));
@@ -2201,6 +2379,7 @@ export function mountTowerDefense(root, context) {
     Space: "wave",
     KeyE: "hero",
     KeyU: "upgrade",
+    KeyP: "specialize",
     KeyT: "target",
     KeyX: "sell",
     KeyQ: "storm",
