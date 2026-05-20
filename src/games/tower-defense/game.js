@@ -12,9 +12,11 @@ const W = 360;
 const H = 360;
 const CELL = 30;
 const GRID = 12;
-const MAX_LEVEL = 12;
+const MAX_LEVEL = 30;
 const WAVES_PER_LEVEL = 4;
-const MAP_VERSION = 2;
+const MAP_VERSION = 3;
+const TOWER_MAX_LEVEL = 5;
+const ACTION_CONFIRM_TIMEOUT = 10;
 
 const DIFFICULTY = {
   easy: { lives: 22, gold: 230, hp: 0.85, speed: 0.86, count: -1 },
@@ -27,18 +29,26 @@ const TOWER_TYPES = {
   arrow: { label: "弩塔", role: "高速单体", cost: 60, damage: 17, range: 74, cooldown: 0.52, speed: 255, color: classicArcade.cyan },
   cannon: { label: "炮塔", role: "范围爆破", cost: 92, damage: 31, range: 65, cooldown: 1.05, speed: 210, splash: 30, color: classicArcade.orange },
   frost: { label: "冰塔", role: "减速控场", cost: 76, damage: 9, range: 68, cooldown: 0.86, speed: 225, slow: 0.48, slowTime: 1.45, color: classicArcade.blue },
-  spark: { label: "电塔", role: "连锁电击", cost: 108, damage: 14, range: 86, cooldown: 0.74, speed: 290, chain: 2, color: classicArcade.yellow }
+  spark: { label: "电塔", role: "连锁电击", cost: 108, damage: 14, range: 86, cooldown: 0.74, speed: 290, chain: 2, color: classicArcade.yellow },
+  venom: { label: "毒雾塔", role: "持续腐蚀", cost: 88, damage: 10, range: 72, cooldown: 0.9, speed: 215, splash: 24, poison: 8, poisonTime: 2.8, color: classicArcade.green },
+  mortar: { label: "迫击塔", role: "远程重炮", cost: 132, damage: 44, range: 116, cooldown: 1.48, speed: 170, splash: 42, color: classicArcade.red }
 };
 
-const TOWER_ORDER = ["arrow", "cannon", "frost", "spark"];
+const TOWER_ORDER = ["arrow", "cannon", "frost", "spark", "venom", "mortar"];
 
 const ENEMY_TRAITS = {
   grunt: { label: "杂兵", unlock: 1, hp: 1, speed: 1, reward: 0, penalty: 1 },
   runner: { label: "快怪", unlock: 2, hp: 0.72, speed: 1.42, reward: 1, penalty: 1 },
   armored: { label: "重甲", unlock: 3, hp: 1.72, speed: 0.76, reward: 4, penalty: 1 },
+  regen: { label: "再生", unlock: 5, hp: 1.22, speed: 0.92, reward: 4, penalty: 1, regen: 4 },
   swarm: { label: "蜂群", unlock: 6, hp: 0.52, speed: 1.76, reward: -1, penalty: 1 },
+  healer: { label: "祭司", unlock: 8, hp: 1.05, speed: 0.84, reward: 5, penalty: 1, healAura: 5 },
   splitter: { label: "分裂", unlock: 9, hp: 1.18, speed: 0.96, reward: 3, penalty: 1, split: 2 },
+  phantom: { label: "相位", unlock: 12, hp: 0.86, speed: 1.28, reward: 6, penalty: 1, dodge: 0.28 },
   shield: { label: "护盾", unlock: 14, hp: 2.35, speed: 0.66, reward: 7, penalty: 2 },
+  juggernaut: { label: "攻城", unlock: 18, hp: 3.15, speed: 0.52, reward: 10, penalty: 3, armor: 0.28 },
+  sapper: { label: "爆破", unlock: 22, hp: 1.38, speed: 1.04, reward: 8, penalty: 2, burst: 1 },
+  warlock: { label: "术士", unlock: 28, hp: 1.62, speed: 0.82, reward: 11, penalty: 2, healAura: 3, armor: 0.16 },
   boss: { label: "守门兽", unlock: 4, hp: 1, speed: 1, reward: 0, penalty: 5 }
 };
 
@@ -86,6 +96,46 @@ const MAPS = [
       [9, 7], [9, 8], [10, 8], [10, 7], [10, 6], [10, 5],
       [10, 4], [11, 4]
     ]
+  },
+  {
+    name: "沼泽弯道",
+    feature: "长廊回折",
+    cells: [
+      [0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [4, 2], [4, 3],
+      [4, 4], [3, 4], [2, 4], [1, 4], [1, 5], [1, 6], [2, 6],
+      [3, 6], [4, 6], [5, 6], [6, 6], [6, 7], [6, 8], [7, 8],
+      [8, 8], [9, 8], [10, 8], [10, 7], [10, 6], [11, 6]
+    ]
+  },
+  {
+    name: "环形核心",
+    feature: "内圈绕行",
+    cells: [
+      [0, 10], [1, 10], [2, 10], [3, 10], [3, 9], [3, 8], [3, 7],
+      [4, 7], [5, 7], [6, 7], [7, 7], [7, 6], [7, 5], [6, 5],
+      [5, 5], [4, 5], [4, 4], [4, 3], [5, 3], [6, 3], [7, 3],
+      [8, 3], [8, 4], [8, 5], [9, 5], [10, 5], [11, 5]
+    ]
+  },
+  {
+    name: "双桥矿线",
+    feature: "中段回压",
+    cells: [
+      [0, 4], [1, 4], [2, 4], [3, 4], [3, 5], [3, 6], [4, 6],
+      [5, 6], [5, 5], [5, 4], [6, 4], [7, 4], [7, 3], [7, 2],
+      [8, 2], [9, 2], [9, 3], [9, 4], [9, 5], [8, 5], [7, 5],
+      [7, 6], [8, 6], [9, 6], [10, 6], [11, 6]
+    ]
+  },
+  {
+    name: "深渊螺旋",
+    feature: "密集折返",
+    cells: [
+      [0, 6], [1, 6], [2, 6], [2, 5], [2, 4], [3, 4], [4, 4],
+      [4, 5], [4, 6], [4, 7], [5, 7], [6, 7], [6, 6], [6, 5],
+      [6, 4], [7, 4], [8, 4], [8, 5], [8, 6], [8, 7], [9, 7],
+      [10, 7], [10, 6], [10, 5], [11, 5]
+    ]
   }
 ].map((map) => ({
   ...map,
@@ -106,6 +156,12 @@ function towerIconSvg(type) {
   }
   if (type === "spark") {
     return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M35 6L14 36h16l-3 22 23-33H34z"/><path d="M20 51h24M17 57h30" class="line"/></svg>`;
+  }
+  if (type === "venom") {
+    return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8c9 12 16 21 16 31 0 10-7 17-16 17s-16-7-16-17c0-10 7-19 16-31z"/><path d="M24 38c4 4 12 4 16 0M23 28h.1M41 28h.1" class="line"/></svg>`;
+  }
+  if (type === "mortar") {
+    return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M17 46h30l5 10H12z"/><path d="M25 37l22-20 8 9-23 20z"/><path d="M13 24l7-7M16 15l7-7M45 9l7-5" class="line"/></svg>`;
   }
   return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8v42"/><path d="M14 28c10-14 26-14 36 0"/><path d="M14 28c10 11 26 11 36 0"/><path d="M26 36h12v14H26z"/><path d="M20 54h24" class="line"/></svg>`;
 }
@@ -156,12 +212,14 @@ function towerStats(tower) {
   const boost = tower.level - 1;
   return {
     ...base,
-    damage: Math.round(base.damage * (1 + boost * 0.48)),
-    range: base.range + boost * 10,
-    cooldown: Math.max(0.22, base.cooldown * (1 - boost * 0.12)),
+    damage: Math.round(base.damage * (1 + boost * 0.42)),
+    range: base.range + boost * 8,
+    cooldown: Math.max(0.18, base.cooldown * (1 - boost * 0.1)),
     splash: base.splash ? base.splash + boost * 5 : 0,
     slowTime: base.slowTime ? base.slowTime + boost * 0.22 : 0,
-    chain: base.chain ? base.chain + (tower.level >= 3 ? 1 : 0) : 0
+    poison: base.poison ? base.poison + boost * 3 : 0,
+    poisonTime: base.poisonTime ? base.poisonTime + boost * 0.32 : 0,
+    chain: base.chain ? base.chain + Math.floor(boost / 2) : 0
   };
 }
 
@@ -185,12 +243,13 @@ function waveNumber(state) {
 
 function waveConfig(config, level, wave) {
   const totalWave = waveIndex({ level, wave }, WAVES_PER_LEVEL);
+  const chapter = Math.floor((level - 1) / 5);
   return {
-    count: Math.max(6, 6 + level * 2 + wave * 2 + Math.floor(totalWave / 5) + config.count),
-    hp: Math.round((34 + level * 18 + wave * 11 + Math.floor(totalWave / 4) * 5) * config.hp),
-    speed: (24 + level * 2.2 + wave * 1.2 + Math.floor(totalWave / 8)) * config.speed,
-    reward: 8 + level,
-    interval: Math.max(0.32, 0.72 - level * 0.026 - wave * 0.012),
+    count: Math.max(6, 7 + level * 2 + wave * 2 + Math.floor(totalWave / 6) + chapter + config.count),
+    hp: Math.round((36 + level * 15 + wave * 12 + Math.floor(totalWave / 4) * 4 + chapter * 22) * config.hp),
+    speed: (24 + level * 1.55 + wave * 1.1 + Math.floor(totalWave / 10)) * config.speed,
+    reward: 8 + level + Math.floor(totalWave / 12),
+    interval: Math.max(0.28, 0.74 - level * 0.014 - wave * 0.014),
     totalWave
   };
 }
@@ -214,9 +273,15 @@ function wavePreview(config, level, wave) {
 }
 
 function enemyKindAt(index, totalWave) {
+  if (totalWave >= ENEMY_TRAITS.warlock.unlock && index % 17 === 12) return "warlock";
+  if (totalWave >= ENEMY_TRAITS.sapper.unlock && index % 13 === 4) return "sapper";
+  if (totalWave >= ENEMY_TRAITS.juggernaut.unlock && index % 16 === 8) return "juggernaut";
   if (totalWave >= ENEMY_TRAITS.shield.unlock && index % 13 === 9) return "shield";
+  if (totalWave >= ENEMY_TRAITS.phantom.unlock && index % 10 === 5) return "phantom";
   if (totalWave >= ENEMY_TRAITS.splitter.unlock && index % 11 === 6) return "splitter";
+  if (totalWave >= ENEMY_TRAITS.healer.unlock && index % 12 === 7) return "healer";
   if (totalWave >= ENEMY_TRAITS.swarm.unlock && index % 6 === 2) return "swarm";
+  if (totalWave >= ENEMY_TRAITS.regen.unlock && index % 9 === 4) return "regen";
   if (totalWave >= ENEMY_TRAITS.armored.unlock && index % 7 === 5) return "armored";
   if (totalWave >= ENEMY_TRAITS.runner.unlock && index % 5 === 3) return "runner";
   return "grunt";
@@ -229,7 +294,13 @@ function createEnemyTemplate(kind, id, waveCfg) {
     kind,
     hp: Math.max(1, Math.round(waveCfg.hp * trait.hp)),
     speed: waveCfg.speed * trait.speed,
-    reward: Math.max(2, waveCfg.reward + trait.reward)
+    reward: Math.max(2, waveCfg.reward + trait.reward),
+    penalty: trait.penalty || 1,
+    regen: trait.regen || 0,
+    healAura: trait.healAura || 0,
+    dodge: trait.dodge || 0,
+    armor: trait.armor || 0,
+    burst: trait.burst || 0
   };
 }
 
@@ -270,6 +341,7 @@ function initialState(config) {
     nextId: 1,
     selectedType: "arrow",
     selectedTower: null,
+    pendingAction: null,
     waveActive: false,
     spawning: false,
     spawnTimer: 0,
@@ -304,6 +376,7 @@ function restoreState(config, saved) {
     queue: Array.isArray(saved.queue) && mapCompatible ? saved.queue : [],
     selectedType: TOWER_TYPES[saved.selectedType] ? saved.selectedType : "arrow",
     selectedTower: savedTowers.some((tower) => tower.id === saved.selectedTower) ? saved.selectedTower : null,
+    pendingAction: null,
     waveActive: mapCompatible ? Boolean(saved.waveActive) : false,
     spawning: mapCompatible ? Boolean(saved.spawning) : false,
     transition: null,
@@ -315,7 +388,7 @@ function restoreState(config, saved) {
 }
 
 function serializeState(state) {
-  const { effects, resultReported, transition, feedback, ...snapshot } = state;
+  const { effects, resultReported, transition, feedback, pendingAction, ...snapshot } = state;
   return {
     ...snapshot,
     enemies: state.enemies.map((enemy) => ({ ...enemy })),
@@ -325,7 +398,8 @@ function serializeState(state) {
     effects: undefined,
     resultReported: undefined,
     transition: undefined,
-    feedback: undefined
+    feedback: undefined,
+    pendingAction: undefined
   };
 }
 
@@ -356,20 +430,44 @@ function towerAt(state, cell) {
   return state.towers.find((tower) => tower.cellX === cell.x && tower.cellY === cell.y);
 }
 
-function buildTower(state, cell) {
+function clearPendingAction(state) {
+  state.pendingAction = null;
+}
+
+function pendingActionKey(action) {
+  if (!action) return "";
+  if (action.type === "build") return `build:${action.cell.x}:${action.cell.y}:${action.towerType}`;
+  return `${action.type}:${action.towerId}`;
+}
+
+function requestActionConfirmation(state, action) {
+  const key = pendingActionKey(action);
+  state.pendingAction = {
+    ...action,
+    key,
+    expiresAt: state.time + ACTION_CONFIRM_TIMEOUT
+  };
+  state.message = action.message || "请确认本次操作";
+}
+
+function expirePendingAction(state) {
+  if (state.pendingAction && state.pendingAction.expiresAt <= state.time) {
+    state.pendingAction = null;
+  }
+}
+
+function placeTower(state, cell, towerType) {
   if (state.over || state.spawning) return;
   if (!isInsideCell(cell)) return;
   if (isPathCell(cell, state.level)) {
     state.message = "道路上不能建塔";
     return;
   }
-  const existing = towerAt(state, cell);
-  if (existing) {
-    state.selectedTower = existing.id;
-    state.message = `${TOWER_TYPES[existing.type].label} Lv.${existing.level}`;
+  if (towerAt(state, cell)) {
+    state.message = "这里已经有防御塔";
     return;
   }
-  const type = TOWER_TYPES[state.selectedType] ? state.selectedType : "arrow";
+  const type = TOWER_TYPES[towerType] ? towerType : "arrow";
   const def = TOWER_TYPES[type];
   if (state.gold < def.cost) {
     state.message = `金币不足，需要 ${def.cost}`;
@@ -393,13 +491,50 @@ function buildTower(state, cell) {
   addFloatingText(state.effects, tower.x, tower.y - 12, `-${def.cost}`, { color: classicArcade.yellow, size: 12 });
 }
 
-function upgradeSelectedTower(state) {
-  const tower = state.towers.find((item) => item.id === state.selectedTower);
+function buildTower(state, cell) {
+  if (state.over || state.spawning) return;
+  if (!isInsideCell(cell)) return;
+  clearPendingAction(state);
+  if (isPathCell(cell, state.level)) {
+    state.message = "道路上不能建塔";
+    return;
+  }
+  const existing = towerAt(state, cell);
+  if (existing) {
+    if (state.selectedTower === existing.id) {
+      state.selectedTower = null;
+      state.message = "已取消选中，隐藏攻击范围";
+    } else {
+      state.selectedTower = existing.id;
+      state.message = `${TOWER_TYPES[existing.type].label} Lv.${existing.level}`;
+    }
+    return;
+  }
+  const type = TOWER_TYPES[state.selectedType] ? state.selectedType : "arrow";
+  const def = TOWER_TYPES[type];
+  if (state.gold < def.cost) {
+    state.message = `金币不足，需要 ${def.cost}`;
+    return;
+  }
+  state.selectedTower = null;
+  requestActionConfirmation(state, {
+    type: "build",
+    cell: { ...cell },
+    towerType: type,
+    title: `建造${def.label}`,
+    detail: `消耗 ${def.cost} 金币，在此格部署${def.role}。`,
+    confirmLabel: "确认建造",
+    message: `确认建造${def.label}？`
+  });
+}
+
+function performUpgradeTower(state, towerId) {
+  const tower = state.towers.find((item) => item.id === towerId);
   if (!tower) {
     state.message = "先点击一座塔";
     return;
   }
-  if (tower.level >= 3) {
+  if (tower.level >= TOWER_MAX_LEVEL) {
     state.message = "这座塔已满级";
     return;
   }
@@ -410,13 +545,40 @@ function upgradeSelectedTower(state) {
   }
   state.gold -= cost;
   tower.level += 1;
+  state.selectedTower = tower.id;
   state.message = `${TOWER_TYPES[tower.type].label} 升到 Lv.${tower.level}`;
   addBurst(state.effects, tower.x, tower.y, { color: classicArcade.yellow, secondary: classicArcade.cyan, count: 12, speed: 58 });
   addFloatingText(state.effects, tower.x, tower.y - 12, "UP", { color: classicArcade.yellow });
 }
 
-function sellSelectedTower(state) {
-  const index = state.towers.findIndex((item) => item.id === state.selectedTower);
+function upgradeSelectedTower(state) {
+  const tower = state.towers.find((item) => item.id === state.selectedTower);
+  if (!tower) {
+    state.message = "先点击一座塔";
+    return;
+  }
+  if (tower.level >= TOWER_MAX_LEVEL) {
+    state.message = "这座塔已满级";
+    return;
+  }
+  const cost = upgradeCost(tower);
+  if (state.gold < cost) {
+    state.message = `升级需要 ${cost} 金币`;
+    return;
+  }
+  const label = TOWER_TYPES[tower.type]?.label || "防御塔";
+  requestActionConfirmation(state, {
+    type: "upgrade",
+    towerId: tower.id,
+    title: `升级${label}`,
+    detail: `消耗 ${cost} 金币，提升到 Lv.${tower.level + 1}。`,
+    confirmLabel: "确认升级",
+    message: `确认升级${label}？`
+  });
+}
+
+function performSellTower(state, towerId) {
+  const index = state.towers.findIndex((item) => item.id === towerId);
   if (index < 0) {
     state.message = "先点击一座塔";
     return;
@@ -430,6 +592,37 @@ function sellSelectedTower(state) {
   state.message = `出售${label}，回收 ${refund} 金币`;
   addBurst(state.effects, tower.x, tower.y, { color: classicArcade.green, secondary: classicArcade.white, count: 10, speed: 52 });
   addFloatingText(state.effects, tower.x, tower.y - 12, `+${refund}`, { color: classicArcade.green });
+}
+
+function sellSelectedTower(state) {
+  const tower = state.towers.find((item) => item.id === state.selectedTower);
+  if (!tower) {
+    state.message = "先点击一座塔";
+    return;
+  }
+  const refund = Math.max(20, Math.round(towerInvestment(tower) * 0.62));
+  const label = TOWER_TYPES[tower.type]?.label || "防御塔";
+  requestActionConfirmation(state, {
+    type: "sell",
+    towerId: tower.id,
+    title: `出售${label}`,
+    detail: `回收 ${refund} 金币，出售后这格会变为空地。`,
+    confirmLabel: "确认出售",
+    message: `确认出售${label}？`
+  });
+}
+
+function confirmPendingAction(state) {
+  const action = state.pendingAction;
+  if (!action) return;
+  clearPendingAction(state);
+  if (action.type === "build") {
+    placeTower(state, action.cell, action.towerType);
+  } else if (action.type === "upgrade") {
+    performUpgradeTower(state, action.towerId);
+  } else if (action.type === "sell") {
+    performSellTower(state, action.towerId);
+  }
 }
 
 function spawnEnemy(state, template, context) {
@@ -462,6 +655,7 @@ function spawnEnemy(state, template, context) {
 
 function startWave(state, config) {
   if (state.over) return;
+  clearPendingAction(state);
   if (state.spawning || state.enemies.length) {
     state.message = "当前波次仍在推进";
     return;
@@ -478,6 +672,7 @@ function startWave(state, config) {
 function completeWave(state, context) {
   if (state.over) return;
   state.waveActive = false;
+  clearPendingAction(state);
   const endpoint = endpointForLevel(state.level);
   const rewards = {
     gold: 30 + state.level * 6 + state.wave * 3,
@@ -543,12 +738,29 @@ function completeWave(state, context) {
 }
 
 function damageEnemy(state, enemy, amount, shot) {
-  enemy.hp -= amount;
-  if (shot.kind === "frost") {
+  if (!enemy || enemy.defeated) return false;
+  const shotKind = shot?.kind || "hit";
+  if (enemy.dodge && !["spark", "venom", "venom-dot"].includes(shotKind) && Math.random() < enemy.dodge) {
+    addFloatingText(state.effects, enemy.x, enemy.y - 10, "闪避", { color: classicArcade.cyan, size: 10 });
+    return false;
+  }
+  if (shot?.poison) {
+    enemy.poisonTimer = Math.max(enemy.poisonTimer || 0, shot.poisonTime || 2.2);
+    enemy.poisonDps = Math.max(enemy.poisonDps || 0, shot.poison || 4);
+  }
+  let finalAmount = amount;
+  if (enemy.armor && !["spark", "venom", "venom-dot"].includes(shotKind)) {
+    finalAmount *= Math.max(0.35, 1 - enemy.armor);
+  }
+  if (enemy.kind === "juggernaut" && shotKind === "mortar") finalAmount *= 1.18;
+  if (enemy.kind === "phantom" && shotKind === "spark") finalAmount *= 1.22;
+  enemy.hp -= finalAmount;
+  if (shotKind === "frost") {
     enemy.slowTimer = Math.max(enemy.slowTimer, shot.slowTime || 1.2);
     enemy.slowFactor = shot.slow || 0.5;
   }
   if (enemy.hp <= 0) {
+    enemy.defeated = true;
     state.gold += enemy.reward;
     state.score += enemy.kind === "boss" ? 360 + state.level * 18 : 18 + enemy.reward;
     if (enemy.kind === "boss") triggerHitStop(state, 0.1, 0.36);
@@ -572,6 +784,10 @@ function damageEnemy(state, enemy, amount, shot) {
         });
       }
     }
+    if (enemy.burst) {
+      state.shake = Math.max(state.shake, 6);
+      addBurst(state.effects, enemy.x, enemy.y, { color: classicArcade.red, secondary: classicArcade.yellow, count: 18, speed: 92, radius: 14 });
+    }
     addBurst(state.effects, enemy.x, enemy.y, {
       color: enemy.kind === "boss" ? classicArcade.red : classicArcade.orange,
       secondary: classicArcade.yellow,
@@ -588,6 +804,23 @@ function damageEnemy(state, enemy, amount, shot) {
 function updateEnemies(state, dt) {
   const waypoints = waypointsForLevel(state.level);
   for (const enemy of state.enemies) {
+    if (enemy.defeated) continue;
+    if (enemy.poisonTimer > 0) {
+      enemy.poisonTimer -= dt;
+      const killed = damageEnemy(state, enemy, (enemy.poisonDps || 0) * dt, { kind: "venom-dot" });
+      if (killed) continue;
+    }
+    if (enemy.regen && enemy.hp > 0 && enemy.hp < enemy.maxHp) {
+      enemy.hp = Math.min(enemy.maxHp, enemy.hp + enemy.regen * dt);
+    }
+    if (enemy.healAura) {
+      for (const ally of state.enemies) {
+        if (ally === enemy || ally.defeated || ally.hp >= ally.maxHp) continue;
+        if (withinDistance(enemy, ally, 44)) {
+          ally.hp = Math.min(ally.maxHp, ally.hp + enemy.healAura * dt);
+        }
+      }
+    }
     if (enemy.slowTimer > 0) enemy.slowTimer -= dt;
     else enemy.slowFactor = 1;
     const target = waypoints[enemy.pathIndex + 1];
@@ -612,6 +845,10 @@ function updateEnemies(state, dt) {
   }
   const endpoint = endpointForLevel(state.level);
   for (let i = state.enemies.length - 1; i >= 0; i -= 1) {
+    if (state.enemies[i].defeated) {
+      state.enemies.splice(i, 1);
+      continue;
+    }
     if (!state.enemies[i].reached) continue;
     const enemy = state.enemies[i];
     const penalty = enemy.penalty || ENEMY_TRAITS[enemy.kind]?.penalty || (enemy.kind === "boss" ? 5 : 1);
@@ -628,7 +865,7 @@ function updateTowers(state, dt) {
     if (tower.cooldown > 0) continue;
     const stats = towerStats(tower);
     const target = state.enemies
-      .filter((enemy) => withinDistance(tower, enemy, stats.range))
+      .filter((enemy) => !enemy.defeated && withinDistance(tower, enemy, stats.range))
       .sort((a, b) => b.pathIndex - a.pathIndex || a.hp - b.hp)[0];
     if (!target) continue;
     tower.cooldown = stats.cooldown;
@@ -643,6 +880,8 @@ function updateTowers(state, dt) {
       splash: stats.splash || 0,
       slow: stats.slow || 1,
       slowTime: stats.slowTime || 0,
+      poison: stats.poison || 0,
+      poisonTime: stats.poisonTime || 0,
       chain: stats.chain || 0,
       color: stats.color
     });
@@ -651,7 +890,7 @@ function updateTowers(state, dt) {
 
 function updateShots(state, dt) {
   for (const shot of state.shots) {
-    const target = state.enemies.find((enemy) => enemy.id === shot.targetId);
+    const target = state.enemies.find((enemy) => enemy.id === shot.targetId && !enemy.defeated);
     if (!target) {
       shot.done = true;
       continue;
@@ -671,7 +910,7 @@ function updateShots(state, dt) {
         }
       } else if (shot.chain) {
         const chainTargets = state.enemies
-          .filter((enemy) => enemy !== target && withinDistance(enemy, target, 56))
+          .filter((enemy) => enemy !== target && !enemy.defeated && withinDistance(enemy, target, 56))
           .sort((a, b) => distance(a, target) - distance(b, target))
           .slice(0, shot.chain);
         const hits = [
@@ -701,6 +940,7 @@ function updateShots(state, dt) {
 function update(state, config, dt, context, rawDt = dt) {
   if (state.over) return;
   state.time += dt;
+  expirePendingAction(state);
   state.shake = Math.max(0, state.shake - dt * 18);
   updateEffects(state.effects, dt);
   updateFeedback(state, rawDt, state.enemies);
@@ -843,6 +1083,34 @@ function drawTower(ctx, tower, selected = false) {
     ctx.beginPath();
     ctx.arc(0, -3, 4, 0, Math.PI * 2);
     ctx.fill();
+  } else if (tower.type === "mortar") {
+    ctx.save();
+    ctx.rotate(-0.42);
+    drawRoundedRect(ctx, -5, -27, 24, 11, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = "#32121d";
+    drawRoundedRect(ctx, -12, -2, 24, 16, 5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = stats.color;
+    ctx.beginPath();
+    ctx.arc(0, -4, 7, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (tower.type === "venom") {
+    ctx.beginPath();
+    ctx.moveTo(0, -22);
+    ctx.bezierCurveTo(13, -7, 13, 10, 0, 17);
+    ctx.bezierCurveTo(-13, 10, -13, -7, 0, -22);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(248,251,255,.78)";
+    ctx.beginPath();
+    ctx.arc(-4, -2, 2.4, 0, Math.PI * 2);
+    ctx.arc(5, 2, 3, 0, Math.PI * 2);
+    ctx.arc(0, 8, 2, 0, Math.PI * 2);
+    ctx.fill();
   } else if (tower.type === "frost") {
     fillPath(ctx, [[0, -22], [12, -7], [8, 8], [0, 16], [-8, 8], [-12, -7]]);
     ctx.stroke();
@@ -882,7 +1150,7 @@ function drawTower(ctx, tower, selected = false) {
   ctx.fillText(`Lv${tower.level}`, 0, 16.8);
   if (def.role) {
     ctx.fillStyle = stats.color;
-    ctx.fillRect(-8, 23, 16 * (tower.level / 3), 2);
+    ctx.fillRect(-8, 23, 16 * (tower.level / TOWER_MAX_LEVEL), 2);
   }
   ctx.restore();
 }
@@ -892,12 +1160,18 @@ function drawEnemy(ctx, enemy) {
     grunt: classicArcade.magenta,
     runner: classicArcade.cyan,
     armored: classicArcade.orange,
+    regen: classicArcade.green,
     swarm: classicArcade.green,
+    healer: classicArcade.white,
     splitter: classicArcade.yellow,
+    phantom: classicArcade.blue,
     shield: classicArcade.blue,
+    juggernaut: classicArcade.red,
+    sapper: classicArcade.orange,
+    warlock: classicArcade.magenta,
     boss: classicArcade.red
   };
-  const radius = enemy.kind === "boss" ? 15 : (enemy.kind === "armored" || enemy.kind === "shield") ? 11 : enemy.kind === "swarm" ? 7 : 9;
+  const radius = enemy.kind === "boss" ? 15 : (enemy.kind === "juggernaut") ? 13 : (enemy.kind === "armored" || enemy.kind === "shield") ? 11 : enemy.kind === "swarm" ? 7 : 9;
   ctx.save();
   ctx.translate(enemy.x, enemy.y);
   ctx.fillStyle = classicArcade.shadow;
@@ -918,6 +1192,55 @@ function drawEnemy(ctx, enemy) {
     ctx.beginPath();
     ctx.arc(0, -3, 5, 0, Math.PI * 2);
     ctx.fill();
+  } else if (enemy.kind === "juggernaut") {
+    fillPath(ctx, [[0, -18], [15, -10], [16, 10], [0, 18], [-16, 10], [-15, -10]]);
+    ctx.fillStyle = "rgba(0,0,0,.32)";
+    fillPath(ctx, [[0, -11], [9, -5], [9, 6], [0, 11], [-9, 6], [-9, -5]]);
+    ctx.strokeStyle = classicArcade.yellow;
+    ctx.lineWidth = 2;
+    strokePath(ctx, [[-12, -14], [-20, -21]]);
+    strokePath(ctx, [[12, -14], [20, -21]]);
+  } else if (enemy.kind === "sapper") {
+    fillPath(ctx, [[0, -14], [12, -3], [7, 13], [-7, 13], [-12, -3]]);
+    ctx.fillStyle = classicArcade.red;
+    ctx.beginPath();
+    ctx.arc(0, 1, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = classicArcade.yellow;
+    ctx.lineWidth = 1.6;
+    strokePath(ctx, [[3, -9], [11, -17]]);
+  } else if (enemy.kind === "warlock") {
+    fillPath(ctx, [[0, -17], [11, 3], [6, 16], [-6, 16], [-11, 3]]);
+    ctx.fillStyle = "#220f36";
+    ctx.beginPath();
+    ctx.arc(0, -5, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = classicArcade.magenta;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 1, 15, 0.18, Math.PI * 1.18);
+    ctx.stroke();
+  } else if (enemy.kind === "phantom") {
+    ctx.globalAlpha = 0.72 + Math.sin(enemy.x * 0.08) * 0.12;
+    fillPath(ctx, [[0, -16], [12, 0], [4, 13], [0, 8], [-4, 13], [-12, 0]]);
+    ctx.fillStyle = "rgba(248,251,255,.38)";
+    ctx.beginPath();
+    ctx.arc(0, -4, 5, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (enemy.kind === "healer") {
+    fillPath(ctx, [[0, -15], [12, -3], [8, 13], [0, 17], [-8, 13], [-12, -3]]);
+    ctx.fillStyle = classicArcade.green;
+    ctx.fillRect(-2, -10, 4, 17);
+    ctx.fillRect(-8, -4, 16, 4);
+  } else if (enemy.kind === "regen") {
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 11, 13, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(93,255,139,.75)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, -1, 15, -0.6, Math.PI * 1.15);
+    ctx.stroke();
   } else if (enemy.kind === "shield") {
     ctx.beginPath();
     ctx.arc(0, 0, 13, 0, Math.PI * 2);
@@ -1011,6 +1334,24 @@ function drawShot(ctx, shot) {
     ctx.arc(0, 0, 5, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
+  } else if (shot.kind === "mortar") {
+    ctx.beginPath();
+    ctx.arc(0, 0, 6.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,209,102,.72)";
+    ctx.beginPath();
+    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (shot.kind === "venom") {
+    ctx.globalAlpha = 0.92;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 6, 4, 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(248,251,255,.72)";
+    ctx.beginPath();
+    ctx.arc(-2, -1, 1.8, 0, Math.PI * 2);
+    ctx.fill();
   } else if (shot.kind === "frost") {
     fillPath(ctx, [[0, -6], [6, 0], [0, 6], [-6, 0]]);
     ctx.stroke();
@@ -1089,6 +1430,14 @@ export function mountTowerDefense(root, context) {
           </button>
         </div>
       </div>
+      <section class="tower-confirm" data-confirm-panel hidden>
+        <strong data-confirm-title>确认操作</strong>
+        <p data-confirm-detail></p>
+        <div class="tower-confirm-actions">
+          <button type="button" data-confirm-cancel>取消</button>
+          <button type="button" data-confirm-ok>确认</button>
+        </div>
+      </section>
     </section>
   `;
 
@@ -1108,6 +1457,11 @@ export function mountTowerDefense(root, context) {
   const waveTip = root.querySelector("[data-wave-tip]");
   const upgradeTip = root.querySelector("[data-upgrade-tip]");
   const sellTip = root.querySelector("[data-sell-tip]");
+  const confirmPanel = root.querySelector("[data-confirm-panel]");
+  const confirmTitle = root.querySelector("[data-confirm-title]");
+  const confirmDetail = root.querySelector("[data-confirm-detail]");
+  const confirmOk = root.querySelector("[data-confirm-ok]");
+  const confirmCancel = root.querySelector("[data-confirm-cancel]");
 
   function refreshHud() {
     status.textContent = state.message;
@@ -1131,12 +1485,21 @@ export function mountTowerDefense(root, context) {
     waveButton.disabled = state.over || state.spawning || state.enemies.length > 0;
     waveTip.textContent = state.waveActive ? `场上 ${state.enemies.length}` : wavePreview(config, state.level, state.wave);
     const upgradeCostValue = selectedTower ? upgradeCost(selectedTower) : 0;
-    upgradeButton.disabled = !selectedTower || selectedTower.level >= 3 || state.gold < upgradeCostValue;
+    upgradeButton.disabled = !selectedTower || selectedTower.level >= TOWER_MAX_LEVEL || state.gold < upgradeCostValue;
     upgradeTip.textContent = selectedTower
-      ? (selectedTower.level >= 3 ? "满级" : `${upgradeCostValue} 金币`)
+      ? (selectedTower.level >= TOWER_MAX_LEVEL ? "满级" : `${upgradeCostValue} 金币`)
       : "选中塔";
     sellButton.disabled = !selectedTower;
     sellTip.textContent = selectedTower ? `+${Math.max(20, Math.round(towerInvestment(selectedTower) * 0.62))}` : "回收";
+    if (confirmPanel) {
+      const pending = state.pendingAction;
+      confirmPanel.hidden = !pending;
+      if (pending) {
+        confirmTitle.textContent = pending.title || "确认操作";
+        confirmDetail.textContent = pending.detail || "确认后会立即执行。";
+        confirmOk.textContent = pending.confirmLabel || "确认";
+      }
+    }
   }
 
   function toCanvasPoint(event) {
@@ -1173,6 +1536,7 @@ export function mountTowerDefense(root, context) {
 
   function handleKeyAction(action) {
     if (TOWER_TYPES[action]) {
+      clearPendingAction(state);
       state.selectedType = action;
       state.message = `选择${TOWER_TYPES[state.selectedType].label}`;
     } else if (action === "wave") {
@@ -1181,6 +1545,11 @@ export function mountTowerDefense(root, context) {
       upgradeSelectedTower(state);
     } else if (action === "sell") {
       sellSelectedTower(state);
+    } else if (action === "confirm") {
+      confirmPendingAction(state);
+    } else if (action === "cancel") {
+      clearPendingAction(state);
+      state.message = "已取消操作";
     } else if (action === "restart") {
       restart();
     }
@@ -1188,9 +1557,15 @@ export function mountTowerDefense(root, context) {
 
   towerButtons.forEach((button) => {
     button.addEventListener("click", () => {
+      clearPendingAction(state);
       state.selectedType = button.dataset.tower;
       state.message = `选择${TOWER_TYPES[state.selectedType].label}`;
     });
+  });
+  confirmOk.addEventListener("click", () => confirmPendingAction(state));
+  confirmCancel.addEventListener("click", () => {
+    clearPendingAction(state);
+    state.message = "已取消操作";
   });
   root.querySelector("[data-action='upgrade']").addEventListener("click", () => upgradeSelectedTower(state));
   root.querySelector("[data-action='wave']").addEventListener("click", () => startWave(state, config));
@@ -1200,9 +1575,13 @@ export function mountTowerDefense(root, context) {
     Digit2: "cannon",
     Digit3: "frost",
     Digit4: "spark",
+    Digit5: "venom",
+    Digit6: "mortar",
     Space: "wave",
     KeyU: "upgrade",
     KeyX: "sell",
+    Enter: "confirm",
+    Escape: "cancel",
     KeyR: "restart"
   }, handleKeyAction);
   const cleanupShellRestart = bindShellRestart(root, context, restart);

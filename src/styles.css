@@ -2240,9 +2240,13 @@ input[type="range"] {
   justify-items: center;
 }
 
+.tower-defense-shell {
+  position: relative;
+}
+
 .tower-controls {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   width: min(96vw, 620px);
 }
@@ -2255,7 +2259,7 @@ input[type="range"] {
   justify-items: center;
   gap: 4px;
   min-width: 0;
-  min-height: 88px;
+  min-height: 82px;
   padding: 8px 5px 7px;
   border: 1px solid color-mix(in srgb, var(--tower-color) 48%, transparent);
   border-radius: 12px;
@@ -2447,6 +2451,70 @@ input[type="range"] {
   opacity: 0.48;
   transform: none;
   box-shadow: 0 3px 0 #070b15;
+}
+
+.tower-confirm {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 8;
+  display: grid;
+  gap: 10px;
+  width: min(84vw, 320px);
+  padding: 16px;
+  border: 1px solid rgba(66, 242, 255, 0.34);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(93, 255, 139, 0.16), transparent 38%),
+    linear-gradient(180deg, rgba(16, 26, 48, 0.97), rgba(5, 9, 20, 0.96));
+  color: #f8fbff;
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  transform: translate(-50%, -50%);
+}
+
+.tower-confirm[hidden] {
+  display: none;
+}
+
+.tower-confirm strong {
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.tower-confirm p {
+  margin: 0;
+  color: rgba(248, 251, 255, 0.72);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.tower-confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tower-confirm-actions button {
+  min-height: 40px;
+  border: 1px solid rgba(248, 251, 255, 0.18);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fbff;
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.tower-confirm-actions button:last-child {
+  border-color: rgba(93, 255, 139, 0.52);
+  background: linear-gradient(180deg, rgba(32, 168, 107, 0.92), rgba(23, 107, 72, 0.94));
+}
+
+@media (min-width: 720px) {
+  .tower-controls {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
 }
 
 .game-root [data-action="restart"] {
