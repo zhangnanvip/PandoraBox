@@ -2390,13 +2390,25 @@ input[type="range"] {
 }
 
 .tower-action-row {
-  display: grid;
-  grid-template-columns: 1.25fr 1fr 1fr 1fr;
+  display: flex;
   gap: 6px;
   width: min(96vw, 620px);
+  max-width: 100%;
+  padding: 1px 2px 7px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tower-action-row::-webkit-scrollbar {
+  display: none;
 }
 
 .tower-action {
+  flex: 0 0 102px;
   display: grid;
   grid-template-columns: 26px minmax(0, auto);
   grid-template-rows: auto auto;
@@ -2411,6 +2423,7 @@ input[type="range"] {
     linear-gradient(180deg, rgba(28, 39, 70, 0.96), rgba(9, 14, 29, 0.94));
   color: #f8fbff;
   box-shadow: 0 6px 0 #070b15, inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  scroll-snap-align: start;
 }
 
 .tower-action span {
@@ -2466,6 +2479,14 @@ input[type="range"] {
 
 .tower-action-wave span {
   color: #5dff8b;
+}
+
+.tower-action-tactic {
+  border-color: color-mix(in srgb, var(--tactic-color, #ffd166) 44%, transparent);
+}
+
+.tower-action-tactic span {
+  color: var(--tactic-color, #ffd166);
 }
 
 .tower-action:disabled,

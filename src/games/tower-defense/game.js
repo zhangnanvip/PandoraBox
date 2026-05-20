@@ -53,6 +53,13 @@ const WAVE_AFFIXES = {
   elite: { label: "精英", detail: "周期性出现强化敌人" }
 };
 
+const TACTICS = {
+  storm: { label: "雷暴", role: "轰击敌群", cooldown: 22, radius: 58, damage: 72, color: classicArcade.yellow },
+  barricade: { label: "路障", role: "封锁控场", cooldown: 18, radius: 38, duration: 5.2, slow: 0.34, color: classicArcade.green }
+};
+
+const TACTIC_ORDER = ["storm", "barricade"];
+
 const ENEMY_TRAITS = {
   grunt: { label: "杂兵", unlock: 1, hp: 1, speed: 1, reward: 0, penalty: 1 },
   runner: { label: "快怪", unlock: 2, hp: 0.72, speed: 1.42, reward: 1, penalty: 1 },
@@ -206,6 +213,12 @@ function actionIconSvg(type) {
   }
   if (type === "target") {
     return `<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="3" class="cut"/><path d="M16 2v6M16 24v6M2 16h6M24 16h6" class="line"/></svg>`;
+  }
+  if (type === "storm") {
+    return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M18 3L7 18h8l-2 11 12-17h-8z"/><path d="M6 25c5 3 15 3 20 0" class="line"/></svg>`;
+  }
+  if (type === "barricade") {
+    return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 11h20v6H6zM8 20h16v6H8z"/><path d="M10 8v21M22 8v21" class="line"/></svg>`;
   }
   return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 17h15l-5 6 10-9H11l5-6z"/></svg>`;
 }
@@ -384,8 +397,10 @@ function initialState(config) {
     towers: [],
     enemies: [],
     shots: [],
+    fields: [],
     queue: [],
     effects: [],
+    tacticCooldowns: Object.fromEntries(TACTIC_ORDER.map((id) => [id, 0])),
     nextId: 1,
     selectedType: "arrow",
     selectedTower: null,
@@ -421,7 +436,9 @@ function restoreState(config, saved) {
     towers: savedTowers,
     enemies: Array.isArray(saved.enemies) && mapCompatible ? saved.enemies : [],
     shots: Array.isArray(saved.shots) && mapCompatible ? saved.shots : [],
+    fields: Array.isArray(saved.fields) && mapCompatible ? saved.fields : [],
     queue: Array.isArray(saved.queue) && mapCompatible ? saved.queue : [],
+    tacticCooldowns: { ...state.tacticCooldowns, ...(saved.tacticCooldowns || {}) },
     selectedType: TOWER_TYPES[saved.selectedType] ? saved.selectedType : "arrow",
     selectedTower: savedTowers.some((tower) => tower.id === saved.selectedTower) ? saved.selectedTower : null,
     pendingAction: null,
@@ -442,6 +459,7 @@ function serializeState(state) {
     enemies: state.enemies.map((enemy) => ({ ...enemy })),
     towers: state.towers.map((tower) => ({ ...tower })),
     shots: state.shots.map((shot) => ({ ...shot })),
+    fields: state.fields.map((field) => ({ ...field })),
     queue: state.queue.map((enemy) => ({ ...enemy })),
     effects: undefined,
     resultReported: undefined,
@@ -688,6 +706,91 @@ function confirmPendingAction(state) {
   }
 }
 
+function tacticReady(state, id) {
+  return Math.max(0, state.tacticCooldowns?.[id] || 0) <= 0;
+}
+
+function tacticCooldownText(state, id) {
+  const cooldown = Math.ceil(Math.max(0, state.tacticCooldowns?.[id] || 0));
+  return cooldown > 0 ? `${cooldown}s` : "就绪";
+}
+
+function enemyClusterTarget(state, radius) {
+  let best = null;
+  let bestScore = -Infinity;
+  for (const enemy of state.enemies) {
+    if (enemy.defeated) continue;
+    const nearby = state.enemies.filter((item) => !item.defeated && withinDistance(enemy, item, radius)).length;
+    const score = nearby * 100 + enemy.pathIndex * 5 + (enemy.elite ? 24 : 0) + (enemy.kind === "boss" ? 60 : 0);
+    if (score > bestScore) {
+      bestScore = score;
+      best = enemy;
+    }
+  }
+  return best;
+}
+
+function castStorm(state) {
+  const tactic = TACTICS.storm;
+  if (!tacticReady(state, "storm")) {
+    state.message = `雷暴冷却 ${tacticCooldownText(state, "storm")}`;
+    return;
+  }
+  const target = enemyClusterTarget(state, tactic.radius);
+  if (!target) {
+    state.message = "敌人进入战场后才能释放雷暴";
+    return;
+  }
+  state.tacticCooldowns.storm = tactic.cooldown;
+  state.message = "雷暴轰击敌群";
+  state.shake = Math.max(state.shake, 8);
+  triggerHitStop(state, 0.08, 0.48);
+  addBurst(state.effects, target.x, target.y, { color: classicArcade.yellow, secondary: classicArcade.cyan, count: 30, speed: 116, radius: 22 });
+  addFloatingText(state.effects, target.x, target.y - 18, "雷暴", { color: classicArcade.yellow, size: 16 });
+  for (let i = state.enemies.length - 1; i >= 0; i -= 1) {
+    const enemy = state.enemies[i];
+    if (!withinDistance(enemy, target, tactic.radius)) continue;
+    const falloff = 1 - clamp(distance(enemy, target) / tactic.radius, 0, 0.48);
+    const killed = damageEnemy(state, enemy, (tactic.damage + state.level * 3) * falloff, { kind: "spark" });
+    if (killed) state.enemies.splice(i, 1);
+  }
+}
+
+function deployBarricade(state) {
+  const tactic = TACTICS.barricade;
+  if (!tacticReady(state, "barricade")) {
+    state.message = `路障冷却 ${tacticCooldownText(state, "barricade")}`;
+    return;
+  }
+  const target = state.enemies
+    .filter((enemy) => !enemy.defeated)
+    .sort((a, b) => b.pathIndex - a.pathIndex || distance(endpointForLevel(state.level), a) - distance(endpointForLevel(state.level), b))[0];
+  if (!target) {
+    state.message = "敌人进入战场后才能部署路障";
+    return;
+  }
+  state.tacticCooldowns.barricade = tactic.cooldown;
+  state.fields.push({
+    id: state.nextId++,
+    kind: "barricade",
+    x: target.x,
+    y: target.y,
+    radius: tactic.radius,
+    duration: tactic.duration,
+    maxDuration: tactic.duration,
+    slow: tactic.slow
+  });
+  state.message = "路障已部署，敌人减速";
+  addBurst(state.effects, target.x, target.y, { color: classicArcade.green, secondary: classicArcade.white, count: 18, speed: 58, radius: 14 });
+  addFloatingText(state.effects, target.x, target.y - 16, "路障", { color: classicArcade.green, size: 14 });
+}
+
+function castTactic(state, id) {
+  clearPendingAction(state);
+  if (id === "storm") castStorm(state);
+  else if (id === "barricade") deployBarricade(state);
+}
+
 function spawnEnemy(state, template, context) {
   const start = startPointForLevel(state.level);
   const enemy = {
@@ -782,6 +885,7 @@ function completeWave(state, context) {
     }
     state.towers = [];
     state.shots = [];
+    state.fields = [];
     state.selectedTower = null;
   }
   announceStageClear(state, context, {
@@ -886,6 +990,12 @@ function updateEnemies(state, dt) {
     }
     if (enemy.slowTimer > 0) enemy.slowTimer -= dt;
     else enemy.slowFactor = 1;
+    let fieldSlow = 1;
+    for (const field of state.fields) {
+      if (field.kind === "barricade" && withinDistance(enemy, field, field.radius)) {
+        fieldSlow = Math.min(fieldSlow, field.slow || 0.45);
+      }
+    }
     const target = waypoints[enemy.pathIndex + 1];
     if (!target) {
       enemy.reached = true;
@@ -894,7 +1004,7 @@ function updateEnemies(state, dt) {
     const dx = target.x - enemy.x;
     const dy = target.y - enemy.y;
     const distance = Math.hypot(dx, dy);
-    const speed = enemy.speed * (enemy.slowTimer > 0 ? enemy.slowFactor : 1);
+    const speed = enemy.speed * (enemy.slowTimer > 0 ? enemy.slowFactor : 1) * fieldSlow;
     const step = speed * dt;
     if (distance <= step) {
       enemy.x = target.x;
@@ -1008,11 +1118,24 @@ function updateShots(state, dt) {
   }
 }
 
+function updateTactics(state, dt) {
+  for (const id of TACTIC_ORDER) {
+    state.tacticCooldowns[id] = Math.max(0, (state.tacticCooldowns[id] || 0) - dt);
+  }
+  for (const field of state.fields) {
+    field.duration -= dt;
+  }
+  for (let i = state.fields.length - 1; i >= 0; i -= 1) {
+    if (state.fields[i].duration <= 0) state.fields.splice(i, 1);
+  }
+}
+
 function update(state, config, dt, context, rawDt = dt) {
   if (state.over) return;
   state.time += dt;
   expirePendingAction(state);
   state.shake = Math.max(0, state.shake - dt * 18);
+  updateTactics(state, dt);
   updateEffects(state.effects, dt);
   updateFeedback(state, rawDt, state.enemies);
   updateStageTransition(state, dt);
@@ -1159,6 +1282,37 @@ function drawPath(ctx, state) {
     ctx.rotate(angle);
     ctx.fillStyle = "rgba(248,251,255,.18)";
     fillPath(ctx, [[6, 0], [-4, -5], [-1, 0], [-4, 5]]);
+    ctx.restore();
+  }
+}
+
+function drawTacticalFields(ctx, state) {
+  for (const field of state.fields) {
+    const progress = clamp(field.duration / (field.maxDuration || field.duration || 1), 0, 1);
+    if (field.kind !== "barricade") continue;
+    ctx.save();
+    ctx.translate(field.x, field.y);
+    ctx.fillStyle = `rgba(93,255,139,${0.08 + progress * 0.08})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, field.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(93,255,139,.42)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([7, 7]);
+    ctx.beginPath();
+    ctx.arc(0, 0, field.radius - 3, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#121b20";
+    drawRoundedRect(ctx, -16, -6, 32, 12, 4);
+    ctx.fill();
+    ctx.strokeStyle = classicArcade.green;
+    ctx.stroke();
+    ctx.fillStyle = classicArcade.green;
+    for (let i = -1; i <= 1; i += 1) {
+      drawRoundedRect(ctx, i * 10 - 2, -12, 4, 24, 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 }
@@ -1569,6 +1723,7 @@ function draw(state, ctx) {
   ctx.translate(offset.x, offset.y);
   drawTerrain(ctx, state);
   drawPath(ctx, state);
+  drawTacticalFields(ctx, state);
   drawTowerEndpoint(ctx, 12, startPointForLevel(state.level).y, classicArcade.green, "入");
   drawTowerEndpoint(ctx, W - 12, endpointForLevel(state.level).y, classicArcade.red, "核");
   state.towers.forEach((tower) => drawTower(ctx, tower, tower.id === state.selectedTower));
@@ -1624,6 +1779,16 @@ export function mountTowerDefense(root, context) {
             <strong>出售</strong>
             <small data-sell-tip>回收</small>
           </button>
+          <button type="button" class="tower-action tower-action-tactic" data-action="storm">
+            <span>${actionIconSvg("storm")}</span>
+            <strong>雷暴</strong>
+            <small data-tactic-tip="storm">就绪</small>
+          </button>
+          <button type="button" class="tower-action tower-action-tactic" data-action="barricade">
+            <span>${actionIconSvg("barricade")}</span>
+            <strong>路障</strong>
+            <small data-tactic-tip="barricade">就绪</small>
+          </button>
         </div>
       </div>
       <section class="tower-confirm" data-confirm-panel hidden>
@@ -1651,10 +1816,12 @@ export function mountTowerDefense(root, context) {
   const upgradeButton = root.querySelector("[data-action='upgrade']");
   const targetButton = root.querySelector("[data-action='target']");
   const sellButton = root.querySelector("[data-action='sell']");
+  const tacticButtons = Object.fromEntries(TACTIC_ORDER.map((id) => [id, root.querySelector(`[data-action='${id}']`)]));
   const waveTip = root.querySelector("[data-wave-tip]");
   const upgradeTip = root.querySelector("[data-upgrade-tip]");
   const targetTip = root.querySelector("[data-target-tip]");
   const sellTip = root.querySelector("[data-sell-tip]");
+  const tacticTips = Object.fromEntries(TACTIC_ORDER.map((id) => [id, root.querySelector(`[data-tactic-tip='${id}']`)]));
   const confirmPanel = root.querySelector("[data-confirm-panel]");
   const confirmTitle = root.querySelector("[data-confirm-title]");
   const confirmDetail = root.querySelector("[data-confirm-detail]");
@@ -1692,6 +1859,17 @@ export function mountTowerDefense(root, context) {
     targetTip.textContent = selectedTower ? (targetMode?.label || "前线") : "选中塔";
     sellButton.disabled = !selectedTower;
     sellTip.textContent = selectedTower ? `+${Math.max(20, Math.round(towerInvestment(selectedTower) * 0.62))}` : "回收";
+    TACTIC_ORDER.forEach((id) => {
+      const button = tacticButtons[id];
+      const tip = tacticTips[id];
+      const ready = tacticReady(state, id);
+      const hasTargets = state.enemies.some((enemy) => !enemy.defeated);
+      if (button) {
+        button.disabled = state.over || !ready || !hasTargets;
+        button.style.setProperty("--tactic-color", TACTICS[id].color);
+      }
+      if (tip) tip.textContent = hasTargets ? tacticCooldownText(state, id) : "待敌";
+    });
     if (confirmPanel) {
       const pending = state.pendingAction;
       confirmPanel.hidden = !pending;
@@ -1748,6 +1926,8 @@ export function mountTowerDefense(root, context) {
       cycleSelectedTowerTarget(state);
     } else if (action === "sell") {
       sellSelectedTower(state);
+    } else if (TACTICS[action]) {
+      castTactic(state, action);
     } else if (action === "confirm") {
       confirmPendingAction(state);
     } else if (action === "cancel") {
@@ -1774,6 +1954,9 @@ export function mountTowerDefense(root, context) {
   root.querySelector("[data-action='target']").addEventListener("click", () => cycleSelectedTowerTarget(state));
   root.querySelector("[data-action='wave']").addEventListener("click", () => startWave(state, config));
   root.querySelector("[data-action='sell']").addEventListener("click", () => sellSelectedTower(state));
+  TACTIC_ORDER.forEach((id) => {
+    root.querySelector(`[data-action='${id}']`)?.addEventListener("click", () => castTactic(state, id));
+  });
   const cleanupKeys = bindActionKeys({
     Digit1: "arrow",
     Digit2: "cannon",
@@ -1785,6 +1968,8 @@ export function mountTowerDefense(root, context) {
     KeyU: "upgrade",
     KeyT: "target",
     KeyX: "sell",
+    KeyQ: "storm",
+    KeyW: "barricade",
     Enter: "confirm",
     Escape: "cancel",
     KeyR: "restart"
