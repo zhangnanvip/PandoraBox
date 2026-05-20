@@ -25,6 +25,7 @@ const GAME_ENTRIES = {
   sudoku: "./src/games/sudoku/game.js",
   klotski: "./src/games/klotski/game.js",
   "block-blast": "./src/games/block-blast/game.js",
+  "tile-match": "./src/games/tile-match/game.js",
   minesweeper: "./src/games/minesweeper/game.js",
   match3: "./src/games/match3/game.js",
   "mahjong-connect": "./src/games/mahjong-connect/game.js",
@@ -60,6 +61,7 @@ const SHARED_PRECACHE = {
 
 const MARKET_HEAT = {
   "block-blast": { score: 98, label: "方块爆款", signal: "Block Puzzle 是当前下载热度和长线复玩都很强的混合休闲品类。" },
+  "tile-match": { score: 97, label: "Tile热门", signal: "三张入槽消除和麻将纸牌是当前移动端热门且耐玩的解谜方向。" },
   match3: { score: 96, label: "三消长线", signal: "关卡制三消仍是移动端长线留存的核心品类。" },
   "mahjong-connect": { score: 94, label: "麻将消除", signal: "麻将、Tile 与连连看适合中老年和碎片时间用户。" },
   "tower-defense": { score: 88, label: "策略耐玩", signal: "塔防靠波次、塔组和地图机制形成长期挑战。" },
@@ -437,6 +439,45 @@ const registrations = [
       ]
     },
     () => import("./block-blast/game.js").then((module) => module.mountBlockBlast)
+  ),
+  defineLocalGame(
+    {
+      id: "tile-match",
+      title: "麻将三消",
+      subtitle: "点牌入槽，三张相同麻将自动消除",
+      tag: "Tile热门",
+      category: "puzzle",
+      secondaryCategories: ["quick", "classic"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("tile-match", "puzzle", { sessionSave: true, staged: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      setupFields: [
+        {
+          id: "tileMode",
+          label: "玩法模式",
+          defaultValue: "campaign",
+          options: [
+            { value: "campaign", label: "章节闯关 60 关递进" },
+            { value: "classic", label: "经典消除 单局清台" },
+            { value: "pressure", label: "槽位压力 更少容错" }
+          ]
+        }
+      ],
+      accent: "jade",
+      icon: "./public/games/puzzle/icons/tile-match.svg",
+      assets: ["./public/games/puzzle/icons/tile-match.svg"],
+      rules: [
+        "点击可选麻将牌进入下方槽位，三张相同牌会自动消除。",
+        "槽位有限，如果槽位被不同牌填满，挑战失败。",
+        "章节闯关包含 60 关，后续会逐步增加堆叠深度、冰封牌、封印牌和暗牌。",
+        "冰封牌需要先破冰，暗牌需要先翻开，封印牌会在消除三张后逐步解开。",
+        "提示、撤回和洗牌次数有限；难度会影响槽位数量、道具数量和特殊牌密度。"
+      ]
+    },
+    () => import("./tile-match/game.js").then((module) => module.mountTileMatch)
   ),
   defineLocalGame(
     {
