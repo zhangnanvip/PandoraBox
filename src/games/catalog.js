@@ -387,14 +387,27 @@ const registrations = [
       progressType: "score",
       ...gamePluginMeta("minesweeper", "puzzle", { sessionSave: true }),
       ...gameVisualStyle("classicPuzzle"),
+      setupFields: [
+        {
+          id: "mineMode",
+          label: "玩法模式",
+          defaultValue: "campaign",
+          options: [
+            { value: "campaign", label: "闯关任务 30 关递进" },
+            { value: "classic", label: "经典排雷 单局挑战" },
+            { value: "timed", label: "限时拆弹 倒计时压力" }
+          ]
+        }
+      ],
       accent: "cinnabar",
       icon: "./public/games/puzzle/icons/minesweeper.svg",
       assets: ["./public/games/puzzle/icons/minesweeper.svg"],
       rules: [
         "点击格子翻开数字，数字表示周围八格内的地雷数量。",
         "首次点击一定安全；移动端可长按插旗，也可开启标记模式。",
-        "插旗用于标记疑似地雷，翻开所有非雷格即获胜。",
-        "难度会影响棋盘尺寸和地雷数量，魔鬼难度提供 16x16 大雷区。"
+        "闯关任务包含 30 关，后续关卡会增加棋盘尺寸与地雷密度。",
+        "扫描可以标出一个安全格，拆雷器可以直接排除一枚隐藏地雷，但次数有限。",
+        "限时拆弹会加入倒计时压力；难度会影响棋盘尺寸、地雷数量和资源数量。"
       ]
     },
     () => import("./minesweeper/game.js").then((module) => module.mountMinesweeper)

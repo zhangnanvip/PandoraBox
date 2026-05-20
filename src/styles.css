@@ -3212,6 +3212,17 @@ input[type="range"] {
     linear-gradient(145deg, rgba(255, 250, 240, 0.98), rgba(248, 229, 213, 0.94));
 }
 
+.mine-cell.is-scanned {
+  border-color: rgba(50, 119, 183, 0.42);
+  color: #3277b7;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(50, 119, 183, 0.15), transparent 48%),
+    linear-gradient(145deg, rgba(240, 249, 255, 0.98), rgba(219, 237, 247, 0.94));
+  box-shadow:
+    0 3px 0 rgba(50, 119, 183, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.58);
+}
+
 .mine-cell.is-mine {
   color: #fffaf0;
   background:
