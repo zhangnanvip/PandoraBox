@@ -26,6 +26,7 @@ const GAME_ENTRIES = {
   klotski: "./src/games/klotski/game.js",
   "block-blast": "./src/games/block-blast/game.js",
   "tile-match": "./src/games/tile-match/game.js",
+  "sort-master": "./src/games/sort-master/game.js",
   minesweeper: "./src/games/minesweeper/game.js",
   match3: "./src/games/match3/game.js",
   "mahjong-connect": "./src/games/mahjong-connect/game.js",
@@ -66,6 +67,7 @@ const MARKET_HEAT = {
   match3: { score: 96, label: "三消长线", signal: "关卡制三消仍是移动端长线留存的核心品类。" },
   survivor: { score: 95, label: "割草成长", signal: "Survivor-like 依靠局内构筑、怪潮压力和 Boss 节点形成强复玩。" },
   "mahjong-connect": { score: 94, label: "麻将消除", signal: "麻将、Tile 与连连看适合中老年和碎片时间用户。" },
+  "sort-master": { score: 93, label: "排序耐玩", signal: "颜色、螺丝、水管和停车排序是移动端长线热度很高的触控解谜方向。" },
   "tower-defense": { score: 88, label: "策略耐玩", signal: "塔防靠波次、塔组和地图机制形成长期挑战。" },
   "2048": { score: 84, label: "数字常青", signal: "数字合成规则极简，但高分循环和多尺寸玩法耐玩。" },
   "space-shooter": { score: 83, label: "弹幕成长", signal: "竖版射击适合做关卡、技能和 Boss 成长线。" },
@@ -480,6 +482,45 @@ const registrations = [
       ]
     },
     () => import("./tile-match/game.js").then((module) => module.mountTileMatch)
+  ),
+  defineLocalGame(
+    {
+      id: "sort-master",
+      title: "排序大师",
+      subtitle: "倒瓶归色，破解锁链与冰封瓶阵",
+      tag: "排序耐玩",
+      category: "puzzle",
+      secondaryCategories: ["quick", "number"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("sort-master", "puzzle", { sessionSave: true, staged: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      setupFields: [
+        {
+          id: "sortMode",
+          label: "玩法模式",
+          defaultValue: "campaign",
+          options: [
+            { value: "campaign", label: "闯关排序 60 关递进" },
+            { value: "chain", label: "锁链挑战 更多障碍瓶" },
+            { value: "relaxed", label: "经典单局 更宽松步数" }
+          ]
+        }
+      ],
+      accent: "sky",
+      icon: "./public/games/puzzle/icons/sort-master.svg",
+      assets: ["./public/games/puzzle/icons/sort-master.svg"],
+      rules: [
+        "点击一个瓶子作为起点，再点击目标瓶，将顶部连续同色液体倒入目标瓶。",
+        "目标瓶必须为空，或顶部颜色与倒入颜色一致，且瓶子不能超过 4 格容量。",
+        "闯关排序包含 60 关，后续会增加颜色数量、瓶子数量、步数压力、锁链瓶和冰封瓶。",
+        "钥匙可解开锁链瓶，破冰可解冻冰封瓶；提示、撤回和洗局次数有限。",
+        "把每种颜色都整理成一整瓶即可过关，剩余步数和道具会转化为奖励分。"
+      ]
+    },
+    () => import("./sort-master/game.js").then((module) => module.mountSortMaster)
   ),
   defineLocalGame(
     {
