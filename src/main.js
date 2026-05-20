@@ -1622,7 +1622,6 @@ function renderLobby() {
           </div>
         </div>
         <div class="header-actions">
-          <button class="icon-button top-icon" data-open-history aria-label="最近对局">${icon("history")}</button>
           <button class="icon-button top-icon" data-open-achievements aria-label="成就">${icon("trophy")}</button>
           <button class="icon-button top-icon" data-open-modal="feedback" aria-label="意见反馈">${icon("feedback")}</button>
           <button class="icon-button top-icon" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>

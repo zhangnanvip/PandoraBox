@@ -26,16 +26,25 @@ const DIFFICULTY = {
 };
 
 const TOWER_TYPES = {
-  arrow: { label: "弩塔", role: "高速单体", cost: 60, damage: 17, range: 74, cooldown: 0.52, speed: 255, color: classicArcade.cyan },
-  cannon: { label: "炮塔", role: "范围爆破", cost: 92, damage: 31, range: 65, cooldown: 1.05, speed: 210, splash: 30, color: classicArcade.orange },
-  frost: { label: "冰塔", role: "减速控场", cost: 76, damage: 9, range: 68, cooldown: 0.86, speed: 225, slow: 0.48, slowTime: 1.45, color: classicArcade.blue },
-  spark: { label: "电塔", role: "连锁电击", cost: 108, damage: 14, range: 86, cooldown: 0.74, speed: 290, chain: 2, color: classicArcade.yellow },
-  venom: { label: "毒雾塔", role: "持续腐蚀", cost: 88, damage: 10, range: 72, cooldown: 0.9, speed: 215, splash: 24, poison: 8, poisonTime: 2.8, color: classicArcade.green },
-  mortar: { label: "迫击塔", role: "远程重炮", cost: 132, damage: 44, range: 116, cooldown: 1.48, speed: 170, splash: 42, color: classicArcade.red }
+  arrow: { label: "弩塔", role: "高速单体", cost: 60, damage: 17, range: 74, cooldown: 0.52, speed: 255, damageType: "physical", color: classicArcade.cyan },
+  cannon: { label: "炮塔", role: "范围爆破", cost: 92, damage: 31, range: 65, cooldown: 1.05, speed: 210, splash: 30, damageType: "explosive", color: classicArcade.orange },
+  frost: { label: "冰塔", role: "减速控场", cost: 76, damage: 9, range: 68, cooldown: 0.86, speed: 225, slow: 0.48, slowTime: 1.45, damageType: "frost", color: classicArcade.blue },
+  spark: { label: "电塔", role: "连锁电击", cost: 108, damage: 14, range: 86, cooldown: 0.74, speed: 290, chain: 2, damageType: "energy", color: classicArcade.yellow },
+  venom: { label: "毒雾塔", role: "持续腐蚀", cost: 88, damage: 10, range: 72, cooldown: 0.9, speed: 215, splash: 24, poison: 8, poisonTime: 2.8, damageType: "poison", color: classicArcade.green },
+  mortar: { label: "迫击塔", role: "远程重炮", cost: 132, damage: 44, range: 116, cooldown: 1.48, speed: 170, splash: 42, damageType: "explosive", color: classicArcade.red }
 };
 
 const TOWER_ORDER = ["arrow", "cannon", "frost", "spark", "venom", "mortar"];
 const SPECIALIZE_LEVEL = 3;
+
+const DAMAGE_TYPE_LABELS = {
+  physical: "穿刺",
+  explosive: "爆破",
+  frost: "寒霜",
+  energy: "电能",
+  poison: "毒素",
+  hero: "守卫"
+};
 
 const TOWER_SPECIALIZATIONS = {
   arrow: [
@@ -110,6 +119,45 @@ const ENEMY_TRAITS = {
   sapper: { label: "爆破", unlock: 22, hp: 1.38, speed: 1.04, reward: 8, penalty: 2, burst: 1 },
   warlock: { label: "术士", unlock: 28, hp: 1.62, speed: 0.82, reward: 11, penalty: 2, healAura: 3, armor: 0.16 },
   boss: { label: "守门兽", unlock: 4, hp: 1, speed: 1, reward: 0, penalty: 5 }
+};
+
+const ENEMY_AFFINITIES = {
+  grunt: { weak: ["physical"], resist: [] },
+  runner: { weak: ["frost", "physical"], resist: ["poison"] },
+  armored: { weak: ["explosive"], resist: ["physical", "poison"] },
+  regen: { weak: ["poison", "energy"], resist: ["frost"] },
+  swarm: { weak: ["explosive", "frost"], resist: ["physical"] },
+  healer: { weak: ["physical", "hero"], resist: ["poison"] },
+  splitter: { weak: ["explosive"], resist: ["energy"] },
+  phantom: { weak: ["energy", "hero"], resist: ["physical", "explosive"] },
+  shield: { weak: ["energy"], resist: ["physical", "poison"] },
+  juggernaut: { weak: ["explosive"], resist: ["physical", "frost", "poison"] },
+  sapper: { weak: ["frost", "physical"], resist: ["explosive"] },
+  warlock: { weak: ["hero", "poison"], resist: ["energy", "frost"] }
+};
+
+const BOSS_AFFINITY_CYCLE = [
+  { weak: ["explosive", "hero"], resist: ["poison"] },
+  { weak: ["energy", "physical"], resist: ["frost"] },
+  { weak: ["poison", "frost"], resist: ["explosive"] }
+];
+
+const LEVEL_EVENTS = {
+  clear: { label: "稳定战线", detail: "标准攻防节奏" },
+  fog: { label: "迷雾战场", detail: "防御塔射程降低，敌人更难命中", towerRange: 0.92, enemyDodge: 0.04 },
+  arcSurge: { label: "电磁涌动", detail: "电塔和守卫强化，敌方护甲略升", damageBonus: { spark: 1.12, hero: 1.08 }, bonusArmor: 0.04 },
+  bounty: { label: "赏金契约", detail: "敌群更多，金币奖励提高", countMultiplier: 1.1, rewardMultiplier: 1.16 },
+  corrosion: { label: "腐蚀雨", detail: "毒塔强化，护甲敌人更硬", damageBonus: { venom: 1.14 }, bonusArmor: 0.06 },
+  scorched: { label: "灼热地脉", detail: "爆破塔强化，敌人移动略快", damageBonus: { cannon: 1.1, mortar: 1.12 }, speedMultiplier: 1.06 }
+};
+
+const LEVEL_EVENT_ORDER = ["clear", "fog", "arcSurge", "bounty", "corrosion", "scorched"];
+
+const BOSS_SKILLS = {
+  aegis: { label: "晶盾", cooldown: 8.8 },
+  summon: { label: "召唤", cooldown: 10.6 },
+  rupture: { label: "震荡", cooldown: 9.8 },
+  enrage: { label: "战吼", cooldown: 9.2 }
 };
 
 const MAPS = [
@@ -454,6 +502,38 @@ function towerInvestment(tower) {
   return value;
 }
 
+function levelEventFor(level) {
+  if (level <= 1) return LEVEL_EVENTS.clear;
+  const id = LEVEL_EVENT_ORDER[(level - 1) % LEVEL_EVENT_ORDER.length] || "clear";
+  return LEVEL_EVENTS[id] || LEVEL_EVENTS.clear;
+}
+
+function bossAffinityForLevel(level) {
+  return BOSS_AFFINITY_CYCLE[(Math.max(1, level) - 1) % BOSS_AFFINITY_CYCLE.length];
+}
+
+function enemyAffinities(enemy) {
+  const fallback = enemy?.kind === "boss"
+    ? bossAffinityForLevel(enemy.level || 1)
+    : ENEMY_AFFINITIES[enemy?.kind] || ENEMY_AFFINITIES.grunt;
+  return {
+    weak: Array.isArray(enemy?.weak) ? enemy.weak : fallback.weak || [],
+    resist: Array.isArray(enemy?.resist) ? enemy.resist : fallback.resist || []
+  };
+}
+
+function damageTypeForShot(shot) {
+  if (shot?.damageType) return shot.damageType;
+  if (shot?.kind === "venom-dot") return "poison";
+  if (shot?.kind === "hero") return "hero";
+  return TOWER_TYPES[shot?.kind]?.damageType || "physical";
+}
+
+function bossSkillForLevel(level) {
+  const order = ["aegis", "summon", "rupture", "enrage"];
+  return order[(Math.max(1, level) - 1) % order.length];
+}
+
 function waveNumber(state) {
   return waveIndex(state, WAVES_PER_LEVEL);
 }
@@ -477,20 +557,22 @@ function waveConfig(config, level, wave) {
   const totalWave = waveIndex({ level, wave }, WAVES_PER_LEVEL);
   const chapter = Math.floor((level - 1) / 5);
   const affixes = waveAffixes(totalWave, wave);
+  const event = levelEventFor(level);
   const rush = affixes.includes("rush");
   const armor = affixes.includes("armor");
   const swarm = affixes.includes("swarm");
   const regen = affixes.includes("regen");
   const elite = affixes.includes("elite");
   return {
-    count: Math.max(6, Math.round((7 + level * 2 + wave * 2 + Math.floor(totalWave / 6) + chapter + config.count) * (swarm ? 1.18 : 1))),
+    count: Math.max(6, Math.round((7 + level * 2 + wave * 2 + Math.floor(totalWave / 6) + chapter + config.count) * (swarm ? 1.18 : 1) * (event.countMultiplier || 1))),
     hp: Math.round((36 + level * 15 + wave * 12 + Math.floor(totalWave / 4) * 4 + chapter * 22) * config.hp * (armor ? 1.18 : 1) * (swarm ? 0.9 : 1)),
-    speed: (24 + level * 1.55 + wave * 1.1 + Math.floor(totalWave / 10)) * config.speed * (rush ? 1.16 : 1),
-    reward: 8 + level + Math.floor(totalWave / 12) + affixes.length * 2,
+    speed: (24 + level * 1.55 + wave * 1.1 + Math.floor(totalWave / 10)) * config.speed * (rush ? 1.16 : 1) * (event.speedMultiplier || 1),
+    reward: Math.round((8 + level + Math.floor(totalWave / 12) + affixes.length * 2) * (event.rewardMultiplier || 1)),
     interval: Math.max(0.25, (0.74 - level * 0.014 - wave * 0.014) * (rush ? 0.88 : 1) * (swarm ? 0.92 : 1)),
     totalWave,
     affixes,
-    bonusArmor: armor ? 0.12 : 0,
+    event,
+    bonusArmor: (armor ? 0.12 : 0) + (event.bonusArmor || 0),
     bonusRegen: regen ? 2.4 : 0,
     eliteEvery: elite ? 7 : 0
   };
@@ -512,7 +594,8 @@ function wavePreview(config, level, wave) {
   const boss = isBossWave(level, wave) ? " · 守门兽" : "";
   const unlock = unlockedEnemyLabels(next.totalWave);
   const affixes = affixText(next.affixes);
-  return `${next.count}${boss} 敌 · HP ${next.hp}${affixes ? ` · ${affixes}` : ""}${unlock ? ` · 新${unlock}` : ""}`;
+  const event = next.event?.label && next.event.label !== LEVEL_EVENTS.clear.label ? ` · ${next.event.label}` : "";
+  return `${next.count}${boss} 敌 · HP ${next.hp}${affixes ? ` · ${affixes}` : ""}${event}${unlock ? ` · 新${unlock}` : ""}`;
 }
 
 function enemyKindAt(index, totalWave) {
@@ -532,6 +615,7 @@ function enemyKindAt(index, totalWave) {
 
 function createEnemyTemplate(kind, id, waveCfg, index = 0) {
   const trait = ENEMY_TRAITS[kind] || ENEMY_TRAITS.grunt;
+  const affinity = ENEMY_AFFINITIES[kind] || ENEMY_AFFINITIES.grunt;
   const elite = Boolean(waveCfg.eliteEvery && index > 0 && index % waveCfg.eliteEvery === 0);
   return {
     id,
@@ -545,6 +629,8 @@ function createEnemyTemplate(kind, id, waveCfg, index = 0) {
     healAura: trait.healAura || 0,
     dodge: trait.dodge || 0,
     armor: (trait.armor || 0) + (waveCfg.bonusArmor || 0),
+    weak: [...(affinity.weak || [])],
+    resist: [...(affinity.resist || [])],
     burst: trait.burst || 0
   };
 }
@@ -557,14 +643,23 @@ function createWave(config, level, wave, nextId) {
   }
   if (isBossWave(level, wave)) {
     const finalBoss = isFinalWave({ level, wave, maxLevel: MAX_LEVEL }, WAVES_PER_LEVEL);
+    const affinity = bossAffinityForLevel(level);
+    const skill = bossSkillForLevel(level);
     queue.push(createBossEnemy({
       id: nextId + queue.length,
       kind: "boss",
+      level,
       name: finalBoss ? "终局魔盒攻城兽" : `${mapForLevel(level).name}守门兽`,
       hp: Math.round((220 + level * 72 + waveCfg.hp * 2.1) * config.hp * (finalBoss ? 1.8 : 1)),
       speed: (16 + level * 0.8) * config.speed,
       reward: finalBoss ? 220 : 80 + level * 8,
-      penalty: finalBoss ? 8 : 4
+      penalty: finalBoss ? 8 : 4,
+      armor: (waveCfg.bonusArmor || 0) + (finalBoss ? 0.12 : 0),
+      weak: [...affinity.weak],
+      resist: [...affinity.resist],
+      bossSkill: finalBoss ? "overlord" : skill,
+      skillTimer: 4.2,
+      skillCooldown: BOSS_SKILLS[skill]?.cooldown || 9.5
     }));
   }
   return queue;
@@ -1094,7 +1189,8 @@ function startWave(state, config) {
   state.waveActive = true;
   state.spawning = true;
   state.spawnTimer = 0.2;
-  state.message = `第 ${waveMeta(state, WAVES_PER_LEVEL)} 波来袭`;
+  const event = levelEventFor(state.level);
+  state.message = `第 ${waveMeta(state, WAVES_PER_LEVEL)} 波来袭 · ${event.label}`;
 }
 
 function completeWave(state, context) {
@@ -1167,10 +1263,24 @@ function completeWave(state, context) {
   });
 }
 
+function damageAffinity(enemy, shot) {
+  const type = damageTypeForShot(shot);
+  const affinity = enemyAffinities(enemy);
+  if (affinity.weak.includes(type)) {
+    return { type, multiplier: 1.22, label: "弱点", color: classicArcade.yellow };
+  }
+  if (affinity.resist.includes(type)) {
+    return { type, multiplier: 0.78, label: "抗性", color: classicArcade.blue };
+  }
+  return { type, multiplier: 1, label: "", color: classicArcade.white };
+}
+
 function damageEnemy(state, enemy, amount, shot) {
   if (!enemy || enemy.defeated) return false;
   const shotKind = shot?.kind || "hit";
-  if (enemy.dodge && !["spark", "venom", "venom-dot"].includes(shotKind) && Math.random() < enemy.dodge) {
+  const event = levelEventFor(state.level);
+  const dodgeChance = (enemy.dodge || 0) + (event.enemyDodge || 0);
+  if (dodgeChance && !["spark", "venom", "venom-dot"].includes(shotKind) && Math.random() < dodgeChance) {
     addFloatingText(state.effects, enemy.x, enemy.y - 10, "闪避", { color: classicArcade.cyan, size: 10 });
     return false;
   }
@@ -1179,9 +1289,16 @@ function damageEnemy(state, enemy, amount, shot) {
     enemy.poisonDps = Math.max(enemy.poisonDps || 0, shot.poison || 4);
   }
   let finalAmount = amount;
-  if (enemy.armor && !["spark", "venom", "venom-dot"].includes(shotKind)) {
-    const effectiveArmor = Math.max(0, enemy.armor - (shot?.armorBreak || 0));
+  if ((enemy.armor || enemy.guardTimer > 0) && !["spark", "venom", "venom-dot"].includes(shotKind)) {
+    const guardArmor = enemy.guardTimer > 0 ? 0.18 : 0;
+    const effectiveArmor = Math.max(0, (Number(enemy.armor) || 0) + guardArmor - (shot?.armorBreak || 0));
     finalAmount *= Math.max(0.35, 1 - effectiveArmor);
+  }
+  const affinity = damageAffinity(enemy, shot);
+  finalAmount *= affinity.multiplier;
+  if (affinity.label && state.time - (enemy.affinityTextAt || 0) > 0.75) {
+    enemy.affinityTextAt = state.time;
+    addFloatingText(state.effects, enemy.x, enemy.y - 17, `${affinity.label}${DAMAGE_TYPE_LABELS[affinity.type] || ""}`, { color: affinity.color, size: 10 });
   }
   if (enemy.kind === "boss" && shot?.bossDamage) finalAmount *= shot.bossDamage;
   if (enemy.kind === "juggernaut" && shotKind === "mortar") finalAmount *= 1.18;
@@ -1200,6 +1317,7 @@ function damageEnemy(state, enemy, amount, shot) {
       for (let i = 0; i < ENEMY_TRAITS[enemy.kind].split; i += 1) {
         const dir = i % 2 === 0 ? -1 : 1;
         const hp = Math.max(3, Math.round(enemy.maxHp * 0.22));
+        const affinity = ENEMY_AFFINITIES.swarm;
         state.enemies.push({
           id: state.nextId++,
           kind: "swarm",
@@ -1212,6 +1330,8 @@ function damageEnemy(state, enemy, amount, shot) {
           slowFactor: 1,
           speed: enemy.speed * 1.16,
           reward: Math.max(2, Math.round(enemy.reward * 0.34)),
+          weak: [...affinity.weak],
+          resist: [...affinity.resist],
           splitChild: true
         });
       }
@@ -1233,10 +1353,108 @@ function damageEnemy(state, enemy, amount, shot) {
   return false;
 }
 
+function bossSkillId(boss) {
+  if (boss.bossSkill !== "overlord") return boss.bossSkill || "aegis";
+  const order = ["aegis", "summon", "rupture", "enrage"];
+  const index = boss.skillIndex || 0;
+  boss.skillIndex = index + 1;
+  return order[index % order.length];
+}
+
+function bossSkillCooldown(boss, skillId) {
+  return Math.max(6.8, (BOSS_SKILLS[skillId]?.cooldown || boss.skillCooldown || 9) - Math.min(2.2, (stateLevelForBoss(boss) - 1) * 0.04));
+}
+
+function stateLevelForBoss(boss) {
+  return clamp(Math.round(Number(boss.level) || 1), 1, MAX_LEVEL);
+}
+
+function spawnBossMinions(state, boss) {
+  const level = stateLevelForBoss(boss);
+  const kind = level >= 24 ? "warlock" : level >= 18 ? "juggernaut" : level >= 12 ? "shield" : level >= 8 ? "healer" : "runner";
+  const affinity = ENEMY_AFFINITIES[kind] || ENEMY_AFFINITIES.grunt;
+  for (let i = 0; i < 2; i += 1) {
+    const dir = i % 2 === 0 ? -1 : 1;
+    const hp = Math.max(24, Math.round(boss.maxHp * (0.1 + level * 0.002)));
+    state.enemies.push({
+      id: state.nextId++,
+      kind,
+      hp,
+      maxHp: hp,
+      x: clamp(boss.x + dir * 12, 8, W - 8),
+      y: clamp(boss.y + 8, 8, H - 8),
+      pathIndex: Math.max(0, boss.pathIndex - 1),
+      slowTimer: 0,
+      slowFactor: 1,
+      speed: boss.speed * (kind === "runner" ? 1.34 : 0.96),
+      reward: 8 + Math.floor(level / 2),
+      penalty: ENEMY_TRAITS[kind]?.penalty || 1,
+      armor: ENEMY_TRAITS[kind]?.armor || 0,
+      regen: ENEMY_TRAITS[kind]?.regen || 0,
+      healAura: ENEMY_TRAITS[kind]?.healAura || 0,
+      dodge: ENEMY_TRAITS[kind]?.dodge || 0,
+      weak: [...(affinity.weak || [])],
+      resist: [...(affinity.resist || [])],
+      summoned: true
+    });
+  }
+}
+
+function castBossSkill(state, boss) {
+  const skillId = bossSkillId(boss);
+  const skill = BOSS_SKILLS[skillId] || BOSS_SKILLS.aegis;
+  if (skillId === "aegis") {
+    boss.guardTimer = Math.max(boss.guardTimer || 0, 5.5);
+    state.message = `${boss.name || "Boss"} 释放${skill.label}`;
+    addFloatingText(state.effects, boss.x, boss.y - 26, skill.label, { color: classicArcade.blue, size: 14 });
+    addBurst(state.effects, boss.x, boss.y, { color: classicArcade.blue, secondary: classicArcade.white, count: 20, speed: 72, radius: 19 });
+  } else if (skillId === "summon") {
+    spawnBossMinions(state, boss);
+    state.message = `${boss.name || "Boss"} 召唤护卫`;
+    addFloatingText(state.effects, boss.x, boss.y - 26, "召唤", { color: classicArcade.magenta, size: 14 });
+    addBurst(state.effects, boss.x, boss.y, { color: classicArcade.magenta, secondary: classicArcade.yellow, count: 20, speed: 74, radius: 18 });
+  } else if (skillId === "rupture") {
+    const tower = state.towers
+      .slice()
+      .sort((a, b) => distance(a, boss) - distance(b, boss) || b.level - a.level)[0];
+    if (tower) {
+      tower.disabledTimer = Math.max(tower.disabledTimer || 0, 2.8 + state.level * 0.035);
+      state.message = `${boss.name || "Boss"} 震荡了${TOWER_TYPES[tower.type]?.label || "防御塔"}`;
+      addFloatingText(state.effects, tower.x, tower.y - 18, "停摆", { color: classicArcade.red, size: 12 });
+      addBurst(state.effects, tower.x, tower.y, { color: classicArcade.red, secondary: classicArcade.yellow, count: 14, speed: 62, radius: 12 });
+    }
+    state.shake = Math.max(state.shake, 5.5);
+    triggerHitStop(state, 0.05, 0.62);
+  } else if (skillId === "enrage") {
+    let affected = 0;
+    for (const enemy of state.enemies) {
+      if (enemy === boss || enemy.defeated) continue;
+      if (!withinDistance(enemy, boss, 74)) continue;
+      enemy.enragedTimer = Math.max(enemy.enragedTimer || 0, 5.2);
+      affected += 1;
+    }
+    if (!affected) boss.enragedTimer = Math.max(boss.enragedTimer || 0, 4.2);
+    state.message = `${boss.name || "Boss"} 发动${skill.label}`;
+    addFloatingText(state.effects, boss.x, boss.y - 26, skill.label, { color: classicArcade.orange, size: 14 });
+    addBurst(state.effects, boss.x, boss.y, { color: classicArcade.orange, secondary: classicArcade.red, count: 24, speed: 82, radius: 18 });
+  }
+  boss.skillTimer = bossSkillCooldown(boss, skillId);
+}
+
+function updateBossSkills(state, dt) {
+  for (const enemy of state.enemies) {
+    if (enemy.kind !== "boss" || enemy.defeated) continue;
+    enemy.skillTimer = Math.max(0, (enemy.skillTimer || 0) - dt);
+    if (enemy.skillTimer <= 0) castBossSkill(state, enemy);
+  }
+}
+
 function updateEnemies(state, dt) {
   const waypoints = waypointsForLevel(state.level);
   for (const enemy of state.enemies) {
     if (enemy.defeated) continue;
+    if (enemy.enragedTimer > 0) enemy.enragedTimer = Math.max(0, enemy.enragedTimer - dt);
+    if (enemy.guardTimer > 0) enemy.guardTimer = Math.max(0, enemy.guardTimer - dt);
     if (enemy.poisonTimer > 0) {
       enemy.poisonTimer -= dt;
       const killed = damageEnemy(state, enemy, (enemy.poisonDps || 0) * dt, { kind: "venom-dot" });
@@ -1269,7 +1487,8 @@ function updateEnemies(state, dt) {
     const dx = target.x - enemy.x;
     const dy = target.y - enemy.y;
     const distance = Math.hypot(dx, dy);
-    const speed = enemy.speed * (enemy.slowTimer > 0 ? enemy.slowFactor : 1) * fieldSlow;
+    const rage = enemy.enragedTimer > 0 ? 1.24 : 1;
+    const speed = enemy.speed * (enemy.slowTimer > 0 ? enemy.slowFactor : 1) * fieldSlow * rage;
     const step = speed * dt;
     if (distance <= step) {
       enemy.x = target.x;
@@ -1310,15 +1529,42 @@ function heroBoostsTower(state, tower) {
   return withinDistance(state.hero, tower, heroStats(state.hero).aura);
 }
 
+function towerCombatStats(state, tower) {
+  const baseStats = towerStats(tower);
+  const event = levelEventFor(state.level);
+  const damageBonus = event.damageBonus?.[tower.type] || event.damageBonus?.[baseStats.damageType] || 1;
+  const linked = heroBoostsTower(state, tower);
+  const heroLevel = clamp(state.hero?.level || 1, 1, HERO.maxLevel);
+  const stats = {
+    ...baseStats,
+    damage: Math.round(baseStats.damage * damageBonus),
+    range: baseStats.range * (event.towerRange || 1),
+    cooldown: baseStats.cooldown * (event.cooldownMultiplier || 1),
+    heroLinked: linked
+  };
+  if (!linked) return stats;
+
+  stats.damage = Math.round(stats.damage * (1.08 + heroLevel * 0.018));
+  stats.cooldown *= Math.max(0.84, 0.97 - heroLevel * 0.018);
+  if (tower.specialization) {
+    if (tower.type === "arrow") stats.bossDamage = (stats.bossDamage || 1) + 0.08;
+    if (tower.type === "cannon" || tower.type === "mortar") stats.splash = (stats.splash || 0) + 4 + heroLevel;
+    if (tower.type === "frost") stats.slowTime = (stats.slowTime || 0) + 0.18 + heroLevel * 0.04;
+    if (tower.type === "spark" && heroLevel >= 3) stats.chain = (stats.chain || 0) + 1;
+    if (tower.type === "venom") stats.poison = (stats.poison || 0) + 2 + heroLevel;
+  }
+  return stats;
+}
+
 function updateTowers(state, dt) {
   for (const tower of state.towers) {
+    if (tower.disabledTimer > 0) {
+      tower.disabledTimer = Math.max(0, tower.disabledTimer - dt);
+      continue;
+    }
     tower.cooldown = Math.max(0, tower.cooldown - dt);
     if (tower.cooldown > 0) continue;
-    const boosted = heroBoostsTower(state, tower);
-    const baseStats = towerStats(tower);
-    const stats = boosted
-      ? { ...baseStats, damage: Math.round(baseStats.damage * 1.12), cooldown: baseStats.cooldown * 0.94 }
-      : baseStats;
+    const stats = towerCombatStats(state, tower);
     const target = state.enemies
       .filter((enemy) => !enemy.defeated && withinDistance(tower, enemy, stats.range))
       .sort((a, b) => targetCompare(tower, a, b))[0];
@@ -1340,6 +1586,8 @@ function updateTowers(state, dt) {
       chain: stats.chain || 0,
       armorBreak: stats.armorBreak || 0,
       bossDamage: stats.bossDamage || 0,
+      damageType: stats.damageType || TOWER_TYPES[tower.type]?.damageType || "physical",
+      heroLinked: stats.heroLinked || false,
       specialization: tower.specialization || null,
       color: stats.color
     });
@@ -1366,20 +1614,28 @@ function updateHero(state, dt) {
     .sort((a, b) => b.pathIndex - a.pathIndex || a.hp - b.hp)[0];
   if (!target) return;
   hero.attackTimer = stats.cooldown;
+  const event = levelEventFor(state.level);
   state.shots.push({
     id: state.nextId++,
     x: hero.x,
     y: hero.y,
     targetId: target.id,
     kind: "hero",
-    damage: stats.damage,
+    damage: Math.round(stats.damage * (event.damageBonus?.hero || 1)),
     speed: 320,
     splash: hero.level >= 4 ? 18 : 0,
     chain: 0,
     slow: 1,
     slowTime: 0,
+    damageType: "hero",
     color: HERO.color
   });
+}
+
+function grantShotKillXp(state, shot, enemy) {
+  if (shot.kind !== "hero" && !shot.heroLinked) return;
+  const base = enemy.kind === "boss" ? 30 : 10 + (enemy.elite ? 8 : 0);
+  grantHeroXp(state, shot.kind === "hero" ? base : Math.max(3, Math.round(base * 0.42)), enemy);
 }
 
 function updateShots(state, dt) {
@@ -1400,7 +1656,7 @@ function updateShots(state, dt) {
           const enemy = state.enemies[i];
           if (!withinDistance(enemy, target, shot.splash)) continue;
           const killed = damageEnemy(state, enemy, shot.damage * (enemy === target ? 1 : 0.62), shot);
-          if (killed && shot.kind === "hero") grantHeroXp(state, enemy.kind === "boss" ? 30 : 10 + (enemy.elite ? 8 : 0), enemy);
+          if (killed) grantShotKillXp(state, shot, enemy);
           if (killed) state.enemies.splice(i, 1);
         }
       } else if (shot.chain) {
@@ -1415,12 +1671,12 @@ function updateShots(state, dt) {
         for (const hit of hits) {
           if (!state.enemies.includes(hit.enemy)) continue;
           const killed = damageEnemy(state, hit.enemy, hit.damage, shot);
-          if (killed && shot.kind === "hero") grantHeroXp(state, hit.enemy.kind === "boss" ? 30 : 10 + (hit.enemy.elite ? 8 : 0), hit.enemy);
+          if (killed) grantShotKillXp(state, shot, hit.enemy);
           if (killed) state.enemies.splice(state.enemies.indexOf(hit.enemy), 1);
         }
       } else {
         const killed = damageEnemy(state, target, shot.damage, shot);
-        if (killed && shot.kind === "hero") grantHeroXp(state, target.kind === "boss" ? 30 : 10 + (target.elite ? 8 : 0), target);
+        if (killed) grantShotKillXp(state, shot, target);
         if (killed) state.enemies.splice(state.enemies.indexOf(target), 1);
       }
       addBurst(state.effects, target.x, target.y, { color: shot.color, secondary: classicArcade.white, count: 5, speed: 40, life: 0.18 });
@@ -1464,6 +1720,7 @@ function update(state, config, dt, context, rawDt = dt) {
     }
     if (!state.queue.length) state.spawning = false;
   }
+  updateBossSkills(state, dt);
   updateEnemies(state, dt);
   updateHero(state, dt);
   updateTowers(state, dt);
@@ -1634,8 +1891,44 @@ function drawTacticalFields(ctx, state) {
   }
 }
 
-function drawTower(ctx, tower, selected = false) {
-  const stats = towerStats(tower);
+function drawHeroLinks(ctx, state) {
+  if (!state.hero) return;
+  const linkedTowers = state.towers.filter((tower) => heroBoostsTower(state, tower));
+  if (!linkedTowers.length) return;
+  ctx.save();
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([4, 7]);
+  linkedTowers.forEach((tower) => {
+    ctx.strokeStyle = tower.specialization ? "rgba(255,209,102,.34)" : "rgba(66,242,255,.24)";
+    ctx.beginPath();
+    ctx.moveTo(state.hero.x, state.hero.y);
+    ctx.lineTo(tower.x, tower.y);
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawLevelEventBadge(ctx, state) {
+  const event = levelEventFor(state.level);
+  if (!event || event === LEVEL_EVENTS.clear) return;
+  ctx.save();
+  ctx.fillStyle = "rgba(5,9,20,.72)";
+  drawRoundedRect(ctx, 8, 8, 104, 22, 7);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,209,102,.42)";
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.fillStyle = classicArcade.yellow;
+  ctx.font = "900 9px system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(event.label, 17, 19.5);
+  ctx.restore();
+}
+
+function drawTower(ctx, state, tower, selected = false) {
+  const stats = towerCombatStats(state, tower);
   const def = TOWER_TYPES[tower.type] || TOWER_TYPES.arrow;
   if (selected) {
     ctx.fillStyle = "rgba(66, 242, 255, .075)";
@@ -1802,6 +2095,20 @@ function drawTower(ctx, tower, selected = false) {
   if (def.role) {
     ctx.fillStyle = stats.color;
     ctx.fillRect(-8, 26, 16 * (tower.level / TOWER_MAX_LEVEL), 2);
+  }
+  if (tower.disabledTimer > 0) {
+    ctx.fillStyle = "rgba(239,71,111,.22)";
+    ctx.beginPath();
+    ctx.arc(0, -1, 23, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = classicArcade.red;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, -1, 18, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = classicArcade.red;
+    ctx.font = "900 8px system-ui, sans-serif";
+    ctx.fillText("停", 0, -22);
   }
   ctx.restore();
 }
@@ -2006,6 +2313,20 @@ function drawEnemy(ctx, enemy, state) {
     ctx.arc(0, 0, radius + 5, 0, Math.PI * 2);
     ctx.stroke();
   }
+  if (enemy.guardTimer > 0) {
+    ctx.strokeStyle = "rgba(66,242,255,.8)";
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius + 8, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  if (enemy.enragedTimer > 0) {
+    ctx.strokeStyle = "rgba(255,107,53,.78)";
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius + 10, -Math.PI * 0.3, Math.PI * 1.35);
+    ctx.stroke();
+  }
   ctx.fillStyle = classicArcade.bg;
   ctx.fillRect(-4, -5, 3, 4);
   ctx.fillRect(2, -5, 3, 4);
@@ -2022,19 +2343,23 @@ function drawEnemy(ctx, enemy, state) {
   const badges = [
     enemy.elite ? { text: "E", color: classicArcade.yellow } : null,
     enemy.armor ? { text: "A", color: classicArcade.blue } : null,
-    enemy.regen || enemy.healAura ? { text: "+", color: classicArcade.green } : null
+    enemy.regen || enemy.healAura ? { text: "+", color: classicArcade.green } : null,
+    enemy.guardTimer > 0 ? { text: "盾", color: classicArcade.cyan } : null,
+    enemy.enragedTimer > 0 ? { text: "速", color: classicArcade.orange } : null,
+    enemyAffinities(enemy).weak.length ? { text: "弱", color: classicArcade.yellow } : null,
+    enemyAffinities(enemy).resist.length ? { text: "抗", color: classicArcade.blue } : null
   ].filter(Boolean);
   badges.forEach((badge, index) => {
-    const x = enemy.x - radius + index * 8;
+    const x = enemy.x - radius + index * 9;
     const y = enemy.y + radius + 3;
     ctx.fillStyle = "rgba(5,9,20,.78)";
-    drawRoundedRect(ctx, x, y, 7, 7, 2);
+    drawRoundedRect(ctx, x, y, 8, 8, 2);
     ctx.fill();
     ctx.fillStyle = badge.color;
     ctx.font = "900 5.5px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(badge.text, x + 3.5, y + 3.8);
+    ctx.fillText(badge.text, x + 4, y + 4.2);
   });
 }
 
@@ -2107,11 +2432,13 @@ function draw(state, ctx) {
   drawTacticalFields(ctx, state);
   drawTowerEndpoint(ctx, 12, startPointForLevel(state.level).y, classicArcade.green, "入");
   drawTowerEndpoint(ctx, W - 12, endpointForLevel(state.level).y, classicArcade.red, "核");
+  drawHeroLinks(ctx, state);
   drawHero(ctx, state);
-  state.towers.forEach((tower) => drawTower(ctx, tower, tower.id === state.selectedTower));
+  state.towers.forEach((tower) => drawTower(ctx, state, tower, tower.id === state.selectedTower));
   state.enemies.forEach((enemy) => drawEnemy(ctx, enemy, state));
   state.shots.forEach((shot) => drawShot(ctx, shot));
   drawEffects(ctx, state.effects);
+  drawLevelEventBadge(ctx, state);
   ctx.restore();
   drawStageTransition(ctx, W, H, state.transition);
 }
@@ -2227,6 +2554,7 @@ export function mountTowerDefense(root, context) {
   function refreshHud() {
     status.textContent = state.message;
     const map = mapForLevel(state.level);
+    const event = levelEventFor(state.level);
     const selectedTower = state.towers.find((tower) => tower.id === state.selectedTower);
     const targetMode = selectedTower ? TARGET_MODES[selectedTower.targetMode || "first"] : null;
     const selectedText = selectedTower
@@ -2235,7 +2563,7 @@ export function mountTowerDefense(root, context) {
     const waveText = state.waveActive
       ? `场上 ${state.enemies.length + state.queue.length} 敌`
       : `下一波 ${wavePreview(config, state.level, state.wave)}`;
-    note.textContent = `${context.labels.difficulty} · ${map.name}/${map.feature} · ${selectedText} · ${waveText}`;
+    note.textContent = `${context.labels.difficulty} · ${map.name}/${map.feature} · ${event.label} · ${selectedText} · ${waveText}`;
     level.textContent = stageLabel(state);
     wave.textContent = waveLabel(state, WAVES_PER_LEVEL);
     lives.textContent = `核心 ${Math.max(0, state.lives)}`;
