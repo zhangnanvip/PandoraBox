@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="合成工坊">
+  <defs>
+    <linearGradient id="bg" x1="10" y1="8" x2="86" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fbfffb"/>
+      <stop offset="1" stop-color="#e6f1ff"/>
+    </linearGradient>
+    <linearGradient id="jade" x1="20" y1="22" x2="48" y2="52">
+      <stop offset="0" stop-color="#8ce8bd"/>
+      <stop offset="1" stop-color="#1f8d67"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="46" y1="20" x2="76" y2="52">
+      <stop offset="0" stop-color="#79d6ff"/>
+      <stop offset="1" stop-color="#3277b7"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="24" y1="52" x2="74" y2="80">
+      <stop offset="0" stop-color="#ffe58a"/>
+      <stop offset="1" stop-color="#d9a32f"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="80" height="80" rx="18" fill="url(#bg)" stroke="#1f5f4a" stroke-width="4"/>
+  <path d="M24 30h48M24 48h48M24 66h48M24 30v36M42 30v36M60 30v36M78 30v36" stroke="#a8c7c0" stroke-width="2" stroke-linecap="round" opacity=".72"/>
+  <rect x="25" y="31" width="16" height="16" rx="5" fill="url(#jade)"/>
+  <rect x="43" y="31" width="16" height="16" rx="5" fill="url(#jade)"/>
+  <path d="M61 31h16v16H61z" fill="url(#sky)"/>
+  <rect x="25" y="49" width="16" height="16" rx="5" fill="url(#sky)"/>
+  <rect x="43" y="49" width="16" height="16" rx="5" fill="url(#gold)"/>
+  <rect x="61" y="49" width="16" height="16" rx="5" fill="url(#gold)"/>
+  <path d="M31 76h34l8-10H39Z" fill="#c64234" opacity=".95"/>
+  <path d="M20 23c12-9 28-9 40 0" fill="none" stroke="#1f5f4a" stroke-width="4" stroke-linecap="round"/>
+  <path d="m60 23-8-5M60 23l-7 6" fill="none" stroke="#1f5f4a" stroke-width="4" stroke-linecap="round"/>
+</svg>

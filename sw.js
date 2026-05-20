@@ -1,6 +1,6 @@
 import { precacheAssets } from "./src/games/catalog.js";
 
-const CACHE_NAME = "pandora-box-v78";
+const CACHE_NAME = "pandora-box-v79";
 const SCOPE_URL = new URL(self.registration.scope);
 
 const CORE_SHELL = [

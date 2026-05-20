@@ -27,6 +27,7 @@ const GAME_ENTRIES = {
   "block-blast": "./src/games/block-blast/game.js",
   "tile-match": "./src/games/tile-match/game.js",
   "sort-master": "./src/games/sort-master/game.js",
+  "merge-workshop": "./src/games/merge-workshop/game.js",
   minesweeper: "./src/games/minesweeper/game.js",
   match3: "./src/games/match3/game.js",
   "mahjong-connect": "./src/games/mahjong-connect/game.js",
@@ -68,6 +69,7 @@ const MARKET_HEAT = {
   survivor: { score: 95, label: "割草成长", signal: "Survivor-like 依靠局内构筑、怪潮压力和 Boss 节点形成强复玩。" },
   "mahjong-connect": { score: 94, label: "麻将消除", signal: "麻将、Tile 与连连看适合中老年和碎片时间用户。" },
   "sort-master": { score: 93, label: "排序耐玩", signal: "颜色、螺丝、水管和停车排序是移动端长线热度很高的触控解谜方向。" },
+  "merge-workshop": { score: 92, label: "合成长线", signal: "Merge 类靠订单、生成器和资源循环形成长期目标，适合离线轻经营。" },
   "tower-defense": { score: 88, label: "策略耐玩", signal: "塔防靠波次、塔组和地图机制形成长期挑战。" },
   "2048": { score: 84, label: "数字常青", signal: "数字合成规则极简，但高分循环和多尺寸玩法耐玩。" },
   "space-shooter": { score: 83, label: "弹幕成长", signal: "竖版射击适合做关卡、技能和 Boss 成长线。" },
@@ -521,6 +523,45 @@ const registrations = [
       ]
     },
     () => import("./sort-master/game.js").then((module) => module.mountSortMaster)
+  ),
+  defineLocalGame(
+    {
+      id: "merge-workshop",
+      title: "合成工坊",
+      subtitle: "生成材料，合成高阶物品并交付订单",
+      tag: "合成长线",
+      category: "puzzle",
+      secondaryCategories: ["strategy", "quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("merge-workshop", "puzzle", { sessionSave: true, staged: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      setupFields: [
+        {
+          id: "mergeMode",
+          label: "玩法模式",
+          defaultValue: "campaign",
+          options: [
+            { value: "campaign", label: "订单闯关 60 关递进" },
+            { value: "rush", label: "紧急订单 更紧能量" },
+            { value: "relaxed", label: "经典工坊 单局经营" }
+          ]
+        }
+      ],
+      accent: "jade",
+      icon: "./public/games/puzzle/icons/merge-workshop.svg",
+      assets: ["./public/games/puzzle/icons/merge-workshop.svg"],
+      rules: [
+        "点击生成器消耗能量产出基础材料，两个同系列同等级材料可以合成为更高等级。",
+        "订单会要求指定系列和等级的材料，交付后会获得分数、能量和少量道具。",
+        "订单闯关包含 60 关，后续会增加材料系列、最高等级、目标订单数量、锁箱和封印材料。",
+        "钥匙可打开锁箱，清扫可解除封印；提示、撤回和换单次数有限。",
+        "能量耗尽且没有可合成、可交付或可生成操作时挑战失败。"
+      ]
+    },
+    () => import("./merge-workshop/game.js").then((module) => module.mountMergeWorkshop)
   ),
   defineLocalGame(
     {
