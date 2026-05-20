@@ -2378,7 +2378,7 @@ input[type="range"] {
 
 .tower-action-row {
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr;
+  grid-template-columns: 1.25fr 1fr 1fr 1fr;
   gap: 8px;
   width: min(96vw, 620px);
 }
@@ -2415,6 +2415,15 @@ input[type="range"] {
   stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.tower-action svg .cut {
+  fill: #101629;
+  stroke: none;
+}
+
+.tower-action svg .line {
+  fill: none;
 }
 
 .tower-action strong,

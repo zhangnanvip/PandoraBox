@@ -36,6 +36,23 @@ const TOWER_TYPES = {
 
 const TOWER_ORDER = ["arrow", "cannon", "frost", "spark", "venom", "mortar"];
 
+const TARGET_MODES = {
+  first: { label: "前线", detail: "优先攻击最靠近核心的敌人" },
+  strong: { label: "强敌", detail: "优先攻击当前生命最高的敌人" },
+  weak: { label: "补刀", detail: "优先攻击当前生命最低的敌人" },
+  nearest: { label: "近身", detail: "优先攻击距离防御塔最近的敌人" }
+};
+
+const TARGET_ORDER = ["first", "strong", "weak", "nearest"];
+
+const WAVE_AFFIXES = {
+  rush: { label: "急行", detail: "速度提升，出怪更密" },
+  armor: { label: "铁甲", detail: "生命和护甲提升" },
+  swarm: { label: "群潮", detail: "数量增加，小怪更多" },
+  regen: { label: "腐生", detail: "敌人缓慢回血" },
+  elite: { label: "精英", detail: "周期性出现强化敌人" }
+};
+
 const ENEMY_TRAITS = {
   grunt: { label: "杂兵", unlock: 1, hp: 1, speed: 1, reward: 0, penalty: 1 },
   runner: { label: "快怪", unlock: 2, hp: 0.72, speed: 1.42, reward: 1, penalty: 1 },
@@ -187,6 +204,9 @@ function actionIconSvg(type) {
   if (type === "sell") {
     return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 10h18l-2 16H9z"/><path d="M11 10V7h10v3M12 15h8M12 20h8"/></svg>`;
   }
+  if (type === "target") {
+    return `<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="3" class="cut"/><path d="M16 2v6M16 24v6M2 16h6M24 16h6" class="line"/></svg>`;
+  }
   return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 17h15l-5 6 10-9H11l5-6z"/></svg>`;
 }
 
@@ -241,16 +261,41 @@ function waveNumber(state) {
   return waveIndex(state, WAVES_PER_LEVEL);
 }
 
+function waveAffixes(totalWave, wave) {
+  const affixes = [];
+  if (wave === WAVES_PER_LEVEL) affixes.push("elite");
+  if (totalWave >= 10 && totalWave % 5 === 0) affixes.push("rush");
+  if (totalWave >= 15 && totalWave % 6 === 0) affixes.push("armor");
+  if (totalWave >= 20 && totalWave % 7 === 0) affixes.push("swarm");
+  if (totalWave >= 26 && totalWave % 8 === 0) affixes.push("regen");
+  return [...new Set(affixes)].slice(0, 2);
+}
+
+function affixText(affixes) {
+  if (!affixes?.length) return "";
+  return affixes.map((id) => WAVE_AFFIXES[id]?.label).filter(Boolean).join("/");
+}
+
 function waveConfig(config, level, wave) {
   const totalWave = waveIndex({ level, wave }, WAVES_PER_LEVEL);
   const chapter = Math.floor((level - 1) / 5);
+  const affixes = waveAffixes(totalWave, wave);
+  const rush = affixes.includes("rush");
+  const armor = affixes.includes("armor");
+  const swarm = affixes.includes("swarm");
+  const regen = affixes.includes("regen");
+  const elite = affixes.includes("elite");
   return {
-    count: Math.max(6, 7 + level * 2 + wave * 2 + Math.floor(totalWave / 6) + chapter + config.count),
-    hp: Math.round((36 + level * 15 + wave * 12 + Math.floor(totalWave / 4) * 4 + chapter * 22) * config.hp),
-    speed: (24 + level * 1.55 + wave * 1.1 + Math.floor(totalWave / 10)) * config.speed,
-    reward: 8 + level + Math.floor(totalWave / 12),
-    interval: Math.max(0.28, 0.74 - level * 0.014 - wave * 0.014),
-    totalWave
+    count: Math.max(6, Math.round((7 + level * 2 + wave * 2 + Math.floor(totalWave / 6) + chapter + config.count) * (swarm ? 1.18 : 1))),
+    hp: Math.round((36 + level * 15 + wave * 12 + Math.floor(totalWave / 4) * 4 + chapter * 22) * config.hp * (armor ? 1.18 : 1) * (swarm ? 0.9 : 1)),
+    speed: (24 + level * 1.55 + wave * 1.1 + Math.floor(totalWave / 10)) * config.speed * (rush ? 1.16 : 1),
+    reward: 8 + level + Math.floor(totalWave / 12) + affixes.length * 2,
+    interval: Math.max(0.25, (0.74 - level * 0.014 - wave * 0.014) * (rush ? 0.88 : 1) * (swarm ? 0.92 : 1)),
+    totalWave,
+    affixes,
+    bonusArmor: armor ? 0.12 : 0,
+    bonusRegen: regen ? 2.4 : 0,
+    eliteEvery: elite ? 7 : 0
   };
 }
 
@@ -269,7 +314,8 @@ function wavePreview(config, level, wave) {
   const next = waveConfig(config, level, wave);
   const boss = isBossWave(level, wave) ? " · 守门兽" : "";
   const unlock = unlockedEnemyLabels(next.totalWave);
-  return `${next.count}${boss} 敌 · HP ${next.hp}${unlock ? ` · 新${unlock}` : ""}`;
+  const affixes = affixText(next.affixes);
+  return `${next.count}${boss} 敌 · HP ${next.hp}${affixes ? ` · ${affixes}` : ""}${unlock ? ` · 新${unlock}` : ""}`;
 }
 
 function enemyKindAt(index, totalWave) {
@@ -287,19 +333,21 @@ function enemyKindAt(index, totalWave) {
   return "grunt";
 }
 
-function createEnemyTemplate(kind, id, waveCfg) {
+function createEnemyTemplate(kind, id, waveCfg, index = 0) {
   const trait = ENEMY_TRAITS[kind] || ENEMY_TRAITS.grunt;
+  const elite = Boolean(waveCfg.eliteEvery && index > 0 && index % waveCfg.eliteEvery === 0);
   return {
     id,
     kind,
-    hp: Math.max(1, Math.round(waveCfg.hp * trait.hp)),
-    speed: waveCfg.speed * trait.speed,
-    reward: Math.max(2, waveCfg.reward + trait.reward),
+    hp: Math.max(1, Math.round(waveCfg.hp * trait.hp * (elite ? 1.55 : 1))),
+    speed: waveCfg.speed * trait.speed * (elite ? 1.05 : 1),
+    reward: Math.max(2, waveCfg.reward + trait.reward + (elite ? 6 : 0)),
     penalty: trait.penalty || 1,
-    regen: trait.regen || 0,
+    elite,
+    regen: (trait.regen || 0) + (waveCfg.bonusRegen || 0),
     healAura: trait.healAura || 0,
     dodge: trait.dodge || 0,
-    armor: trait.armor || 0,
+    armor: (trait.armor || 0) + (waveCfg.bonusArmor || 0),
     burst: trait.burst || 0
   };
 }
@@ -308,7 +356,7 @@ function createWave(config, level, wave, nextId) {
   const waveCfg = waveConfig(config, level, wave);
   const queue = [];
   for (let i = 0; i < waveCfg.count; i += 1) {
-    queue.push(createEnemyTemplate(enemyKindAt(i, waveCfg.totalWave), nextId + i, waveCfg));
+    queue.push(createEnemyTemplate(enemyKindAt(i, waveCfg.totalWave), nextId + i, waveCfg, i));
   }
   if (isBossWave(level, wave)) {
     const finalBoss = isFinalWave({ level, wave, maxLevel: MAX_LEVEL }, WAVES_PER_LEVEL);
@@ -477,6 +525,7 @@ function placeTower(state, cell, towerType) {
     id: state.nextId++,
     type,
     level: 1,
+    targetMode: "first",
     cellX: cell.x,
     cellY: cell.y,
     x: cell.x * CELL + CELL / 2,
@@ -610,6 +659,20 @@ function sellSelectedTower(state) {
     confirmLabel: "确认出售",
     message: `确认出售${label}？`
   });
+}
+
+function cycleSelectedTowerTarget(state) {
+  const tower = state.towers.find((item) => item.id === state.selectedTower);
+  if (!tower) {
+    state.message = "先点击一座塔";
+    return;
+  }
+  clearPendingAction(state);
+  const current = TARGET_ORDER.includes(tower.targetMode) ? tower.targetMode : "first";
+  const next = TARGET_ORDER[(TARGET_ORDER.indexOf(current) + 1) % TARGET_ORDER.length];
+  tower.targetMode = next;
+  state.message = `${TOWER_TYPES[tower.type].label} 目标：${TARGET_MODES[next].label}`;
+  addFloatingText(state.effects, tower.x, tower.y - 14, TARGET_MODES[next].label, { color: TOWER_TYPES[tower.type].color, size: 11 });
 }
 
 function confirmPendingAction(state) {
@@ -859,6 +922,14 @@ function updateEnemies(state, dt) {
   }
 }
 
+function targetCompare(tower, a, b) {
+  const mode = TARGET_ORDER.includes(tower.targetMode) ? tower.targetMode : "first";
+  if (mode === "strong") return b.hp - a.hp || b.pathIndex - a.pathIndex;
+  if (mode === "weak") return a.hp - b.hp || b.pathIndex - a.pathIndex;
+  if (mode === "nearest") return distance(tower, a) - distance(tower, b) || b.pathIndex - a.pathIndex;
+  return b.pathIndex - a.pathIndex || a.hp - b.hp;
+}
+
 function updateTowers(state, dt) {
   for (const tower of state.towers) {
     tower.cooldown = Math.max(0, tower.cooldown - dt);
@@ -866,7 +937,7 @@ function updateTowers(state, dt) {
     const stats = towerStats(tower);
     const target = state.enemies
       .filter((enemy) => !enemy.defeated && withinDistance(tower, enemy, stats.range))
-      .sort((a, b) => b.pathIndex - a.pathIndex || a.hp - b.hp)[0];
+      .sort((a, b) => targetCompare(tower, a, b))[0];
     if (!target) continue;
     tower.cooldown = stats.cooldown;
     state.shots.push({
@@ -1148,6 +1219,12 @@ function drawTower(ctx, tower, selected = false) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(`Lv${tower.level}`, 0, 16.8);
+  if (selected) {
+    const targetLabel = TARGET_MODES[tower.targetMode || "first"]?.label || TARGET_MODES.first.label;
+    ctx.fillStyle = stats.color;
+    ctx.font = "900 6.5px system-ui, sans-serif";
+    ctx.fillText(targetLabel, 0, -30);
+  }
   if (def.role) {
     ctx.fillStyle = stats.color;
     ctx.fillRect(-8, 23, 16 * (tower.level / TOWER_MAX_LEVEL), 2);
@@ -1288,9 +1365,16 @@ function drawEnemy(ctx, enemy) {
     strokePath(ctx, [[-8, 1], [-15, -5]]);
     strokePath(ctx, [[8, 1], [15, -5]]);
   }
-  ctx.strokeStyle = enemy.slowTimer > 0 ? classicArcade.blue : "rgba(255,255,255,.45)";
+  ctx.strokeStyle = enemy.slowTimer > 0 ? classicArcade.blue : enemy.elite ? classicArcade.yellow : "rgba(255,255,255,.45)";
   ctx.lineWidth = 2;
   ctx.stroke();
+  if (enemy.poisonTimer > 0) {
+    ctx.strokeStyle = "rgba(93,255,139,.72)";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius + 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
   ctx.fillStyle = classicArcade.bg;
   ctx.fillRect(-4, -5, 3, 4);
   ctx.fillRect(2, -5, 3, 4);
@@ -1423,6 +1507,11 @@ export function mountTowerDefense(root, context) {
             <strong>升级</strong>
             <small data-upgrade-tip>选中塔</small>
           </button>
+          <button type="button" class="tower-action" data-action="target">
+            <span>${actionIconSvg("target")}</span>
+            <strong>目标</strong>
+            <small data-target-tip>选中塔</small>
+          </button>
           <button type="button" class="tower-action" data-action="sell">
             <span>${actionIconSvg("sell")}</span>
             <strong>出售</strong>
@@ -1453,9 +1542,11 @@ export function mountTowerDefense(root, context) {
   const towerButtons = [...root.querySelectorAll("[data-tower]")];
   const waveButton = root.querySelector("[data-action='wave']");
   const upgradeButton = root.querySelector("[data-action='upgrade']");
+  const targetButton = root.querySelector("[data-action='target']");
   const sellButton = root.querySelector("[data-action='sell']");
   const waveTip = root.querySelector("[data-wave-tip]");
   const upgradeTip = root.querySelector("[data-upgrade-tip]");
+  const targetTip = root.querySelector("[data-target-tip]");
   const sellTip = root.querySelector("[data-sell-tip]");
   const confirmPanel = root.querySelector("[data-confirm-panel]");
   const confirmTitle = root.querySelector("[data-confirm-title]");
@@ -1467,7 +1558,8 @@ export function mountTowerDefense(root, context) {
     status.textContent = state.message;
     const map = mapForLevel(state.level);
     const selectedTower = state.towers.find((tower) => tower.id === state.selectedTower);
-    const selectedText = selectedTower ? `选中 ${TOWER_TYPES[selectedTower.type].label} Lv.${selectedTower.level}` : `${TOWER_TYPES[state.selectedType].label} ${TOWER_TYPES[state.selectedType].cost} 金币`;
+    const targetMode = selectedTower ? TARGET_MODES[selectedTower.targetMode || "first"] : null;
+    const selectedText = selectedTower ? `选中 ${TOWER_TYPES[selectedTower.type].label} Lv.${selectedTower.level} · ${targetMode?.label || "前线"}` : `${TOWER_TYPES[state.selectedType].label} ${TOWER_TYPES[state.selectedType].cost} 金币`;
     const waveText = state.waveActive
       ? `场上 ${state.enemies.length + state.queue.length} 敌`
       : `下一波 ${wavePreview(config, state.level, state.wave)}`;
@@ -1489,6 +1581,8 @@ export function mountTowerDefense(root, context) {
     upgradeTip.textContent = selectedTower
       ? (selectedTower.level >= TOWER_MAX_LEVEL ? "满级" : `${upgradeCostValue} 金币`)
       : "选中塔";
+    targetButton.disabled = !selectedTower;
+    targetTip.textContent = selectedTower ? (targetMode?.label || "前线") : "选中塔";
     sellButton.disabled = !selectedTower;
     sellTip.textContent = selectedTower ? `+${Math.max(20, Math.round(towerInvestment(selectedTower) * 0.62))}` : "回收";
     if (confirmPanel) {
@@ -1543,6 +1637,8 @@ export function mountTowerDefense(root, context) {
       startWave(state, config);
     } else if (action === "upgrade") {
       upgradeSelectedTower(state);
+    } else if (action === "target") {
+      cycleSelectedTowerTarget(state);
     } else if (action === "sell") {
       sellSelectedTower(state);
     } else if (action === "confirm") {
@@ -1568,6 +1664,7 @@ export function mountTowerDefense(root, context) {
     state.message = "已取消操作";
   });
   root.querySelector("[data-action='upgrade']").addEventListener("click", () => upgradeSelectedTower(state));
+  root.querySelector("[data-action='target']").addEventListener("click", () => cycleSelectedTowerTarget(state));
   root.querySelector("[data-action='wave']").addEventListener("click", () => startWave(state, config));
   root.querySelector("[data-action='sell']").addEventListener("click", () => sellSelectedTower(state));
   const cleanupKeys = bindActionKeys({
@@ -1579,6 +1676,7 @@ export function mountTowerDefense(root, context) {
     Digit6: "mortar",
     Space: "wave",
     KeyU: "upgrade",
+    KeyT: "target",
     KeyX: "sell",
     Enter: "confirm",
     Escape: "cancel",
