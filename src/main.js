@@ -80,13 +80,33 @@ function findAvailableGame(id) {
 
 function gameMatchesCategory(game, categoryId) {
   if (categoryId === "all") return true;
+  if (categoryId === "hot") return marketHeatScore(game) >= 68;
   return game.category === categoryId || (game.secondaryCategories || []).includes(categoryId);
+}
+
+function marketHeatScore(game) {
+  return Number.isFinite(game?.marketHeat?.score) ? game.marketHeat.score : 0;
+}
+
+function sortByMarketHeat(games) {
+  return [...games].sort((a, b) => {
+    const scoreDelta = marketHeatScore(b) - marketHeatScore(a);
+    if (scoreDelta) return scoreDelta;
+    return a.title.localeCompare(b.title, "zh-Hans-CN");
+  });
 }
 
 function availableGameSections(categoryId = "all") {
   const allGames = availableGames();
+  if (categoryId === "hot") {
+    return [{
+      ...findCategory("hot"),
+      title: "热门推荐",
+      games: sortByMarketHeat(allGames.filter((game) => gameMatchesCategory(game, "hot")))
+    }];
+  }
   const visibleGames = allGames.filter((game) => gameMatchesCategory(game, categoryId));
-  const groups = categoryId === "all" ? categories.filter((category) => category.id !== "all") : [findCategory(categoryId)];
+  const groups = categoryId === "all" ? categories.filter((category) => !["all", "hot"].includes(category.id)) : [findCategory(categoryId)];
 
   return groups
     .map((category) => ({
@@ -1468,6 +1488,9 @@ function renderLobbyDashboard() {
 function renderGameCard(game) {
   const category = findCategory(game.category);
   const favorite = isFavorite(game.id);
+  const hotLabel = state.activeCategory === "hot" && game.marketHeat
+    ? `<span>热度 ${game.marketHeat.score}</span><span>${game.marketHeat.label}</span>`
+    : "";
   return `
     <article class="game-card accent-${game.accent}">
       <button
@@ -1486,6 +1509,7 @@ function renderGameCard(game) {
           <div class="game-meta">
             <span class="tag-chip">${game.tag}</span>
             <span>${category.shortTitle}</span>
+            ${hotLabel}
             ${game.capabilities?.sessionSave ? "<span>可续玩</span>" : ""}
           </div>
         </div>

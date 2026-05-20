@@ -3,6 +3,7 @@ import { visualStyleDefinition } from "../theme/game-visuals.js";
 
 export const categories = [
   { id: "all", title: "全部", shortTitle: "全部" },
+  { id: "hot", title: "热门", shortTitle: "热门" },
   { id: "classic", title: "经典棋局", shortTitle: "棋局" },
   { id: "race", title: "跳跃竞速", shortTitle: "竞速" },
   { id: "puzzle", title: "益智解谜", shortTitle: "解谜" },
@@ -56,6 +57,28 @@ const SHARED_PRECACHE = {
   ]
 };
 
+const MARKET_HEAT = {
+  match3: { score: 96, label: "三消长线", signal: "关卡制三消仍是移动端长线留存的核心品类。" },
+  "mahjong-connect": { score: 94, label: "麻将消除", signal: "麻将、Tile 与连连看适合中老年和碎片时间用户。" },
+  "tower-defense": { score: 88, label: "策略耐玩", signal: "塔防靠波次、塔组和地图机制形成长期挑战。" },
+  "2048": { score: 84, label: "数字常青", signal: "数字合成规则极简，但高分循环和多尺寸玩法耐玩。" },
+  "space-shooter": { score: 83, label: "弹幕成长", signal: "竖版射击适合做关卡、技能和 Boss 成长线。" },
+  minesweeper: { score: 82, label: "逻辑常青", signal: "经典逻辑游戏适合离线、闯关和限时模式。" },
+  "tank-battle": { score: 80, label: "动作怀旧", signal: "坦克战适合关卡地图、道具和基地防守循环。" },
+  snake: { score: 78, label: "街机常青", signal: "贪吃蛇适合做任务、障碍和成长变体。" },
+  sudoku: { score: 77, label: "数独长线", signal: "数独靠每日题、难度和笔记机制保持复玩。" },
+  breakout: { score: 75, label: "物理街机", signal: "打砖块适合道具、Boss 砖和关卡目标扩展。" },
+  xiangqi: { score: 74, label: "区域常青", signal: "中国象棋在中文用户中有稳定认知和对弈深度。" },
+  gomoku: { score: 72, label: "快局策略", signal: "五子棋上手快，AI 强度和残局题能提高耐玩度。" },
+  klotski: { score: 70, label: "滑块解谜", signal: "华容道适合做关卡包、步数目标和排行榜。" },
+  reversi: { score: 69, label: "翻转策略", signal: "黑白棋适合短局 AI 训练和残局挑战。" },
+  go: { score: 68, label: "深度棋局", signal: "围棋深度高，但移动端完整局时长偏长。" },
+  flying: { score: 68, label: "轻桌游", signal: "骰子竞速适合多人和事件卡扩展。" },
+  checkers: { score: 64, label: "跳跃棋局", signal: "跳棋类需要任务化和关卡化增强移动端复玩。" },
+  draughts: { score: 64, label: "经典跳棋", signal: "国际跳棋依赖 AI 和残局目标提升热度。" },
+  tictactoe: { score: 62, label: "超短快局", signal: "井字棋适合作为教学和变体入口，长线较弱。" }
+};
+
 function gameVisualStyle(key) {
   const style = visualStyleDefinition(key);
   return {
@@ -68,6 +91,7 @@ function gamePluginMeta(id, preset, capabilities = {}) {
   return {
     pluginId: `pandora.local.${id}`,
     entry: GAME_ENTRIES[id],
+    marketHeat: MARKET_HEAT[id] || { score: 50, label: "小众补充", signal: "作为大厅品类补充。" },
     precacheAssets: SHARED_PRECACHE[preset] || [],
     capabilities: {
       ...(CAPABILITY_PRESETS[preset] || CAPABILITY_PRESETS.board),
