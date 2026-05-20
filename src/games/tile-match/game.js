@@ -39,6 +39,31 @@ const TILE_MODES = {
   pressure: { label: "槽位压力", levels: 1, pressure: 8 }
 };
 
+const TILE_NUMBERS = { 1: "一", 2: "二", 3: "三" };
+const WIND_LABELS = { east: "東", south: "南", west: "西", north: "北" };
+
+function tileFaceMarkup(id, options = {}) {
+  const def = tileDef(id);
+  if (options.hidden) return `<span class="mahjong-face is-back"><span>背</span></span>`;
+  const number = id.match(/\d+/)?.[0];
+  if (id.startsWith("wan")) {
+    return `<span class="mahjong-face face-wan"><b>${TILE_NUMBERS[number] || number}</b><em>萬</em></span>`;
+  }
+  if (id.startsWith("tong")) {
+    const count = Number(number) || 1;
+    return `<span class="mahjong-face face-tong"><span class="mahjong-pips count-${count}">${Array.from({ length: count }, () => "<i></i>").join("")}</span></span>`;
+  }
+  if (id.startsWith("tiao")) {
+    const count = Number(number) || 1;
+    return `<span class="mahjong-face face-tiao"><span class="mahjong-bamboo count-${count}">${Array.from({ length: count }, () => "<i></i>").join("")}</span></span>`;
+  }
+  if (id === "bai") return `<span class="mahjong-face face-bai"><b>白</b><em></em></span>`;
+  if (id === "zhong") return `<span class="mahjong-face face-honor face-zhong"><b>中</b></span>`;
+  if (id === "fa") return `<span class="mahjong-face face-honor face-fa"><b>發</b></span>`;
+  if (["east", "south", "west", "north"].includes(id)) return `<span class="mahjong-face face-wind"><b>${WIND_LABELS[id] || def.label}</b><em>風</em></span>`;
+  return `<span class="mahjong-face face-flower"><b>${def.label}</b><em>花</em></span>`;
+}
+
 function selectedMode(options) {
   return TILE_MODES[options?.tileMode] ? options.tileMode : "campaign";
 }
@@ -513,7 +538,8 @@ export function mountTileMatch(root, context) {
         style="--tile-depth:${depth};"
         aria-label="${label}"
       >
-        <span>${tile.locked ? "封" : label}</span>
+        ${tileFaceMarkup(tile.id, { hidden: tile.hidden })}
+        ${tile.locked ? "<em class=\"mahjong-badge seal\">封</em>" : ""}
         ${tile.ice ? `<b>冰${tile.ice}</b>` : ""}
       </button>
     `;
@@ -535,7 +561,7 @@ export function mountTileMatch(root, context) {
     const slots = Array.from({ length: state.slots }, (_, index) => state.tray[index] || null);
     return slots.map((tile) => {
       if (!tile) return `<span class="tile-slot is-empty"></span>`;
-      return `<span class="tile-slot tone-${tile.tone}"><b>${tile.label}</b></span>`;
+      return `<span class="tile-slot tone-${tile.tone}">${tileFaceMarkup(tile.id)}</span>`;
     }).join("");
   }
 

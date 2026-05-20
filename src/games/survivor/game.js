@@ -542,11 +542,15 @@ function update(state, dt, context) {
 }
 
 function drawGrid(ctx, camera) {
-  ctx.fillStyle = "#101820";
+  ctx.fillStyle = "#0d1720";
   ctx.fillRect(0, 0, W, H);
   ctx.save();
   ctx.translate(-camera.x, -camera.y);
-  ctx.fillStyle = "#142a2c";
+  const bg = ctx.createLinearGradient(camera.x, camera.y, camera.x + W, camera.y + H);
+  bg.addColorStop(0, "#13292d");
+  bg.addColorStop(0.52, "#102328");
+  bg.addColorStop(1, "#19243a");
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, WORLD, WORLD);
   ctx.strokeStyle = "rgba(255,255,255,.045)";
   ctx.lineWidth = 1;
@@ -562,15 +566,328 @@ function drawGrid(ctx, camera) {
     ctx.lineTo(WORLD, y);
     ctx.stroke();
   }
+  ctx.fillStyle = "rgba(56,210,124,.055)";
+  for (let x = 90; x < WORLD; x += 210) {
+    for (let y = 120; y < WORLD; y += 240) {
+      const wobble = Math.sin(x * 0.03 + y * 0.02) * 18;
+      ctx.beginPath();
+      ctx.ellipse(x + wobble, y - wobble * 0.5, 34, 16, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
   ctx.restore();
 }
 
-function drawCircle(ctx, state, item, color, radius = item.radius) {
-  const p = worldToScreen(state, item.x, item.y);
+function roundedRectPath(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+}
+
+function drawHealthBar(ctx, p, entity) {
+  const width = entity.radius * 2.25;
+  const y = p.y - entity.radius - 10;
+  ctx.fillStyle = "rgba(0,0,0,.52)";
+  roundedRectPath(ctx, p.x - width / 2, y, width, 5, 3);
+  ctx.fill();
+  ctx.fillStyle = entity.boss ? classicArcade.yellow : classicArcade.green;
+  roundedRectPath(ctx, p.x - width / 2, y, width * clamp(entity.hp / entity.maxHp, 0, 1), 5, 3);
+  ctx.fill();
+}
+
+function drawPickup(ctx, state, pickup) {
+  const p = worldToScreen(state, pickup.x, pickup.y);
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.shadowColor = "rgba(66,242,255,.28)";
+  ctx.shadowBlur = 10;
+  if (pickup.type === "xp") {
+    ctx.fillStyle = classicArcade.cyan;
+    ctx.beginPath();
+    ctx.moveTo(0, -pickup.radius);
+    ctx.lineTo(pickup.radius, 0);
+    ctx.lineTo(0, pickup.radius);
+    ctx.lineTo(-pickup.radius, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.72)";
+    ctx.fillRect(-2, -2, 4, 4);
+  } else if (pickup.type === "heal") {
+    ctx.fillStyle = classicArcade.green;
+    roundedRectPath(ctx, -pickup.radius, -pickup.radius, pickup.radius * 2, pickup.radius * 2, 5);
+    ctx.fill();
+    ctx.fillStyle = classicArcade.white;
+    ctx.fillRect(-2, -7, 4, 14);
+    ctx.fillRect(-7, -2, 14, 4);
+  } else if (pickup.type === "bomb") {
+    ctx.fillStyle = classicArcade.red;
+    ctx.beginPath();
+    ctx.arc(0, 1, pickup.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = classicArcade.yellow;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(2, -pickup.radius + 1);
+    ctx.quadraticCurveTo(8, -pickup.radius - 9, 13, -pickup.radius - 5);
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = "#7b4b21";
+    roundedRectPath(ctx, -12, -8, 24, 18, 4);
+    ctx.fill();
+    ctx.fillStyle = classicArcade.yellow;
+    ctx.fillRect(-12, -2, 24, 4);
+    ctx.fillRect(-2, -8, 4, 18);
+  }
+  ctx.restore();
+}
+
+function drawBlade(ctx, x, y, angle, scale = 1, color = classicArcade.yellow) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+  ctx.moveTo(0, -10 * scale);
+  ctx.lineTo(4 * scale, 3 * scale);
+  ctx.lineTo(0, 8 * scale);
+  ctx.lineTo(-4 * scale, 3 * scale);
+  ctx.closePath();
   ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.72)";
+  ctx.fillRect(-1 * scale, -7 * scale, 2 * scale, 10 * scale);
+  ctx.restore();
+}
+
+function drawProjectile(ctx, state, projectile) {
+  const p = worldToScreen(state, projectile.x, projectile.y);
+  const angle = Math.atan2(projectile.vy, projectile.vx) + Math.PI / 2;
+  drawBlade(ctx, p.x, p.y, angle, 0.72, projectile.type === "knife" ? classicArcade.yellow : classicArcade.cyan);
+}
+
+function drawEnemyShot(ctx, state, shot) {
+  const p = worldToScreen(state, shot.x, shot.y);
+  const angle = Math.atan2(shot.vy, shot.vx);
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(angle);
+  ctx.fillStyle = classicArcade.red;
+  ctx.beginPath();
+  ctx.moveTo(shot.radius + 4, 0);
+  ctx.quadraticCurveTo(0, -shot.radius, -shot.radius - 3, 0);
+  ctx.quadraticCurveTo(0, shot.radius, shot.radius + 4, 0);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.65)";
+  ctx.beginPath();
+  ctx.arc(1, -2, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawEnemyBody(ctx, enemy, scale) {
+  if (enemy.boss) {
+    ctx.fillStyle = "#5a1024";
+    ctx.beginPath();
+    ctx.moveTo(0, -30 * scale);
+    ctx.lineTo(26 * scale, -16 * scale);
+    ctx.lineTo(31 * scale, 16 * scale);
+    ctx.lineTo(0, 33 * scale);
+    ctx.lineTo(-31 * scale, 16 * scale);
+    ctx.lineTo(-26 * scale, -16 * scale);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = enemy.color;
+    ctx.beginPath();
+    ctx.ellipse(0, 2 * scale, 22 * scale, 25 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = classicArcade.yellow;
+    ctx.beginPath();
+    ctx.arc(0, 2 * scale, 8 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = classicArcade.yellow;
+    ctx.lineWidth = 3 * scale;
+    ctx.beginPath();
+    ctx.moveTo(-16 * scale, -22 * scale);
+    ctx.lineTo(-25 * scale, -34 * scale);
+    ctx.moveTo(16 * scale, -22 * scale);
+    ctx.lineTo(25 * scale, -34 * scale);
+    ctx.stroke();
+    return;
+  }
+
+  if (enemy.type === "bat") {
+    ctx.fillStyle = enemy.color;
+    ctx.beginPath();
+    ctx.moveTo(-4 * scale, -4 * scale);
+    ctx.lineTo(-24 * scale, -16 * scale);
+    ctx.lineTo(-18 * scale, 6 * scale);
+    ctx.lineTo(-5 * scale, 3 * scale);
+    ctx.lineTo(0, 12 * scale);
+    ctx.lineTo(5 * scale, 3 * scale);
+    ctx.lineTo(18 * scale, 6 * scale);
+    ctx.lineTo(24 * scale, -16 * scale);
+    ctx.lineTo(4 * scale, -4 * scale);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#12233a";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 7 * scale, 10 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (enemy.type === "brute") {
+    ctx.fillStyle = "#60401e";
+    roundedRectPath(ctx, -15 * scale, -14 * scale, 30 * scale, 30 * scale, 7 * scale);
+    ctx.fill();
+    ctx.fillStyle = enemy.color;
+    roundedRectPath(ctx, -11 * scale, -18 * scale, 22 * scale, 26 * scale, 6 * scale);
+    ctx.fill();
+  } else if (enemy.type === "spitter") {
+    ctx.fillStyle = "#133a2d";
+    ctx.beginPath();
+    ctx.ellipse(0, 1 * scale, 15 * scale, 12 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = enemy.color;
+    ctx.beginPath();
+    ctx.arc(0, -9 * scale, 10 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = classicArcade.red;
+    ctx.beginPath();
+    ctx.arc(0, -8 * scale, 4 * scale, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (enemy.type === "charger") {
+    ctx.fillStyle = enemy.color;
+    ctx.beginPath();
+    ctx.moveTo(0, -18 * scale);
+    ctx.lineTo(15 * scale, 12 * scale);
+    ctx.lineTo(4 * scale, 8 * scale);
+    ctx.lineTo(0, 18 * scale);
+    ctx.lineTo(-4 * scale, 8 * scale);
+    ctx.lineTo(-15 * scale, 12 * scale);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = classicArcade.white;
+    ctx.fillRect(-3 * scale, -13 * scale, 6 * scale, 14 * scale);
+  } else if (enemy.type === "shield") {
+    ctx.fillStyle = "#dfe8ef";
+    ctx.beginPath();
+    ctx.moveTo(0, -18 * scale);
+    ctx.quadraticCurveTo(17 * scale, -13 * scale, 16 * scale, 2 * scale);
+    ctx.quadraticCurveTo(12 * scale, 17 * scale, 0, 22 * scale);
+    ctx.quadraticCurveTo(-12 * scale, 17 * scale, -16 * scale, 2 * scale);
+    ctx.quadraticCurveTo(-17 * scale, -13 * scale, 0, -18 * scale);
+    ctx.fill();
+    ctx.strokeStyle = classicArcade.cyan;
+    ctx.lineWidth = 2 * scale;
+    ctx.stroke();
+  } else if (enemy.type === "elite") {
+    ctx.fillStyle = enemy.color;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i += 1) {
+      const r = i % 2 ? 10 * scale : 19 * scale;
+      const a = -Math.PI / 2 + i * Math.PI / 5;
+      const x = Math.cos(a) * r;
+      const y = Math.sin(a) * r;
+      if (i) ctx.lineTo(x, y);
+      else ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#211033";
+    ctx.beginPath();
+    ctx.arc(0, 0, 7 * scale, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.fillStyle = enemy.color;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 12 * scale, 15 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.42)";
+    ctx.lineWidth = 2 * scale;
+    ctx.beginPath();
+    for (const side of [-1, 1]) {
+      ctx.moveTo(side * 8 * scale, -4 * scale);
+      ctx.lineTo(side * 18 * scale, -10 * scale);
+      ctx.moveTo(side * 9 * scale, 3 * scale);
+      ctx.lineTo(side * 19 * scale, 8 * scale);
+    }
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(0,0,0,.62)";
+  ctx.beginPath();
+  ctx.arc(-4 * scale, -4 * scale, 2 * scale, 0, Math.PI * 2);
+  ctx.arc(4 * scale, -4 * scale, 2 * scale, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawEnemy(ctx, state, enemy) {
+  const p = worldToScreen(state, enemy.x, enemy.y);
+  const scale = enemy.radius / 12;
+  const angle = Math.atan2(state.player.y - enemy.y, state.player.x - enemy.x) + Math.PI / 2;
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(angle);
+  ctx.globalAlpha = enemy.flash ? 0.68 : 1;
+  ctx.fillStyle = "rgba(0,0,0,.26)";
+  ctx.beginPath();
+  ctx.ellipse(0, enemy.radius * 0.55, enemy.radius * 0.95, enemy.radius * 0.28, 0, 0, Math.PI * 2);
+  ctx.fill();
+  drawEnemyBody(ctx, enemy, scale);
+  ctx.restore();
+  drawHealthBar(ctx, p, enemy);
+}
+
+function drawPlayer(ctx, state) {
+  const p = worldToScreen(state, state.player.x, state.player.y);
+  const moving = Math.hypot(state.controls.axisX || 0, state.controls.axisY || 0);
+  const angle = moving ? Math.atan2(state.controls.axisY, state.controls.axisX) + Math.PI / 2 : Math.sin(state.time * 2) * 0.05;
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(angle);
+  const blink = state.player.invuln > 0 && Math.floor(state.time * 16) % 2;
+  ctx.globalAlpha = blink ? 0.58 : 1;
+  ctx.fillStyle = "rgba(0,0,0,.28)";
+  ctx.beginPath();
+  ctx.ellipse(0, 11, 16, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#123832";
+  ctx.beginPath();
+  ctx.moveTo(0, -22);
+  ctx.lineTo(16, 14);
+  ctx.lineTo(0, 8);
+  ctx.lineTo(-16, 14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = classicArcade.green;
+  ctx.beginPath();
+  ctx.moveTo(0, -19);
+  ctx.lineTo(10, 9);
+  ctx.lineTo(0, 17);
+  ctx.lineTo(-10, 9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = classicArcade.cyan;
+  roundedRectPath(ctx, -6, -9, 12, 15, 4);
+  ctx.fill();
+  ctx.fillStyle = classicArcade.white;
+  ctx.beginPath();
+  ctx.arc(0, -13, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = classicArcade.yellow;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-15, 2);
+  ctx.lineTo(-25, -4);
+  ctx.moveTo(15, 2);
+  ctx.lineTo(25, -4);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function draw(state, ctx) {
@@ -580,31 +897,10 @@ function draw(state, ctx) {
   ctx.save();
   ctx.translate(offset.x, offset.y);
   drawGrid(ctx, camera);
-  state.pickups.forEach((pickup) => {
-    const colors = { xp: classicArcade.cyan, heal: classicArcade.green, bomb: classicArcade.red, chest: classicArcade.yellow };
-    drawCircle(ctx, state, pickup, colors[pickup.type] || classicArcade.white, pickup.radius);
-  });
-  state.projectiles.forEach((projectile) => drawCircle(ctx, state, projectile, classicArcade.yellow, projectile.radius));
-  state.enemyShots.forEach((shot) => drawCircle(ctx, state, shot, classicArcade.red, shot.radius));
-  state.enemies.forEach((enemy) => {
-    const p = worldToScreen(state, enemy.x, enemy.y);
-    ctx.save();
-    ctx.globalAlpha = enemy.flash ? 0.65 : 1;
-    ctx.fillStyle = enemy.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, enemy.radius, 0, Math.PI * 2);
-    ctx.fill();
-    if (enemy.boss) {
-      ctx.strokeStyle = classicArcade.yellow;
-      ctx.lineWidth = 3;
-      ctx.stroke();
-    }
-    ctx.fillStyle = "rgba(0,0,0,.5)";
-    ctx.fillRect(p.x - enemy.radius, p.y - enemy.radius - 8, enemy.radius * 2, 4);
-    ctx.fillStyle = classicArcade.green;
-    ctx.fillRect(p.x - enemy.radius, p.y - enemy.radius - 8, enemy.radius * 2 * clamp(enemy.hp / enemy.maxHp, 0, 1), 4);
-    ctx.restore();
-  });
+  state.pickups.forEach((pickup) => drawPickup(ctx, state, pickup));
+  state.projectiles.forEach((projectile) => drawProjectile(ctx, state, projectile));
+  state.enemyShots.forEach((shot) => drawEnemyShot(ctx, state, shot));
+  state.enemies.forEach((enemy) => drawEnemy(ctx, state, enemy));
   if (state.skills.aura) {
     const p = worldToScreen(state, state.player.x, state.player.y);
     ctx.strokeStyle = "rgba(123,212,255,.28)";
@@ -618,20 +914,19 @@ function draw(state, ctx) {
     const p = worldToScreen(state, state.player.x, state.player.y);
     for (let i = 0; i < count; i += 1) {
       const angle = state.time * (1.9 + state.skills.orbit * 0.12) + i * Math.PI * 2 / count;
+      const ox = p.x + Math.cos(angle) * 42;
+      const oy = p.y + Math.sin(angle) * 42;
       ctx.fillStyle = classicArcade.blue;
       ctx.beginPath();
-      ctx.arc(p.x + Math.cos(angle) * 42, p.y + Math.sin(angle) * 42, 7, 0, Math.PI * 2);
+      ctx.arc(ox, oy, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.72)";
+      ctx.beginPath();
+      ctx.arc(ox - 2, oy - 2, 2, 0, Math.PI * 2);
       ctx.fill();
     }
   }
-  const player = worldToScreen(state, state.player.x, state.player.y);
-  ctx.fillStyle = state.player.invuln > 0 && Math.floor(state.time * 16) % 2 ? classicArcade.white : classicArcade.green;
-  ctx.beginPath();
-  ctx.moveTo(player.x, player.y - 16);
-  ctx.lineTo(player.x - 13, player.y + 12);
-  ctx.lineTo(player.x + 13, player.y + 12);
-  ctx.closePath();
-  ctx.fill();
+  drawPlayer(ctx, state);
   drawEffects(ctx, state.effects.map((effect) => ({ ...effect, x: effect.x - camera.x, y: effect.y - camera.y })));
   ctx.restore();
   drawHud(ctx, state);

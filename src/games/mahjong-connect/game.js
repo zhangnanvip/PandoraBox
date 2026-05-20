@@ -26,6 +26,30 @@ const TILE_SET = [
   { id: "chrys", label: "菊", tone: "flower" }
 ];
 
+const TILE_NUMBERS = { 1: "一", 2: "二", 3: "三" };
+const WIND_LABELS = { east: "東", south: "南", west: "西", north: "北" };
+
+function tileFaceMarkup(id) {
+  const tile = tileDef(id);
+  const number = id.match(/\d+/)?.[0];
+  if (id.startsWith("wan")) {
+    return `<span class="mahjong-face face-wan"><b>${TILE_NUMBERS[number] || number}</b><em>萬</em></span>`;
+  }
+  if (id.startsWith("tong")) {
+    const count = Number(number) || 1;
+    return `<span class="mahjong-face face-tong"><span class="mahjong-pips count-${count}">${Array.from({ length: count }, () => "<i></i>").join("")}</span></span>`;
+  }
+  if (id.startsWith("tiao")) {
+    const count = Number(number) || 1;
+    return `<span class="mahjong-face face-tiao"><span class="mahjong-bamboo count-${count}">${Array.from({ length: count }, () => "<i></i>").join("")}</span></span>`;
+  }
+  if (id === "bai") return `<span class="mahjong-face face-bai"><b>白</b><em></em></span>`;
+  if (id === "zhong") return `<span class="mahjong-face face-honor face-zhong"><b>中</b></span>`;
+  if (id === "fa") return `<span class="mahjong-face face-honor face-fa"><b>發</b></span>`;
+  if (["east", "south", "west", "north"].includes(id)) return `<span class="mahjong-face face-wind"><b>${WIND_LABELS[id] || tile.label}</b><em>風</em></span>`;
+  return `<span class="mahjong-face face-flower"><b>${tile.label}</b><em>花</em></span>`;
+}
+
 const DIFFICULTY = {
   easy: { label: "简单", pairs: 18, growth: 0.45, blockers: -2, hints: 6, shuffles: 5 },
   medium: { label: "中等", pairs: 22, growth: 0.58, blockers: 0, hints: 4, shuffles: 4 },
@@ -410,7 +434,7 @@ export function mountMahjongConnect(root, context) {
     const tile = tileDef(value);
     return `
       <button type="button" class="mahjong-cell mahjong-tile tone-${tile.tone}${selected}${hinted}${path}" data-index="${index}" aria-label="${tile.label}">
-        <span>${tile.label}</span>
+        ${tileFaceMarkup(value)}
       </button>
     `;
   }
