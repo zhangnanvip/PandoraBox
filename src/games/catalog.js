@@ -24,6 +24,7 @@ const GAME_ENTRIES = {
   flying: "./src/games/flying/game.js",
   sudoku: "./src/games/sudoku/game.js",
   klotski: "./src/games/klotski/game.js",
+  "block-blast": "./src/games/block-blast/game.js",
   minesweeper: "./src/games/minesweeper/game.js",
   match3: "./src/games/match3/game.js",
   "mahjong-connect": "./src/games/mahjong-connect/game.js",
@@ -58,6 +59,7 @@ const SHARED_PRECACHE = {
 };
 
 const MARKET_HEAT = {
+  "block-blast": { score: 98, label: "方块爆款", signal: "Block Puzzle 是当前下载热度和长线复玩都很强的混合休闲品类。" },
   match3: { score: 96, label: "三消长线", signal: "关卡制三消仍是移动端长线留存的核心品类。" },
   "mahjong-connect": { score: 94, label: "麻将消除", signal: "麻将、Tile 与连连看适合中老年和碎片时间用户。" },
   "tower-defense": { score: 88, label: "策略耐玩", signal: "塔防靠波次、塔组和地图机制形成长期挑战。" },
@@ -396,6 +398,45 @@ const registrations = [
       ]
     },
     () => import("./match3/game.js").then((module) => module.mountMatch3)
+  ),
+  defineLocalGame(
+    {
+      id: "block-blast",
+      title: "方块爆破",
+      subtitle: "10x10 放置方块，连消行列冲击高分",
+      tag: "方块爆款",
+      category: "puzzle",
+      secondaryCategories: ["number", "quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("block-blast", "puzzle", { sessionSave: true, staged: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      setupFields: [
+        {
+          id: "blockMode",
+          label: "玩法模式",
+          defaultValue: "campaign",
+          options: [
+            { value: "campaign", label: "闯关任务 60 关递进" },
+            { value: "classic", label: "经典高分 单局冲榜" },
+            { value: "pressure", label: "炸弹压力 倒计时障碍" }
+          ]
+        }
+      ],
+      accent: "sky",
+      icon: "./public/games/puzzle/icons/block-blast.svg",
+      assets: ["./public/games/puzzle/icons/block-blast.svg"],
+      rules: [
+        "选择下方方块后点击棋盘落位，填满整行或整列即可爆破得分。",
+        "闯关任务包含 60 关，后续会逐步加入冰块、炸弹和更复杂的方块形状。",
+        "冰块会占位，需要通过行列爆破或锤子清除；炸弹会随步数倒计时，未及时清除会失败。",
+        "旋转、锤子和换组都是有限资源，适合在关键卡点使用。",
+        "难度会影响步数、目标分、冰块、炸弹和道具数量。"
+      ]
+    },
+    () => import("./block-blast/game.js").then((module) => module.mountBlockBlast)
   ),
   defineLocalGame(
     {

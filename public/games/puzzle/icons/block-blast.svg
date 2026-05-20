@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="方块爆破">
+  <defs>
+    <linearGradient id="bg" x1="10" y1="8" x2="86" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f8fffb"/>
+      <stop offset="1" stop-color="#dff0ff"/>
+    </linearGradient>
+    <linearGradient id="red" x1="20" y1="18" x2="44" y2="46">
+      <stop offset="0" stop-color="#ff8f78"/>
+      <stop offset="1" stop-color="#c64234"/>
+    </linearGradient>
+    <linearGradient id="green" x1="44" y1="20" x2="74" y2="48">
+      <stop offset="0" stop-color="#78e6b8"/>
+      <stop offset="1" stop-color="#1f8d67"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="24" y1="48" x2="56" y2="78">
+      <stop offset="0" stop-color="#79d6ff"/>
+      <stop offset="1" stop-color="#3277b7"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="58" y1="52" x2="80" y2="76">
+      <stop offset="0" stop-color="#ffe58a"/>
+      <stop offset="1" stop-color="#d9a32f"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="80" height="80" rx="18" fill="url(#bg)" stroke="#1f5f4a" stroke-width="4"/>
+  <path d="M23 22h50M23 36h50M23 50h50M23 64h50M23 78h50M23 22v56M37 22v56M51 22v56M65 22v56M79 22v56" stroke="#a8c7c0" stroke-width="2" stroke-linecap="round" opacity=".72"/>
+  <g filter="none">
+    <rect x="24" y="24" width="13" height="13" rx="3" fill="url(#red)"/>
+    <rect x="38" y="24" width="13" height="13" rx="3" fill="url(#red)"/>
+    <rect x="38" y="38" width="13" height="13" rx="3" fill="url(#red)"/>
+    <rect x="54" y="24" width="13" height="13" rx="3" fill="url(#green)"/>
+    <rect x="68" y="24" width="13" height="13" rx="3" fill="url(#green)"/>
+    <rect x="54" y="38" width="13" height="13" rx="3" fill="url(#green)"/>
+    <rect x="24" y="56" width="13" height="13" rx="3" fill="url(#blue)"/>
+    <rect x="38" y="56" width="13" height="13" rx="3" fill="url(#blue)"/>
+    <rect x="52" y="56" width="13" height="13" rx="3" fill="url(#blue)"/>
+    <rect x="66" y="56" width="13" height="13" rx="3" fill="url(#gold)"/>
+    <rect x="66" y="70" width="13" height="13" rx="3" fill="url(#gold)"/>
+  </g>
+  <path d="M18 70c9-4 18-4 27 0M55 16c4 9 4 18 0 27" stroke="#fffaf0" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+</svg>
