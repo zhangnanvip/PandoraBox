@@ -1290,7 +1290,7 @@ function renderHeroCard(game) {
         <div class="hero-card-tags">
           <span class="meta-pill">${game.tag}</span>
           <span class="meta-pill">${category.shortTitle}</span>
-          ${game.capabilities?.sessionSave ? "<span class=\"meta-pill\">可续玩</span>" : ""}
+          <span class="meta-pill">🔥 ${score}</span>
         </div>
         <div class="hero-card-actions">
           <button class="primary-button" type="button" data-prepare-game="${escapeAttr(game.id)}" aria-label="开始${gameTitle}">${icon("play")} 立即开始</button>
@@ -1333,7 +1333,6 @@ function renderGameCard(game) {
             <span class="tag-chip">${game.tag}</span>
             <span>${category.shortTitle}</span>
             ${heatLabel}
-            ${game.capabilities?.sessionSave ? "<span class=\"meta-pill meta-pill--resume\">可续玩</span>" : ""}
           </div>
         </div>
       </div>

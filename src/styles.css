@@ -5531,7 +5531,7 @@ input[type="range"] {
   }
 }
 
-@media (min-width: 521px) and (max-width: 720px) {
+@media (min-width: 521px) and (max-width: 900px) {
   .app-frame {
     padding-left: 18px;
     padding-right: 18px;
