@@ -1284,7 +1284,7 @@ function renderHeroCard(game) {
         ${boardPreview(game)}
       </div>
       <div class="hero-card-copy">
-        <span class="hero-card-eyebrow">${heat.label || "热门推荐"} · 热度 ${score}</span>
+        <span class="hero-card-eyebrow">热门推荐 · 热度 ${score}</span>
         <h2>${game.title}</h2>
         <p>${heat.signal || game.subtitle}</p>
         <div class="hero-card-tags">
@@ -1310,8 +1310,9 @@ function pickHeroGame() {
 function renderGameCard(game) {
   const category = findCategory(game.category);
   const favorite = isFavorite(game.id);
-  const hotLabel = state.activeCategory === "hot" && game.marketHeat
-    ? `<span class="meta-pill meta-pill--hot" aria-label="热度 ${game.marketHeat.score}">🔥 ${game.marketHeat.score}</span><span class="meta-pill meta-pill--hot-soft">${game.marketHeat.label}</span>`
+  const heatScore = marketHeatScore(game);
+  const heatLabel = heatScore
+    ? `<span class="meta-pill meta-pill--hot" aria-label="热度 ${heatScore}">🔥 ${heatScore}</span>`
     : "";
   return `
     <article class="card card--standard game-card accent-${game.accent}" tabindex="0">
@@ -1331,7 +1332,7 @@ function renderGameCard(game) {
           <div class="game-meta">
             <span class="tag-chip">${game.tag}</span>
             <span>${category.shortTitle}</span>
-            ${hotLabel}
+            ${heatLabel}
             ${game.capabilities?.sessionSave ? "<span class=\"meta-pill meta-pill--resume\">可续玩</span>" : ""}
           </div>
         </div>
