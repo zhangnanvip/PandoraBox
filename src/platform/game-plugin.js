@@ -1,3 +1,5 @@
+import { asArray, unique } from "../utils/common.js";
+
 const DEFAULT_MODES = ["ai", "local"];
 const DEFAULT_DIFFICULTIES = ["easy", "medium", "hard"];
 export const GAME_PLUGIN_API_VERSION = 1;
@@ -11,15 +13,6 @@ const DEFAULT_CAPABILITIES = {
   staged: false,
   boss: false
 };
-
-function asArray(value, fallback = []) {
-  if (!Array.isArray(value)) return fallback;
-  return value.filter(Boolean);
-}
-
-function unique(values) {
-  return [...new Set(values.filter(Boolean))];
-}
 
 function normalizeCapabilities(capabilities = {}) {
   if (!capabilities || typeof capabilities !== "object") return DEFAULT_CAPABILITIES;

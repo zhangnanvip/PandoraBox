@@ -1,4 +1,5 @@
 import { defineUrlGame } from "./game-plugin.js";
+import { asArray, escapeHtml as escapeText, safeCapabilityKey, safeSlug, unique } from "../utils/common.js";
 
 export const PLUGIN_SOURCE_CONFIG_URL = new URL("../../public/plugin-sources.json", import.meta.url);
 
@@ -24,31 +25,6 @@ export const DEFAULT_PLUGIN_SOURCE_STATE = {
   loaded: false,
   error: ""
 };
-
-function asArray(value, fallback = []) {
-  return Array.isArray(value) ? value.filter(Boolean) : fallback;
-}
-
-function escapeText(value, fallback = "") {
-  return String(value || fallback)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
-function safeSlug(value, fallback = "") {
-  const text = String(value || "");
-  return /^[a-z0-9][a-z0-9-]*$/.test(text) ? text : fallback;
-}
-
-function safeCapabilityKey(value) {
-  const text = String(value || "");
-  return /^[a-z][a-zA-Z0-9]*$/.test(text) ? text : "";
-}
-
-function unique(values) {
-  return [...new Set(values.filter(Boolean))];
-}
 
 function normalizeBooleanCapabilities(capabilities = {}) {
   if (!capabilities || typeof capabilities !== "object") return {};

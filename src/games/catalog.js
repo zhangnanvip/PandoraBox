@@ -145,7 +145,7 @@ const registrations = [
       complexity: "困难",
       difficultySupport: ["easy", "medium", "hard", "devil"],
       progressType: "match",
-      ...gamePluginMeta("go", "board"),
+      ...gamePluginMeta("go", "board", { sessionSave: true }),
       ...gameVisualStyle("guofengBoard"),
       setupFields: [
         {
@@ -226,7 +226,7 @@ const registrations = [
       secondaryCategories: ["quick"],
       complexity: "简单",
       progressType: "match",
-      ...gamePluginMeta("tictactoe", "board"),
+      ...gamePluginMeta("tictactoe", "board", { sessionSave: true }),
       ...gameVisualStyle("guofengBoard"),
       accent: "jade",
       icon: "./public/skins/guofeng-ink/icons/tictactoe.svg",
@@ -295,7 +295,7 @@ const registrations = [
       secondaryCategories: ["quick"],
       complexity: "简单",
       progressType: "match",
-      ...gamePluginMeta("flying", "board"),
+      ...gamePluginMeta("flying", "board", { sessionSave: true }),
       ...gameVisualStyle("guofengBoard"),
       accent: "sky",
       icon: "./public/skins/guofeng-ink/icons/flying.svg",

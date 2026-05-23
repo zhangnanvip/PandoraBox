@@ -3,7 +3,16 @@ import { loadGamePlugin as loadRegisteredGamePlugin } from "./platform/game-plug
 import { DEFAULT_PLUGIN_SOURCE_STATE, collectEnabledPluginRegistrations, loadPluginSourceState, summarizePluginSources } from "./platform/plugin-sources.js";
 import { configureSound, playResultSound, playSound as playFeedbackSound } from "./platform/sound.js";
 import { interfaceThemes, themeOrder } from "./theme/skins.js";
+import { escapeAttr, stableStringify } from "./utils/common.js";
 import { loadState, saveState } from "./utils/storage.js";
+import { icon } from "./views/icons.js";
+import { boardPreview } from "./views/previews.js";
+import { difficultyLabel, modeLabel, outcomeLabel } from "./views/labels.js";
+import {
+  cacheStatusFor,
+  renderPluginSourceAudit,
+  renderPluginSourceList
+} from "./views/plugin-sources-view.js";
 
 const app = document.querySelector("#app");
 const FEEDBACK_REPO_URL = "https://github.com/zhangnanvip/PandoraBox";
@@ -160,30 +169,6 @@ function syncGameStyleSheets(paths = []) {
   });
 }
 
-const difficultyLabel = {
-  easy: "简单",
-  medium: "中等",
-  hard: "困难",
-  expert: "专家",
-  devil: "魔鬼"
-};
-
-const modeLabel = {
-  ai: "单人对弈",
-  local: "本地双人",
-  solo: "单人挑战"
-};
-
-const capabilityLabel = {
-  offline: "离线",
-  fullscreen: "全屏",
-  sessionSave: "续玩",
-  touchControls: "触控",
-  keyboardControls: "键盘",
-  staged: "闯关",
-  boss: "Boss"
-};
-
 const ACHIEVEMENTS = [
   {
     id: "first_play",
@@ -317,14 +302,7 @@ function pluginAssetUrlsForSource(source) {
 }
 
 function cacheStatusForSource(source) {
-  if (!source?.enabled) return { state: "disabled", text: "未启用" };
-  const status = state.pluginCacheStatus[source.id];
-  if (!status) return { state: "pending", text: "等待缓存" };
-  if (status.state === "ready") return { ...status, text: `资源已缓存 ${status.done}/${status.total}` };
-  if (status.state === "empty") return { ...status, text: "无额外资源" };
-  if (status.state === "unavailable") return { ...status, text: "当前环境不支持缓存" };
-  if (status.state === "error") return { ...status, text: `缓存失败 ${status.done || 0}/${status.total || 0}` };
-  return { ...status, text: "缓存中" };
+  return cacheStatusFor(source, state.pluginCacheStatus);
 }
 
 async function cachePluginSourceAssets(sourceId) {
@@ -478,12 +456,6 @@ function collectSetupValuesFromModal(game) {
     ...selectedGameOptions(game),
     ...values
   };
-}
-
-function stableStringify(value) {
-  if (!value || typeof value !== "object") return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
-  return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
 }
 
 function sessionOptionsFor(options = {}) {
@@ -724,34 +696,8 @@ function openAchievementsPage() {
   setState({ view: "achievements", modal: "" });
 }
 
-function icon(name) {
-  const paths = {
-    settings: '<path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.04.04a2.16 2.16 0 0 1-3.06 3.06l-.04-.04a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.08 1.64V21.4a2.16 2.16 0 0 1-4.32 0v-.08a1.8 1.8 0 0 0-1.08-1.64 1.8 1.8 0 0 0-1.98.36l-.04.04a2.16 2.16 0 0 1-3.06-3.06l.04-.04A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.64-1.08H2.88a2.16 2.16 0 0 1 0-4.32h.08A1.8 1.8 0 0 0 4.6 8.52a1.8 1.8 0 0 0-.36-1.98l-.04-.04A2.16 2.16 0 0 1 7.26 3.44l.04.04a1.8 1.8 0 0 0 1.98.36A1.8 1.8 0 0 0 10.36 2.2V2.12a2.16 2.16 0 0 1 4.32 0v.08a1.8 1.8 0 0 0 1.08 1.64 1.8 1.8 0 0 0 1.98-.36l.04-.04a2.16 2.16 0 0 1 3.06 3.06l-.04.04a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.64 1.08h.08a2.16 2.16 0 0 1 0 4.32h-.08A1.8 1.8 0 0 0 19.4 15Z"/>',
-    back: '<path d="m15 18-6-6 6-6"/>',
-    rules: '<path d="M6 4.5h9.2a2.8 2.8 0 0 1 2.8 2.8v12.2H8.8A2.8 2.8 0 0 1 6 16.7V4.5Z"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',
-    close: '<path d="M6 6l12 12M18 6 6 18"/>',
-    play: '<path d="M8 5v14l11-7L8 5Z"/>',
-    pause: '<path d="M7 5h3v14H7V5Z"/><path d="M14 5h3v14h-3V5Z"/>',
-    restart: '<path d="M3 12a9 9 0 1 0 2.64-6.36"/><path d="M3 5v6h6"/>',
-    history: '<path d="M12 8v5l3 2"/><path d="M3.05 11a9 9 0 1 1 2.64 6.36"/><path d="M3 17v-6h6"/>',
-    star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>',
-    trophy: '<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 3"/><path d="M17 6h3a3 3 0 0 1-3 3"/><path d="M9 17h6"/>',
-    feedback: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7A2.5 2.5 0 0 1 17.5 15H11l-5 4v-4.2A2.5 2.5 0 0 1 4 12.5v-7Z"/><path d="M8 8h8M8 11h5"/>',
-    sound: '<path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9.5a4 4 0 0 1 0 5"/>',
-    offline: '<path d="M6 19h12a4 4 0 0 0 .6-7.96A6.5 6.5 0 0 0 6 9.2 4.9 4.9 0 0 0 6 19Z"/><path d="m9 14 2.2 2.2L16 11"/>'
-  };
-  return `<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
-}
-
 function option(value, label, selected) {
   return `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
-}
-
-function escapeAttr(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("\"", "&quot;")
-    .replaceAll("<", "&lt;");
 }
 
 function supportedValue(current, supported, fallback) {
@@ -875,17 +821,6 @@ function selectedGameOptions(game) {
   };
 }
 
-function outcomeLabel(outcome) {
-  const labels = {
-    win: "胜利",
-    loss: "失利",
-    draw: "平局",
-    complete: "完成",
-    score: "结算"
-  };
-  return labels[outcome] || "完成";
-}
-
 function formatTime(value) {
   if (!value) return "暂无";
   const date = new Date(value);
@@ -1004,124 +939,14 @@ function renderThemeTabs() {
     const theme = interfaceThemes[id];
     const active = state.theme === id;
     const disabled = theme.status !== "ready";
+    const badge = disabled ? "预留" : active ? "当前" : "切换";
     return `
       <button class="skin-tab ${active ? "is-active" : ""}" data-theme="${id}" ${disabled ? "disabled" : ""}>
         <span>${theme.name}</span>
-        ${disabled ? "<small>预留</small>" : "<small>当前</small>"}
+        <small>${badge}</small>
       </button>
     `;
   }).join("");
-}
-
-function boardPreview(game) {
-  if (game.icon) {
-    return `
-      <div class="game-art accent-${game.accent}">
-        <img src="${game.icon}" alt="" loading="lazy" />
-      </div>
-    `;
-  }
-
-  if (game.id === "gomoku") {
-    return `
-      <div class="preview-board preview-grid">
-        ${Array.from({ length: 25 }, (_, index) => {
-          const stone = [6, 12, 18].includes(index) ? "black" : [7, 13].includes(index) ? "white" : "";
-          return `<span class="${stone ? `preview-stone ${stone}` : ""}"></span>`;
-        }).join("")}
-      </div>
-    `;
-  }
-
-  if (game.id === "go") {
-    return `
-      <div class="preview-board preview-grid go-preview">
-        ${Array.from({ length: 25 }, (_, index) => {
-          const stone = [8, 11, 16].includes(index) ? "black" : [7, 12, 17].includes(index) ? "white" : "";
-          return `<span class="${stone ? `preview-stone ${stone}` : ""}"></span>`;
-        }).join("")}
-      </div>
-    `;
-  }
-
-  if (game.id === "xiangqi") {
-    return `
-      <div class="preview-xiangqi" aria-hidden="true">
-        <b>車</b><b>馬</b><b>相</b><b>帥</b><b>炮</b>
-      </div>
-    `;
-  }
-
-  if (game.id === "checkers") {
-    return `
-      <div class="preview-checkers" aria-hidden="true">
-        ${["#c64234", "#e4a72f", "#1f8d67", "#3277b7", "#7a5bb7", "#d65f8d"].map((color) =>
-          `<span style="background:${color}"></span>`
-        ).join("")}
-      </div>
-    `;
-  }
-
-  if (game.id === "reversi") {
-    return `
-      <div class="preview-board preview-grid reversi-preview" aria-hidden="true">
-        ${Array.from({ length: 25 }, (_, index) => {
-          const stone = [7, 13].includes(index) ? "black" : [11, 17].includes(index) ? "white" : "";
-          return `<span class="${stone ? `preview-stone ${stone}` : ""}"></span>`;
-        }).join("")}
-      </div>
-    `;
-  }
-
-  if (game.id === "draughts") {
-    return `
-      <div class="preview-draughts" aria-hidden="true">
-        ${Array.from({ length: 16 }, (_, index) => {
-          const row = Math.floor(index / 4);
-          const piece = row < 2 ? "black" : row > 1 ? "red" : "";
-          return `<span class="${piece}"></span>`;
-        }).join("")}
-      </div>
-    `;
-  }
-
-  if (game.id === "sudoku") {
-    return `
-      <div class="preview-sudoku" aria-hidden="true">
-        ${["5", "", "4", "", "7", "", "9", "", "2"].map((value) => `<span>${value}</span>`).join("")}
-      </div>
-    `;
-  }
-
-  if (game.id === "klotski") {
-    return `
-      <div class="preview-klotski" aria-hidden="true">
-        <span class="cao">曹</span><span>将</span><span>关</span><span>卒</span>
-      </div>
-    `;
-  }
-
-  if (game.id === "2048") {
-    return `
-      <div class="preview-2048" aria-hidden="true">
-        <span>2</span><span>4</span><span>8</span><span>16</span>
-      </div>
-    `;
-  }
-
-  if (game.id === "tictactoe") {
-    return `
-      <div class="preview-tictactoe" aria-hidden="true">
-        ${["X", "", "O", "", "X", "", "O", "", "X"].map((value) => `<span>${value}</span>`).join("")}
-      </div>
-    `;
-  }
-
-  return `
-    <div class="preview-flying" aria-hidden="true">
-      <span>1</span><span>2</span><span>3</span><span>4</span>
-    </div>
-  `;
 }
 
 function renderCategoryTabs() {
@@ -1402,124 +1227,6 @@ function pluginSourceById(sourceId) {
   return sources.find((source) => source.id === sourceId) || null;
 }
 
-function renderPluginSourceGameList(source) {
-  const gamesPreview = source?.catalog?.gamePreviews || [];
-  if (!gamesPreview.length) return "<p class=\"empty-note\">这个扩展目录暂时没有可展示的游戏。</p>";
-
-  return `
-    <div class="achievement-list">
-      ${gamesPreview.map((game) => `
-        <div class="achievement-row plugin-game-preview">
-          <div>
-            <strong>${game.title}</strong>
-            <span>${[
-              game.subtitle || game.id,
-              game.version ? `v${game.version}` : "",
-              game.modeSupport?.length ? game.modeSupport.map((mode) => modeLabel[mode] || mode).join("/") : "",
-              game.difficultySupport?.length ? game.difficultySupport.map((difficulty) => difficultyLabel[difficulty] || difficulty).join("/") : "",
-              game.assets ? `${game.assets} 个资源` : ""
-            ].filter(Boolean).join(" · ")}</span>
-            <div class="progress-pills plugin-capability-pills">
-              ${Object.entries(game.capabilities || {})
-                .filter(([, enabled]) => enabled)
-                .map(([key]) => `<span>${capabilityLabel[key] || key}</span>`)
-                .join("") || "<span>基础插件</span>"}
-            </div>
-          </div>
-          <b>${game.status}</b>
-        </div>
-      `).join("")}
-    </div>
-  `;
-}
-
-function renderPluginSourceAudit(source) {
-  if (!source) {
-    return `
-      <div class="source-audit-panel">
-        <p>这个插件源已经不存在，可能是配置被更新了。</p>
-        <div class="settings-actions">
-          <button class="primary-button" data-open-modal="settings">返回设置</button>
-        </div>
-      </div>
-    `;
-  }
-
-  const catalog = source.catalog || {};
-  const canToggle = source.type === "url" && catalog.loaded && !catalog.error;
-  const status = source.enabled ? "已启用" : "未启用";
-  const cacheStatus = cacheStatusForSource(source);
-  const action = source.enabled
-    ? `<button class="danger-button" data-disable-plugin-source="${escapeAttr(source.id)}">停用扩展包</button>`
-    : `<button class="primary-button" data-enable-plugin-source="${escapeAttr(source.id)}" ${canToggle ? "" : "disabled"}>确认启用</button>`;
-
-  return `
-    <div class="source-audit-panel">
-      <p>启用后，这个目录内通过 Manifest 校验的游戏会加入大厅，并作为独立插件模块加载。远程源仍受应用的远程加载策略限制。</p>
-      <div class="progress-pills">
-        <span>${status}</span>
-        <span>${source.trust}</span>
-        <span>可发现 ${catalog.games || 0}</span>
-        <span>可接入 ${catalog.loadableGames || 0}</span>
-        <span>${cacheStatus.text}</span>
-        ${source.enabledByUser ? "<span>本机启用</span>" : ""}
-      </div>
-      <div class="source-audit-meta">
-        <strong>${source.name}</strong>
-        <span>${source.url || "内置游戏包"}</span>
-        ${catalog.title ? `<span>${catalog.title}</span>` : ""}
-        ${catalog.description ? `<span>${catalog.description}</span>` : ""}
-        ${catalog.error ? `<span>${catalog.error}</span>` : ""}
-        ${catalog.blocked ? `<span>${catalog.blocked}</span>` : ""}
-        ${cacheStatus.error ? `<span>${cacheStatus.error}</span>` : ""}
-      </div>
-      ${renderPluginSourceGameList(source)}
-      ${catalog.loadErrors?.length ? `
-        <ul class="modal-list">
-          ${catalog.loadErrors.map((error, index) => `<li><b>${index + 1}</b><span>${error}</span></li>`).join("")}
-        </ul>
-      ` : ""}
-      <div class="settings-actions">
-        <button class="secondary-button" data-open-modal="settings">返回设置</button>
-        ${action}
-      </div>
-    </div>
-  `;
-}
-
-function renderPluginSourceList() {
-  const summary = summarizePluginSources(state.pluginSources);
-  const sources = state.pluginSources.sources || DEFAULT_PLUGIN_SOURCE_STATE.sources;
-  return `
-    <div class="plugin-source-list">
-      ${sources.map((source) => `
-        <div class="plugin-source-row ${source.enabled ? "is-enabled" : ""}">
-          <div>
-            <strong>${source.name}</strong>
-            <span>
-              ${source.type === "builtin" ? "随应用离线打包" : source.url || "扩展源预留"}
-              ${source.catalog?.loaded ? ` · 可发现 ${source.catalog.games} 个游戏` : ""}
-              ${source.catalog?.loadableGames ? ` · 已接入 ${source.catalog.loadableGames} 个游戏` : ""}
-              ${source.enabled ? ` · ${cacheStatusForSource(source).text}` : ""}
-              ${source.catalog?.blocked ? ` · ${source.catalog.blocked}` : ""}
-              ${source.catalog?.loadErrors?.length ? ` · ${source.catalog.loadErrors.length} 个 Manifest 异常` : ""}
-              ${source.catalog?.error ? ` · ${source.catalog.error}` : ""}
-            </span>
-          </div>
-          <div class="plugin-source-actions">
-            <b>${source.enabled ? "启用" : "禁用"}</b>
-            ${source.type === "url" ? `<button class="secondary-button" data-review-plugin-source="${escapeAttr(source.id)}">详情</button>` : ""}
-          </div>
-        </div>
-      `).join("")}
-      <p class="empty-note">
-        ${summary.remoteEnabled ? "远程扩展源已启用。" : "远程扩展源默认禁用，后续只会在用户明确开启并完成审核后加载。"}
-      </p>
-      ${summary.error ? `<p class="empty-note">${summary.error}</p>` : ""}
-    </div>
-  `;
-}
-
 function renderLobbyDashboard() {
   const recent = recentActivities(2);
   const stats = totalStats();
@@ -1564,10 +1271,10 @@ function renderGameCard(game) {
   const category = findCategory(game.category);
   const favorite = isFavorite(game.id);
   const hotLabel = state.activeCategory === "hot" && game.marketHeat
-    ? `<span>热度 ${game.marketHeat.score}</span><span>${game.marketHeat.label}</span>`
+    ? `<span class="meta-pill meta-pill--hot" aria-label="热度 ${game.marketHeat.score}">🔥 ${game.marketHeat.score}</span><span class="meta-pill meta-pill--hot-soft">${game.marketHeat.label}</span>`
     : "";
   return `
-    <article class="game-card accent-${game.accent}">
+    <article class="game-card accent-${game.accent}" tabindex="0">
       <button
         class="favorite-button ${favorite ? "is-active" : ""}"
         data-toggle-favorite="${game.id}"
@@ -1585,7 +1292,7 @@ function renderGameCard(game) {
             <span class="tag-chip">${game.tag}</span>
             <span>${category.shortTitle}</span>
             ${hotLabel}
-            ${game.capabilities?.sessionSave ? "<span>可续玩</span>" : ""}
+            ${game.capabilities?.sessionSave ? "<span class=\"meta-pill meta-pill--resume\">可续玩</span>" : ""}
           </div>
         </div>
       </div>
@@ -1700,7 +1407,7 @@ function renderGame() {
         </div>
       </header>
 
-      <section id="game-root" class="game-root"></section>
+      <section id="game-root" class="game-root" data-game-id="${escapeAttr(game.id)}" data-skin="${escapeAttr(state.theme)}" data-visual-style="${escapeAttr(visualStyle)}"></section>
     </main>
   `;
   window.scrollTo(0, 0);
@@ -1790,7 +1497,7 @@ function modalContent() {
     const source = pluginSourceById(state.pendingPluginSource);
     return {
       title: source ? `${source.name}审核` : "插件源审核",
-      body: renderPluginSourceAudit(source)
+      body: renderPluginSourceAudit(source, state.pluginCacheStatus)
     };
   }
 
@@ -2005,7 +1712,7 @@ function modalContent() {
         </div>
         <div>
           <span class="modal-label">插件源</span>
-          ${renderPluginSourceList()}
+          ${renderPluginSourceList(state.pluginSources, state.pluginCacheStatus)}
         </div>
         <div class="settings-actions">
           <button class="secondary-button" data-open-modal="offline">${icon("offline")} 离线状态</button>

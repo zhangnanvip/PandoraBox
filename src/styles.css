@@ -1,32 +1,5 @@
-:root {
-  color-scheme: light;
-  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-}
-
-:root[data-theme="guofeng"],
-:root[data-skin="guofeng"] {
-  --page: #f8f2e6;
-  --page-strong: #eadfcb;
-  --surface: #fffaf0;
-  --surface-2: rgba(255, 250, 240, 0.72);
-  --surface-3: #ead8ba;
-  --wood: #d6b271;
-  --wood-dark: #80603a;
-  --ink: #2b241b;
-  --muted: #6f604d;
-  --line: rgba(68, 50, 28, 0.14);
-  --line-strong: rgba(31, 95, 74, 0.28);
-  --jade: #1f5f4a;
-  --jade-soft: #dceadf;
-  --cinnabar: #b63b2b;
-  --gold: #d79d38;
-  --lotus: #be5c79;
-  --sky: #32799a;
-  --shadow: 0 18px 44px rgba(47, 75, 61, 0.12);
-  --radius: 8px;
-}
+@import url("./styles/tokens.css");
+@import url("./styles/themes/ink-dark.css");
 
 * {
   box-sizing: border-box;
@@ -5511,3 +5484,305 @@ input[type="range"] {
   }
 
 }
+
+/* ───────────────────────────────────────────────────────────
+ *  Responsive breakpoints (A-tier cleanup)
+ *  - ≤360px: 极窄机型 (老 iPhone SE 等)
+ *  - 521–720px: 大屏手机 / 小平板纵向
+ *  - 901–1199px: 中屏桌面 (3 列)
+ *  - ≥1200px: 宽屏桌面 (4 列 + 更宽容器)
+ *  - landscape + short: 横屏紧凑
+ * ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 360px) {
+  .app-frame {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .app-topbar h1 {
+    font-size: 1.04rem;
+  }
+
+  .header-actions .top-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .lobby-dashboard {
+    gap: 8px;
+  }
+
+  .game-card {
+    padding: 8px;
+    min-height: 86px;
+  }
+
+  .game-card h2 {
+    font-size: 1rem;
+  }
+
+  .category-tabs {
+    gap: 6px;
+  }
+
+  .recent-list {
+    gap: 6px;
+  }
+}
+
+@media (min-width: 521px) and (max-width: 720px) {
+  .app-frame {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .game-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .game-card-top {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .game-card-icon {
+    width: 76px;
+    height: 76px;
+  }
+}
+
+@media (min-width: 901px) {
+  .app-frame {
+    width: min(100%, 1040px);
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .lobby-dashboard {
+    grid-template-columns: 1.4fr 1fr;
+    gap: 16px;
+  }
+
+  .game-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .game-card {
+    min-height: 108px;
+    padding: 14px;
+  }
+
+  .game-card-top {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .game-card-icon {
+    width: 96px;
+    height: 96px;
+  }
+
+  .game-card h2 {
+    font-size: 1.18rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .app-frame {
+    width: min(100%, 1180px);
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .game-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .game-card {
+    padding: 14px;
+    min-height: 116px;
+  }
+
+  .play-frame:not(.arcade-play-frame) .game-root {
+    margin-inline: auto;
+    max-width: 920px;
+  }
+
+  .lobby-hero {
+    grid-template-columns: 1.4fr 1fr;
+    align-items: center;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .app-frame {
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .lobby-hero {
+    display: none;
+  }
+
+  .lobby-dashboard {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .app-topbar {
+    padding-bottom: 4px;
+  }
+
+  .play-frame:not(.arcade-play-frame) .play-header h1 {
+    font-size: 1rem;
+  }
+
+  .play-frame:not(.arcade-play-frame) .play-header .eyebrow {
+    display: none;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────
+ *  B3 卡片精修
+ *  hover 抬升 + press 反馈 + 焦点可见 + 徽章语义化
+ * ──────────────────────────────────────────────────────────── */
+
+.game-card {
+  cursor: default;
+  transition:
+    transform var(--motion-fast, 120ms ease),
+    box-shadow var(--motion-base, 200ms ease),
+    border-color var(--motion-base, 200ms ease);
+  outline: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .game-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-2, 0 18px 44px rgba(47, 75, 61, 0.16));
+  }
+
+  .game-card:hover::after {
+    opacity: 0.5;
+  }
+
+  .game-card:hover .compact-play-button {
+    transform: translateY(-1px);
+  }
+}
+
+.game-card:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--bg-page, transparent),
+    0 0 0 4px var(--accent-primary, var(--jade));
+}
+
+.game-card:active {
+  transform: scale(0.992);
+}
+
+.compact-play-button {
+  transition: transform var(--motion-fast, 120ms ease);
+}
+
+/* ─── 徽章独立样式 ─── */
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.meta-pill--hot {
+  border-color: rgba(231, 88, 64, 0.36);
+  background: linear-gradient(135deg, rgba(231, 88, 64, 0.18), rgba(215, 157, 56, 0.18));
+  color: var(--cinnabar);
+}
+
+.meta-pill--hot-soft {
+  border-color: rgba(215, 157, 56, 0.32);
+  background: rgba(215, 157, 56, 0.12);
+  color: var(--wood-dark, #80603a);
+}
+
+.meta-pill--resume {
+  border-color: rgba(31, 95, 74, 0.38);
+  background: var(--jade-soft);
+  color: var(--jade);
+}
+
+/* 收藏星：未收藏时降透明度但保留点击区域 */
+.favorite-button {
+  transition:
+    transform var(--motion-fast, 120ms ease),
+    background-color var(--motion-base, 200ms ease),
+    border-color var(--motion-base, 200ms ease),
+    opacity var(--motion-base, 200ms ease);
+  opacity: 0.55;
+}
+
+.favorite-button.is-active,
+.game-card:hover .favorite-button,
+.game-card:focus-within .favorite-button {
+  opacity: 1;
+}
+
+.favorite-button:hover {
+  transform: scale(1.08);
+}
+
+.favorite-button:active {
+  transform: scale(0.94);
+}
+
+/* 暗色主题下的徽章对比度补偿 */
+:root[data-theme="ink-dark"] .meta-pill--hot,
+:root[data-skin="ink-dark"] .meta-pill--hot {
+  color: #ffb3a4;
+  border-color: rgba(255, 179, 164, 0.36);
+  background: linear-gradient(135deg, rgba(255, 107, 94, 0.18), rgba(224, 184, 100, 0.16));
+}
+
+:root[data-theme="ink-dark"] .meta-pill--hot-soft,
+:root[data-skin="ink-dark"] .meta-pill--hot-soft {
+  color: #e0b864;
+  border-color: rgba(224, 184, 100, 0.36);
+  background: rgba(224, 184, 100, 0.10);
+}
+
+:root[data-theme="ink-dark"] .game-meta span,
+:root[data-skin="ink-dark"] .game-meta span {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: var(--muted);
+}
+
+:root[data-theme="ink-dark"] .game-meta .tag-chip,
+:root[data-skin="ink-dark"] .game-meta .tag-chip {
+  background: var(--jade-soft);
+  border-color: rgba(86, 192, 158, 0.42);
+  color: #8fdcc0;
+}
+
+:root[data-theme="ink-dark"] .favorite-button,
+:root[data-skin="ink-dark"] .favorite-button {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--muted);
+}
+
+:root[data-theme="ink-dark"] .favorite-button.is-active,
+:root[data-skin="ink-dark"] .favorite-button.is-active {
+  background: rgba(224, 184, 100, 0.16);
+  border-color: rgba(224, 184, 100, 0.48);
+  color: var(--gold);
+}
+

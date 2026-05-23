@@ -1,0 +1,93 @@
+/* ─────────────────────────────────────────────────────────────
+ * 潘多拉魔盒 · 设计 Token
+ *
+ * 本文件只声明默认 token（国风主题），其余主题通过覆盖同名变量实现。
+ * 见 design/v2-evolution-plan.md §2 设计系统 v2
+ * ──────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+
+  /* ─── 语义化别名（v2 推荐使用，对老变量做映射） ─── */
+  --bg-page:        var(--page);
+  --bg-surface:     var(--surface);
+  --bg-surface-2:   var(--surface-2);
+  --bg-elevated:    var(--surface);
+  --text-strong:    var(--ink);
+  --text-soft:      var(--muted);
+  --accent-primary: var(--jade);
+  --accent-danger:  var(--cinnabar);
+  --accent-gold:    var(--gold);
+  --accent-lotus:   var(--lotus);
+  --accent-sky:     var(--sky);
+
+  /* ─── 几何 ─── */
+  --radius-sm: 6px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --shadow-1: 0 4px 12px rgba(47, 75, 61, 0.08);
+  --shadow-2: 0 18px 44px rgba(47, 75, 61, 0.12);
+  --shadow-3: 0 32px 72px rgba(47, 75, 61, 0.18);
+
+  /* ─── 间距阶梯 ─── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+
+  /* ─── 排版阶梯 ─── */
+  --text-overline: 0.6875rem;
+  --text-caption:  0.8125rem;
+  --text-body:     0.9375rem;
+  --text-heading:  1.125rem;
+  --text-title:    1.375rem;
+  --text-display:  1.875rem;
+
+  /* ─── 动效 ─── */
+  --motion-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-slow: 320ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * 默认主题（国风）—— 与 v1 完全兼容，老 CSS 选择器仍然可用
+ * ──────────────────────────────────────────────────────────── */
+
+:root[data-theme="guofeng"],
+:root[data-skin="guofeng"] {
+  /* 底色 */
+  --page: #f8f2e6;
+  --page-strong: #eadfcb;
+  --surface: #fffaf0;
+  --surface-2: rgba(255, 250, 240, 0.72);
+  --surface-3: #ead8ba;
+
+  /* 木质点缀 */
+  --wood: #d6b271;
+  --wood-dark: #80603a;
+
+  /* 墨色 */
+  --ink: #2b241b;
+  --muted: #6f604d;
+  --line: rgba(68, 50, 28, 0.14);
+  --line-strong: rgba(31, 95, 74, 0.28);
+
+  /* 品牌 / 强调 */
+  --jade: #1f5f4a;
+  --jade-soft: #dceadf;
+  --cinnabar: #b63b2b;
+  --gold: #d79d38;
+  --lotus: #be5c79;
+  --sky: #32799a;
+
+  /* 投影 / 圆角 */
+  --shadow: 0 18px 44px rgba(47, 75, 61, 0.12);
+  --radius: 8px;
+}

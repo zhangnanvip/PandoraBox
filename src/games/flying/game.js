@@ -140,10 +140,53 @@ function chooseAiPiece(state, difficulty) {
   return best;
 }
 
+function serializeFlyingState(state) {
+  return {
+    pieces: state.pieces.map((pieces) => [...pieces]),
+    turn: state.turn,
+    dice: state.dice,
+    rolled: state.rolled,
+    winner: state.winner,
+    history: Array.isArray(state.history) ? state.history.slice(-50) : [],
+    message: state.message
+  };
+}
+
+function restoreFlyingSnapshot(snapshot) {
+  if (!snapshot || !isValidState(snapshot)) return null;
+  const fresh = initialState();
+  return {
+    ...fresh,
+    pieces: snapshot.pieces.map((pieces) => [...pieces]),
+    turn: snapshot.turn ?? 0,
+    dice: snapshot.dice || 0,
+    rolled: snapshot.rolled === true,
+    winner: typeof snapshot.winner === "number" ? snapshot.winner : -1,
+    history: Array.isArray(snapshot.history) ? [...snapshot.history] : [],
+    message: snapshot.message || fresh.message
+  };
+}
+
+function sessionMetaForFlying(state) {
+  const finishedPieces = state.pieces.reduce(
+    (sum, set) => sum + set.filter((pos) => pos >= 51).length,
+    0
+  );
+  return {
+    stage: state.winner >= 0 ? `已结束` : `${PLAYER_NAMES[state.turn]}方进行中`,
+    level: finishedPieces,
+    score: finishedPieces
+  };
+}
+
 export function mountFlyingChess(root, context) {
   const storageKey = `flying:${context.mode}`;
-  let state = loadState(storageKey, initialState());
-  if (!isValidState(state)) state = initialState();
+  const initial = (context.savedState && restoreFlyingSnapshot(context.savedState))
+    || (() => {
+      const legacy = loadState(storageKey, null);
+      return legacy && isValidState(legacy) ? restoreFlyingSnapshot(legacy) : initialState();
+    })();
+  let state = initial;
 
   let disposed = false;
   let aiTimer = 0;
@@ -152,6 +195,11 @@ export function mountFlyingChess(root, context) {
 
   function save() {
     saveState(storageKey, state);
+    if (context.saveSession && state.winner < 0) {
+      context.saveSession(serializeFlyingState(state), sessionMetaForFlying(state));
+    } else if (context.clearSession && state.winner >= 0) {
+      context.clearSession();
+    }
   }
 
   function snapshot() {
@@ -260,6 +308,7 @@ export function mountFlyingChess(root, context) {
     state = initialState();
     resultReported = false;
     removeState(storageKey);
+    context.clearSession?.();
     render();
   }
 

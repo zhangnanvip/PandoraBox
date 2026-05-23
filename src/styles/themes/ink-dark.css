@@ -1,0 +1,152 @@
+/* ─────────────────────────────────────────────────────────────
+ * 主题 · 水墨夜（ink-dark）
+ * 深靛底 + 玉色主色，沿用 v1 变量命名，不改下游选择器。
+ * ──────────────────────────────────────────────────────────── */
+
+:root[data-theme="ink-dark"],
+:root[data-skin="ink-dark"] {
+  color-scheme: dark;
+
+  /* 底色 */
+  --page: #0e1218;
+  --page-strong: #1a2230;
+  --surface: #161c25;
+  --surface-2: rgba(28, 36, 48, 0.78);
+  --surface-3: #1d2531;
+
+  /* 木质点缀（暗调铜木色） */
+  --wood: #7d6a48;
+  --wood-dark: #4a3d27;
+
+  /* 墨色（反转为浅字） */
+  --ink: #e8eaef;
+  --muted: #9aa2af;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(86, 192, 158, 0.36);
+
+  /* 品牌 / 强调（提亮以保对比） */
+  --jade: #56c09e;
+  --jade-soft: rgba(86, 192, 158, 0.16);
+  --cinnabar: #ef6b5e;
+  --gold: #e0b864;
+  --lotus: #d076a0;
+  --sky: #5fb3d4;
+
+  /* 投影（在暗底上靠透明叠加） */
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+  --shadow-1: 0 4px 12px rgba(0, 0, 0, 0.32);
+  --shadow-2: 0 18px 44px rgba(0, 0, 0, 0.48);
+  --shadow-3: 0 32px 72px rgba(0, 0, 0, 0.62);
+
+  --radius: 8px;
+}
+
+/* 暗色下不要叠纸张/水墨贴图，改用极轻的氛围渐变 */
+:root[data-theme="ink-dark"] body,
+:root[data-skin="ink-dark"] body {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(86, 192, 158, 0.10), transparent 60%),
+    radial-gradient(circle at 82% 92%, rgba(96, 120, 180, 0.08), transparent 65%),
+    linear-gradient(180deg, #0c1017 0%, #0e1218 60%, #0a0e14 100%);
+  color: var(--ink);
+}
+
+/* 大厅的装饰性玉环 + 斜纹在暗色下不合适，做温和替换 */
+:root[data-theme="ink-dark"] .lobby-frame::before,
+:root[data-skin="ink-dark"] .lobby-frame::before {
+  background:
+    radial-gradient(circle at calc(100% - 80px) 120px, rgba(86, 192, 158, 0.12), transparent 60%),
+    linear-gradient(115deg, transparent 0 48%, rgba(86, 192, 158, 0.04) 48% 49%, transparent 49%);
+}
+
+/* 卡片在暗色下需要边框线提示边界（亮色靠白底就够） */
+:root[data-theme="ink-dark"] .game-card,
+:root[data-skin="ink-dark"] .game-card {
+  background:
+    linear-gradient(135deg, rgba(34, 42, 56, 0.92), rgba(22, 28, 37, 0.74)),
+    rgba(22, 28, 37, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme="ink-dark"] .game-card:hover,
+:root[data-skin="ink-dark"] .game-card:hover {
+  border-color: rgba(86, 192, 158, 0.32);
+}
+
+/* 模态背板在暗色下要更深 */
+:root[data-theme="ink-dark"] .modal-backdrop,
+:root[data-skin="ink-dark"] .modal-backdrop {
+  background: rgba(6, 8, 12, 0.62);
+}
+
+:root[data-theme="ink-dark"] .modal-panel,
+:root[data-skin="ink-dark"] .modal-panel {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* 按钮：主按钮在暗色下用更亮的玉色描边 */
+:root[data-theme="ink-dark"] .primary-button,
+:root[data-skin="ink-dark"] .primary-button {
+  color: #0e1218;
+  background: linear-gradient(180deg, #6dd0ac, #4ab491);
+  box-shadow: 0 6px 18px rgba(86, 192, 158, 0.28);
+}
+
+:root[data-theme="ink-dark"] .secondary-button,
+:root[data-skin="ink-dark"] .secondary-button {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+}
+
+:root[data-theme="ink-dark"] .icon-button,
+:root[data-skin="ink-dark"] .icon-button {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: var(--ink);
+}
+
+/* 输入控件 */
+:root[data-theme="ink-dark"] select,
+:root[data-theme="ink-dark"] input[type="text"],
+:root[data-theme="ink-dark"] input[type="email"],
+:root[data-theme="ink-dark"] input:not([type]),
+:root[data-theme="ink-dark"] textarea,
+:root[data-skin="ink-dark"] select,
+:root[data-skin="ink-dark"] textarea {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+}
+
+/* 数据胶囊 */
+:root[data-theme="ink-dark"] .progress-pills span,
+:root[data-skin="ink-dark"] .progress-pills span {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: var(--muted);
+}
+
+/* 分类 Tab */
+:root[data-theme="ink-dark"] .category-tab,
+:root[data-skin="ink-dark"] .category-tab {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: var(--muted);
+}
+
+:root[data-theme="ink-dark"] .category-tab.is-active,
+:root[data-skin="ink-dark"] .category-tab.is-active {
+  background: var(--jade-soft);
+  border-color: var(--jade);
+  color: var(--ink);
+}
+
+/* 顶部品牌 */
+:root[data-theme="ink-dark"] .brand-mark,
+:root[data-skin="ink-dark"] .brand-mark {
+  background: linear-gradient(135deg, #1d2531, #0e1218);
+  color: var(--jade);
+  border: 1px solid rgba(86, 192, 158, 0.32);
+}

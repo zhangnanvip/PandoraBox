@@ -268,11 +268,51 @@ function renderCell(cell, index, state) {
   `;
 }
 
+function serializeGoState(state) {
+  return {
+    size: state.size,
+    board: [...state.board],
+    turn: state.turn,
+    captures: { ...state.captures },
+    passes: state.passes,
+    winner: state.winner,
+    lastMove: state.lastMove,
+    history: Array.isArray(state.history) ? state.history.slice(-40) : [],
+    message: state.message
+  };
+}
+
+function restoreGoSnapshot(snapshot, requiredSize) {
+  if (!snapshot || !isValidState(snapshot) || snapshot.size !== requiredSize) return null;
+  const fresh = initialState(requiredSize);
+  return {
+    ...fresh,
+    ...snapshot,
+    board: [...snapshot.board],
+    captures: { ...snapshot.captures },
+    history: Array.isArray(snapshot.history) ? [...snapshot.history] : []
+  };
+}
+
+function sessionMetaForGo(state) {
+  const placed = state.board.filter((cell) => cell !== EMPTY).length;
+  return {
+    stage: state.winner ? `已结束` : `${state.turn === BLACK ? "黑" : "白"}方 · ${placed} 子`,
+    level: state.size,
+    score: placed
+  };
+}
+
 export function mountGo(root, context) {
   const configuredSize = selectedBoardSize(context.options);
   const storageKey = `go:${context.mode}:${context.difficulty}:${configuredSize}`;
-  let state = loadState(storageKey, initialState(configuredSize));
-  if (!isValidState(state) || state.size !== configuredSize) state = initialState(configuredSize);
+  const initial = (context.savedState && restoreGoSnapshot(context.savedState, configuredSize))
+    || (() => {
+      const legacy = loadState(storageKey, null);
+      const restored = legacy && restoreGoSnapshot(legacy, configuredSize);
+      return restored || initialState(configuredSize);
+    })();
+  let state = initial;
 
   let disposed = false;
   let aiTimer = 0;
@@ -280,6 +320,11 @@ export function mountGo(root, context) {
 
   function save() {
     saveState(storageKey, state);
+    if (context.saveSession && !state.winner) {
+      context.saveSession(serializeGoState(state), sessionMetaForGo(state));
+    } else if (context.clearSession && state.winner) {
+      context.clearSession();
+    }
   }
 
   function snapshot() {
@@ -373,6 +418,7 @@ export function mountGo(root, context) {
     state = initialState(configuredSize);
     resultReported = false;
     removeState(storageKey);
+    context.clearSession?.();
     save();
     render();
   }

@@ -96,10 +96,59 @@ function labelFor(player) {
   return "平局";
 }
 
+function serializeState(state) {
+  return {
+    board: [...state.board],
+    turn: state.turn,
+    winner: state.winner,
+    line: [...state.line],
+    history: state.history.map((entry) => ({
+      board: [...entry.board],
+      turn: entry.turn,
+      winner: entry.winner,
+      line: [...entry.line],
+      message: entry.message
+    })),
+    message: state.message
+  };
+}
+
+function restoreFromSnapshot(snapshot) {
+  if (!snapshot || !isValidState(snapshot)) return null;
+  const fresh = initialState();
+  return {
+    ...fresh,
+    ...snapshot,
+    board: [...snapshot.board],
+    line: [...(snapshot.line || [])],
+    history: Array.isArray(snapshot.history) ? snapshot.history.map((entry) => ({
+      board: [...entry.board],
+      turn: entry.turn,
+      winner: entry.winner || "",
+      line: [...(entry.line || [])],
+      message: entry.message || ""
+    })) : []
+  };
+}
+
+function sessionMetaFor(state) {
+  const placed = state.board.filter(Boolean).length;
+  return {
+    stage: state.winner ? `已结束 · ${placed} 手` : `进行中 · ${placed} 手`,
+    level: placed,
+    score: placed
+  };
+}
+
 export function mountTicTacToe(root, context) {
   const storageKey = `tictactoe:${context.mode}`;
-  let state = loadState(storageKey, initialState());
-  if (!isValidState(state)) state = initialState();
+  // 优先用平台会话快照（来自"继续游玩"），否则回退到旧 localStorage
+  const initial = (context.savedState && restoreFromSnapshot(context.savedState))
+    || (() => {
+      const legacy = loadState(storageKey, null);
+      return legacy && isValidState(legacy) ? restoreFromSnapshot(legacy) : initialState();
+    })();
+  let state = initial;
 
   let disposed = false;
   let aiTimer = 0;
@@ -107,6 +156,11 @@ export function mountTicTacToe(root, context) {
 
   function save() {
     saveState(storageKey, state);
+    if (context.saveSession && !state.winner) {
+      context.saveSession(serializeState(state), sessionMetaFor(state));
+    } else if (context.clearSession && state.winner) {
+      context.clearSession();
+    }
   }
 
   function snapshot() {
@@ -179,6 +233,7 @@ export function mountTicTacToe(root, context) {
     state = initialState();
     resultReported = false;
     removeState(storageKey);
+    context.clearSession?.();
     render();
   }
 
