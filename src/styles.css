@@ -5786,3 +5786,339 @@ input[type="range"] {
   color: var(--gold);
 }
 
+/* ───────────────────────────────────────────────────────────
+ *  B3 卡片三态骨架（v2）
+ *  见 design/v2-evolution-plan.md §3.1
+ *
+ *  .card           — 通用行为层：transition / hover / focus / press
+ *  .card--compact  — 紧凑变体（历史、收藏、最近活动）
+ *  .card--standard — 标准变体（大厅游戏卡）
+ *  .card--hero     — 大头条（B3.2 实装，本段先占位语义）
+ *
+ *  策略：.card 只声明"行为类"属性，几何形态保留给具体类
+ *  （.game-card / .history-row / .resume-card），避免与现有
+ *  @media 断点冲突；后续 dedup 时可逐步把行为层从具体类剥离。
+ * ──────────────────────────────────────────────────────────── */
+
+.card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--motion-fast, 120ms ease),
+    box-shadow var(--motion-base, 200ms ease),
+    border-color var(--motion-base, 200ms ease);
+  outline: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-2, 0 18px 44px rgba(47, 75, 61, 0.16));
+  }
+}
+
+.card:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--bg-page, transparent),
+    0 0 0 4px var(--accent-primary, var(--jade));
+}
+
+.card:active {
+  transform: scale(0.992);
+}
+
+/* compact / standard 当前仅作语义标记；视觉沿用既有 .history-row / .game-card */
+.card--compact,
+.card--standard {
+  /* 预留位 — B3.2 后视情况补差异化 token */
+}
+
+/* ─── card--hero：大厅热门头条 ─── */
+.card--hero {
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr);
+  gap: var(--space-5, 20px);
+  align-items: center;
+  min-height: 196px;
+  margin: 0 0 var(--space-4, 16px);
+  padding: var(--space-6, 24px);
+  border: 1px solid rgba(255, 250, 240, 0.22);
+  border-radius: var(--radius-lg, 14px);
+  background:
+    linear-gradient(135deg, rgba(31, 95, 74, 0.92), rgba(182, 59, 43, 0.78));
+  color: #fff8e7;
+  box-shadow: var(--shadow-2, 0 18px 44px rgba(47, 75, 61, 0.16));
+  text-align: left;
+}
+
+.card--hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 88% 16%, rgba(255, 245, 220, 0.22), transparent 52%),
+    radial-gradient(circle at 8% 86%, rgba(255, 245, 220, 0.12), transparent 58%);
+  pointer-events: none;
+}
+
+.card--hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-card-icon {
+  display: grid;
+  place-items: center;
+  width: 144px;
+  height: 144px;
+  border-radius: var(--radius-lg, 14px);
+  background: rgba(255, 250, 240, 0.16);
+  border: 1px solid rgba(255, 250, 240, 0.28);
+  backdrop-filter: blur(8px);
+}
+
+.hero-card-icon > * {
+  width: 78%;
+  height: 78%;
+}
+
+.hero-card-icon .preview-board {
+  padding: 6px;
+}
+
+.hero-card-copy {
+  display: grid;
+  gap: var(--space-2, 8px);
+  min-width: 0;
+}
+
+.hero-card-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  font-size: var(--text-caption, 0.8125rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 245, 220, 0.86);
+}
+
+.hero-card-copy h2 {
+  margin: 0;
+  font-size: var(--text-display, 1.875rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff8e7;
+}
+
+.hero-card-copy p {
+  margin: 0;
+  max-width: 56ch;
+  font-size: var(--text-body, 0.9375rem);
+  color: rgba(255, 245, 220, 0.86);
+  line-height: 1.55;
+}
+
+.hero-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+  margin-top: var(--space-2, 8px);
+}
+
+.hero-card-tags .meta-pill {
+  background: rgba(255, 250, 240, 0.18);
+  border-color: rgba(255, 250, 240, 0.32);
+  color: #fff8e7;
+}
+
+.hero-card-actions {
+  margin-top: var(--space-4, 16px);
+  display: flex;
+  gap: var(--space-3, 12px);
+  flex-wrap: wrap;
+}
+
+.hero-card-actions .primary-button {
+  min-height: 44px;
+  padding-inline: var(--space-6, 24px);
+  font-size: var(--text-heading, 1.125rem);
+  background: rgba(255, 250, 240, 0.96);
+  color: var(--jade);
+  border: none;
+}
+
+.hero-card-actions .primary-button:hover {
+  background: #fff;
+}
+
+/* mobile：竖排降级 */
+@media (max-width: 720px) {
+  .card--hero {
+    grid-template-columns: 1fr;
+    gap: var(--space-3, 12px);
+    padding: var(--space-4, 16px);
+    min-height: 0;
+  }
+
+  .hero-card-icon {
+    width: 96px;
+    height: 96px;
+    justify-self: start;
+  }
+
+  .hero-card-copy h2 {
+    font-size: var(--text-title, 1.375rem);
+  }
+
+  .hero-card-actions .primary-button {
+    width: 100%;
+  }
+}
+
+/* 暗色主题适配 */
+:root[data-theme="ink-dark"] .card--hero,
+:root[data-skin="ink-dark"] .card--hero {
+  background:
+    linear-gradient(135deg, rgba(86, 192, 158, 0.32), rgba(239, 107, 94, 0.28)),
+    rgba(22, 28, 37, 0.88);
+  border-color: rgba(86, 192, 158, 0.34);
+}
+
+:root[data-theme="ink-dark"] .hero-card-icon,
+:root[data-skin="ink-dark"] .hero-card-icon {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+:root[data-theme="ink-dark"] .hero-card-actions .primary-button,
+:root[data-skin="ink-dark"] .hero-card-actions .primary-button {
+  background: var(--accent-primary, var(--jade));
+  color: #0e1218;
+}
+
+/* ───────────────────────────────────────────────────────────
+ *  B4 模态分级骨架（v2）
+ *  见 design/v2-evolution-plan.md §4.1
+ *
+ *  .modal--sheet   — 大面板（开局 / 规则 / 设置 / 反馈）
+ *  .modal--dialog  — 紧凑确认（重开 / 暂停 / 离线 / 插件源审核）
+ *  .modal--full    — 结算（更宽、更高）
+ *  .modal--toast   — 顶部下降轻反馈（B4.2 实装）
+ * ──────────────────────────────────────────────────────────── */
+
+.modal-panel.modal--sheet {
+  /* 沿用 .modal-panel 默认（width:520 / max-height:76svh） */
+}
+
+.modal-panel.modal--dialog {
+  width: min(100%, 420px);
+  max-height: min(70svh, 540px);
+}
+
+.modal-panel.modal--full {
+  width: min(100%, 640px);
+  max-height: min(82svh, 720px);
+}
+
+/* 结算页"本局亮点"条目 */
+.result-highlight {
+  margin-top: var(--space-3, 12px);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-radius: var(--radius, 8px);
+  border: 1px solid rgba(215, 157, 56, 0.4);
+  background: linear-gradient(135deg, rgba(215, 157, 56, 0.18), rgba(31, 95, 74, 0.14));
+  color: var(--ink);
+}
+
+.result-highlight-eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  font-size: var(--text-caption, 0.8125rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.result-highlight strong {
+  display: block;
+  color: var(--ink);
+  font-size: var(--text-heading, 1.125rem);
+}
+
+:root[data-theme="ink-dark"] .result-highlight,
+:root[data-skin="ink-dark"] .result-highlight {
+  border-color: rgba(224, 184, 100, 0.38);
+  background: linear-gradient(135deg, rgba(224, 184, 100, 0.16), rgba(86, 192, 158, 0.14));
+}
+
+:root[data-theme="ink-dark"] .result-highlight strong,
+:root[data-skin="ink-dark"] .result-highlight strong {
+  color: var(--ink);
+}
+
+/* ─── B4.2 toast 组件 ─── */
+.toast-layer {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 40;
+  display: grid;
+  gap: var(--space-2, 8px);
+  width: min(92vw, 480px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.modal--toast {
+  display: grid;
+  grid-template-columns: 4px minmax(0, 1fr);
+  gap: var(--space-3, 12px);
+  align-items: center;
+  padding: var(--space-3, 12px) var(--space-4, 16px) var(--space-3, 12px) var(--space-2, 8px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 8px);
+  background: var(--surface);
+  box-shadow: var(--shadow-2, 0 18px 44px rgba(47, 75, 61, 0.16));
+  color: var(--ink);
+  font-size: var(--text-body, 0.9375rem);
+  line-height: 1.45;
+  opacity: 0;
+  transform: translateY(-12px);
+  transition:
+    opacity var(--motion-base, 200ms ease),
+    transform var(--motion-base, 200ms ease);
+  pointer-events: auto;
+}
+
+.modal--toast.is-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.modal--toast::before {
+  content: "";
+  align-self: stretch;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--accent-primary, var(--jade));
+}
+
+.modal--toast--success::before {
+  background: var(--accent-primary, var(--jade));
+}
+
+.modal--toast--danger::before {
+  background: var(--accent-danger, var(--cinnabar));
+}
+
+.modal--toast--info::before {
+  background: var(--accent-sky, var(--sky));
+}
+
+:root[data-theme="ink-dark"] .modal--toast,
+:root[data-skin="ink-dark"] .modal--toast {
+  background: var(--bg-elevated, #1d2531);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: var(--ink);
+}
+

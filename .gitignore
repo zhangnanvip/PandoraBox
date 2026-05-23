@@ -4,3 +4,7 @@ dist/
 .env
 .env.*
 .hatch-pets/
+
+# Claude Code 本地数据（个人权限缓存与 worktree 元数据），仅共享 launch.json
+.claude/settings.local.json
+.claude/worktrees/

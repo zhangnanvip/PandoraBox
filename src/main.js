@@ -4,6 +4,7 @@ import { DEFAULT_PLUGIN_SOURCE_STATE, collectEnabledPluginRegistrations, loadPlu
 import { configureSound, playResultSound, playSound as playFeedbackSound } from "./platform/sound.js";
 import { interfaceThemes, themeOrder } from "./theme/skins.js";
 import { escapeAttr, stableStringify } from "./utils/common.js";
+import { trapFocus } from "./utils/focus-trap.js";
 import { loadState, saveState } from "./utils/storage.js";
 import { icon } from "./views/icons.js";
 import { boardPreview } from "./views/previews.js";
@@ -60,6 +61,7 @@ let cleanupGame = null;
 let gameLoadToken = 0;
 let renderedGameId = "";
 let installPrompt = null;
+let releaseFocusTrap = null;
 
 function externalGameRegistrations() {
   const seen = new Set(games.map((game) => game.id));
@@ -339,6 +341,7 @@ async function cachePluginSourceAssets(sourceId) {
 async function clearOfflineCaches() {
   if (!("caches" in window) || !location.protocol.startsWith("http")) {
     state.cacheNotice = "当前打开方式不支持清除离线缓存，对局记录未受影响。";
+    showToast(state.cacheNotice, { kind: "info" });
     renderModal();
     return;
   }
@@ -350,9 +353,11 @@ async function clearOfflineCaches() {
     state.cacheNotice = keys.length
       ? `已清除 ${keys.length} 个离线缓存，刷新后会重新拉取资源；对局记录已保留。`
       : "没有可清除的离线缓存，对局记录已保留。";
+    showToast(state.cacheNotice, { kind: "success" });
     navigator.serviceWorker?.getRegistration?.().then((registration) => registration?.update?.()).catch(() => {});
   } catch (error) {
     state.cacheNotice = `清除缓存失败：${error?.message || "未知错误"}`;
+    showToast(state.cacheNotice, { kind: "danger" });
   }
   renderModal();
 }
@@ -971,7 +976,7 @@ function renderRecentShortcut({ game, progress, sessionItem }) {
     ? `data-resume-session="${escapeAttr(sessionItem.key)}" aria-label="续玩${gameTitle}"`
     : `data-prepare-game="${escapeAttr(game.id)}" aria-label="继续游玩${gameTitle}"`;
   return `
-    <article class="recent-activity accent-${game.accent}">
+    <article class="card card--compact recent-activity accent-${game.accent}">
       <div class="recent-activity-copy">
         <span class="game-tag">${hasSession ? "可续玩" : "最近"}</span>
         <h3>${game.title}</h3>
@@ -992,7 +997,7 @@ function favoriteDetail(game) {
 
 function renderFavoriteShortcut(game) {
   return `
-    <article class="recent-activity favorite-activity accent-${game.accent}">
+    <article class="card card--compact recent-activity favorite-activity accent-${game.accent}">
       <div class="recent-activity-copy">
         <span class="game-tag">收藏</span>
         <h3>${game.title}</h3>
@@ -1085,7 +1090,7 @@ function renderHistoryItem({ game, progress, sessionItem }) {
     ? `data-resume-session="${escapeAttr(sessionItem.key)}" aria-label="续玩${gameTitle}"`
     : `data-prepare-game="${escapeAttr(game.id)}" aria-label="继续游玩${gameTitle}"`;
   return `
-    <article class="history-row accent-${game.accent}">
+    <article class="card card--compact history-row accent-${game.accent}">
       <div class="game-card-icon history-icon" aria-hidden="true">
         ${boardPreview(game)}
       </div>
@@ -1156,7 +1161,7 @@ function renderFavoriteItem(game) {
   const progress = progressFor(game.id);
   const resultText = progress.lastResult ? `上次 ${outcomeLabel(progress.lastResult)}` : "暂无结算";
   return `
-    <article class="history-row favorite-row accent-${game.accent}">
+    <article class="card card--compact history-row favorite-row accent-${game.accent}">
       <div class="game-card-icon history-icon" aria-hidden="true">
         ${boardPreview(game)}
       </div>
@@ -1267,6 +1272,41 @@ function renderLobbyDashboard() {
   `;
 }
 
+function renderHeroCard(game) {
+  if (!game) return "";
+  const category = findCategory(game.category);
+  const heat = game.marketHeat || {};
+  const score = marketHeatScore(game);
+  const gameTitle = escapeAttr(game.title);
+  return `
+    <article class="card card--hero accent-${game.accent}" tabindex="0" aria-label="${gameTitle} 热门推荐">
+      <div class="hero-card-icon" aria-hidden="true">
+        ${boardPreview(game)}
+      </div>
+      <div class="hero-card-copy">
+        <span class="hero-card-eyebrow">${heat.label || "热门推荐"} · 热度 ${score}</span>
+        <h2>${game.title}</h2>
+        <p>${heat.signal || game.subtitle}</p>
+        <div class="hero-card-tags">
+          <span class="meta-pill">${game.tag}</span>
+          <span class="meta-pill">${category.shortTitle}</span>
+          ${game.capabilities?.sessionSave ? "<span class=\"meta-pill\">可续玩</span>" : ""}
+        </div>
+        <div class="hero-card-actions">
+          <button class="primary-button" type="button" data-prepare-game="${escapeAttr(game.id)}" aria-label="开始${gameTitle}">${icon("play")} 立即开始</button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function pickHeroGame() {
+  if (!["all", "hot"].includes(state.activeCategory)) return null;
+  const candidates = availableGames().filter((game) => marketHeatScore(game) >= 95);
+  if (!candidates.length) return null;
+  return sortByMarketHeat(candidates)[0] || null;
+}
+
 function renderGameCard(game) {
   const category = findCategory(game.category);
   const favorite = isFavorite(game.id);
@@ -1274,7 +1314,7 @@ function renderGameCard(game) {
     ? `<span class="meta-pill meta-pill--hot" aria-label="热度 ${game.marketHeat.score}">🔥 ${game.marketHeat.score}</span><span class="meta-pill meta-pill--hot-soft">${game.marketHeat.label}</span>`
     : "";
   return `
-    <article class="game-card accent-${game.accent}" tabindex="0">
+    <article class="card card--standard game-card accent-${game.accent}" tabindex="0">
       <button
         class="favorite-button ${favorite ? "is-active" : ""}"
         data-toggle-favorite="${game.id}"
@@ -1305,7 +1345,9 @@ function renderGameCard(game) {
 
 function renderGameSections() {
   const sections = availableGameSections(state.activeCategory);
-  return sections.map((section) => `
+  const heroGame = pickHeroGame();
+  const heroMarkup = renderHeroCard(heroGame);
+  return `${heroMarkup}${sections.map((section) => `
     <section class="game-section" aria-label="${section.title}">
       <div class="game-section-head">
         <h2>${section.title}</h2>
@@ -1315,7 +1357,7 @@ function renderGameSections() {
         ${section.games.map(renderGameCard).join("")}
       </div>
     </section>
-  `).join("");
+  `).join("")}`;
 }
 
 function renderLobby() {
@@ -1400,10 +1442,8 @@ function renderGame() {
           <h1>${game.title}</h1>
         </div>
         <div class="header-actions">
-          <button class="icon-button small restart-top-button" data-restart-current-game aria-label="重开">${icon("restart")}</button>
           <button class="icon-button small" data-open-modal="pause" aria-label="暂停">${icon("pause")}</button>
-          <button class="icon-button small" data-open-modal="rules" aria-label="规则">${icon("rules")}</button>
-          <button class="icon-button small" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
+          ${game.capabilities?.fullscreen ? "" : `<button class="icon-button small" data-open-modal="rules" aria-label="规则">${icon("rules")}</button>`}
         </div>
       </header>
 
@@ -1570,8 +1610,9 @@ function modalContent() {
           <strong>稍作停顿</strong>
           <p>${canSaveSession ? "回到大厅会保存当前进度，之后可在最近对局里继续。" : "当前游戏会保持在原地，关闭暂停层后继续。"}</p>
           <div class="settings-actions">
-            <button class="secondary-button" data-open-modal="rules">查看规则</button>
-            <button class="secondary-button" data-open-modal="settings">设置</button>
+            <button class="secondary-button" data-open-modal="rules">${icon("rules")} 查看规则</button>
+            <button class="secondary-button" data-open-modal="settings">${icon("settings")} 设置</button>
+            <button class="secondary-button" data-open-modal="restart">${icon("restart")} 重开本局</button>
             ${canSaveSession ? "<button class=\"secondary-button\" data-pause-lobby>保存回大厅</button>" : ""}
             <button class="primary-button" data-resume-game>${icon("play")} 继续</button>
           </div>
@@ -1596,6 +1637,11 @@ function modalContent() {
             ${result.score ? `<span>分数 ${result.score}</span>` : ""}
             ${result.progress.bestScore ? `<span>最高 ${result.progress.bestScore}</span>` : ""}
           </div>
+          ${result.extra ? `
+          <div class="result-highlight">
+            <span class="result-highlight-eyebrow">本局亮点</span>
+            <strong>${result.extra}</strong>
+          </div>` : ""}
           <div class="settings-actions">
             <button class="secondary-button" data-result-close>继续查看</button>
             <button class="primary-button" data-result-lobby>返回大厅</button>
@@ -1728,15 +1774,55 @@ function modalContent() {
   };
 }
 
+function modalVariant(name) {
+  if (name === "result") return "full";
+  if (["start", "rules", "feedback", "settings"].includes(name)) return "sheet";
+  // restart / pause / offline / plugin-source 等紧凑确认场景
+  return "dialog";
+}
+
+function ensureToastLayer() {
+  let layer = document.querySelector(".toast-layer");
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.className = "toast-layer";
+    document.body.appendChild(layer);
+  }
+  return layer;
+}
+
+function showToast(message, { kind = "info", duration = 3200 } = {}) {
+  if (!message) return;
+  const layer = ensureToastLayer();
+  const el = document.createElement("div");
+  el.className = `modal--toast modal--toast--${kind}`;
+  el.setAttribute("role", "status");
+  el.setAttribute("aria-live", "polite");
+  const body = document.createElement("span");
+  body.textContent = message;
+  el.appendChild(body);
+  layer.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("is-active"));
+  window.setTimeout(() => {
+    el.classList.remove("is-active");
+    window.setTimeout(() => el.remove(), 280);
+  }, duration);
+}
+
 function renderModal() {
+  if (releaseFocusTrap) {
+    releaseFocusTrap();
+    releaseFocusTrap = null;
+  }
   app.querySelector(".modal-backdrop")?.remove();
   if (!state.modal) return;
 
   const game = findAvailableGame(state.currentGame || state.pendingGame);
   const content = modalContent();
+  const variant = modalVariant(state.modal);
   app.insertAdjacentHTML("beforeend", `
     <div class="modal-backdrop" role="presentation" data-close-modal>
-      <section class="modal-panel" role="dialog" aria-modal="true" aria-label="${content.title}">
+      <section class="modal-panel modal--${variant}" role="dialog" aria-modal="true" aria-label="${content.title}">
         <div class="modal-head">
           <h2>${content.title}</h2>
           <button class="icon-button small" data-close-modal aria-label="关闭">${icon("close")}</button>
@@ -1833,6 +1919,12 @@ function renderModal() {
       if (!button.disabled) setState({ theme: button.dataset.theme });
     });
   });
+
+  // 焦点陷阱：Tab/Shift+Tab 在面板内循环、ESC 关闭、关闭后焦点回到触发按钮
+  const panel = app.querySelector(".modal-panel");
+  if (panel) {
+    releaseFocusTrap = trapFocus(panel, { onEscape: closeModal });
+  }
 }
 
 function render() {

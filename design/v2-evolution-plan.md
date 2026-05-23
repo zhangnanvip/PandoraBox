@@ -50,7 +50,7 @@ src/
 | 卡片 | 单一布局，热度/收藏/可续玩混在 meta 行 | 信息层级不清；缺少视觉重点 |
 | 模态 | 7 种弹窗共用一个 `modal-panel`，文案差异大 | 视觉节奏不一致；交互模式不统一 |
 | AI | 五子棋 / 象棋 / 黑白棋 / 跳棋分别实现 minimax | 维护成本高；难度刻度不可比 |
-| 续玩 | 24 款游戏中 12 款实现 `restoreState` | 用户期望不一致；街机/解谜尤其缺 |
+| 续玩 | ~~24 款游戏中 12 款实现 `restoreState`~~ → **24/24 已接入**（C4 完成） | 历史问题，已闭环 |
 | 成就 | 6 条 + 简单计数 | 长线动力不足 |
 | 可访问性 | 仅 `aria-label`，无焦点管理 / 无键盘陷阱 | 键盘用户无法关闭弹窗 |
 
@@ -365,12 +365,13 @@ export function minimax({
 
 ### 6.1 现状
 
-```
-有 restoreState (12 款)：
-  gomoku, xiangqi, sudoku, klotski, 2048, reversi, checkers,
-  draughts, snake, tower-defense, tank-battle, breakout
+> **2026-05 更新：C4 已完成。** 全部 24 款已接入 `context.savedState / saveSession / clearSession`，catalog 中相应 `sessionSave: true` 已开。下文保留为历史背景。
 
-缺 restoreState (12 款)：
+```
+全部 24 款已接入会话快照（acdd53d 完成棋类与轻量休闲 5 款，
+puzzle 类与街机已在更早提交补齐）：
+  gomoku, xiangqi, sudoku, klotski, 2048, reversi, checkers,
+  draughts, snake, tower-defense, tank-battle, breakout,
   go, tictactoe, flying, mahjong-connect, match3, merge-workshop,
   minesweeper, block-blast, sort-master, tile-match, space-shooter,
   survivor
@@ -564,7 +565,7 @@ C3. 五子棋 + 黑白棋 + 跳棋 + 象棋接入
     依赖：C2
     风险：中（每款棋类各自调难度）
 
-C4. 缺失 restoreState 补齐（12 款）
+C4. 缺失 restoreState 补齐（12 款）  ✅ 已完成
     依赖：无
     风险：低（独立 PR，逐款验收）
 
@@ -593,7 +594,7 @@ C1 store ──→ C2 minimax ──→ C3 接入棋类
    │
    └──→ C5 成就 v2
 
-C4 restoreState 补齐（独立，可任何时候做）
+C4 restoreState 补齐（独立，可任何时候做）  ✅
 ```
 
 ### 10.4 验收清单（每步必查）
