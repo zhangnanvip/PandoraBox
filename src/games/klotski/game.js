@@ -290,12 +290,11 @@ export function mountKlotski(root, context) {
   function render() {
     const level = levelFor(state.level);
     const piece = selectedPiece();
-    const moves = movesFor(state, piece);
     root.innerHTML = `
       <section class="game-panel game-status">
         <div>
           <strong>${state.message}</strong>
-          <p class="game-note">${context.labels.difficulty} · ${level.title} · ${level.target} 步目标</p>
+          <p class="game-note">${context.labels.difficulty} · ${level.title} · ${level.target} 步目标 · 滑动棋子移动</p>
         </div>
         <div class="mini-stats">
           <span>步数 ${state.steps}</span>
@@ -319,9 +318,6 @@ export function mountKlotski(root, context) {
       </section>
 
       <section class="game-panel toolbar">
-        ${Object.entries(DIRS).map(([id, [, , label]]) => `
-          <button class="secondary-button" data-move="${id}" ${moves.some((moveInfo) => moveInfo.id === id) ? "" : "disabled"}>${label}</button>
-        `).join("")}
         <button class="secondary-button" data-action="undo" ${state.history.length ? "" : "disabled"}>悔棋</button>
         <button class="danger-button" data-action="restart">重开</button>
       </section>
@@ -359,9 +355,6 @@ export function mountKlotski(root, context) {
         }
         select(button.dataset.piece);
       });
-    });
-    root.querySelectorAll("[data-move]").forEach((button) => {
-      button.addEventListener("click", () => move(button.dataset.move));
     });
     root.querySelector("[data-action='undo']").addEventListener("click", undo);
     root.querySelector("[data-action='restart']").addEventListener("click", restart);
