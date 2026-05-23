@@ -956,11 +956,16 @@ function renderChoices(root, state) {
     panel?.remove();
     return;
   }
+  // 同一组 choices 期间避免每帧重建按钮 DOM——否则用户的 pointerdown
+  // 和 pointerup 跨过一次 game-loop tick 时，按钮节点被替换，click 不触发
+  const signature = state.choices.map((c) => `${c.id}:${(state.skills[c.id] || 0) + 1}`).join("|");
+  if (panel && panel.dataset.choicesSig === signature) return;
   if (!panel) {
     panel = document.createElement("section");
     panel.className = "survivor-upgrades";
     root.append(panel);
   }
+  panel.dataset.choicesSig = signature;
   panel.innerHTML = `
     <strong>选择强化</strong>
     ${state.choices.map((choice) => `
