@@ -37,7 +37,13 @@ const GAME_ENTRIES = {
   survivor: "./src/games/survivor/game.js",
   "space-shooter": "./src/games/space-shooter/game.js",
   snake: "./src/games/snake/game.js",
-  breakout: "./src/games/breakout/game.js"
+  breakout: "./src/games/breakout/game.js",
+  tetris: "./src/games/tetris/game.js",
+  connect4: "./src/games/connect4/game.js",
+  "memory-match": "./src/games/memory-match/game.js",
+  fifteen: "./src/games/fifteen/game.js",
+  sokoban: "./src/games/sokoban/game.js",
+  blackjack: "./src/games/blackjack/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -66,7 +72,7 @@ const MARKET_HEAT = {
   "block-blast": { score: 98, label: "方块爆款", signal: "Block Puzzle 是当前下载热度和长线复玩都很强的混合休闲品类。" },
   "tile-match": { score: 97, label: "Tile热门", signal: "三张入槽消除和麻将纸牌是当前移动端热门且耐玩的解谜方向。" },
   match3: { score: 96, label: "三消长线", signal: "关卡制三消仍是移动端长线留存的核心品类。" },
-  survivor: { score: 95, label: "割草成长", signal: "Survivor-like 依靠局内构筑、怪潮压力和 Boss 节点形成强复玩。" },
+  survivor: { score: 95, label: "百鬼夜行", signal: "东方志怪割草依靠匣术构筑、百鬼怪潮、章节鬼王和局外成长形成强复玩。" },
   "mahjong-connect": { score: 94, label: "麻将消除", signal: "麻将、Tile 与连连看适合中老年和碎片时间用户。" },
   "sort-master": { score: 93, label: "排序耐玩", signal: "颜色、螺丝、水管和停车排序是移动端长线热度很高的触控解谜方向。" },
   "merge-workshop": { score: 92, label: "合成长线", signal: "Merge 类靠订单、生成器和资源循环形成长期目标，适合离线轻经营。" },
@@ -86,7 +92,13 @@ const MARKET_HEAT = {
   flying: { score: 68, label: "轻桌游", signal: "骰子竞速适合多人和事件卡扩展。" },
   checkers: { score: 64, label: "跳跃棋局", signal: "跳棋类需要任务化和关卡化增强移动端复玩。" },
   draughts: { score: 64, label: "经典跳棋", signal: "国际跳棋依赖 AI 和残局目标提升热度。" },
-  tictactoe: { score: 62, label: "超短快局", signal: "井字棋适合作为教学和变体入口，长线较弱。" }
+  tictactoe: { score: 62, label: "超短快局", signal: "井字棋适合作为教学和变体入口，长线较弱。" },
+  tetris: { score: 96, label: "方块鼻祖", signal: "俄罗斯方块是全球认知度最高的落子消除街机，长线刷分极强。" },
+  connect4: { score: 81, label: "对弈快局", signal: "四子棋上手快、AI 深度可调，适合碎片时间双人或对弈。" },
+  "memory-match": { score: 79, label: "记忆翻牌", signal: "翻牌配对适合全年龄段，关卡与限时易扩展。" },
+  fifteen: { score: 73, label: "滑块数字", signal: "数字华容道是经典滑块解谜，步数与计时排行耐玩。" },
+  sokoban: { score: 71, label: "推箱闯关", signal: "推箱子靠关卡设计形成长线，仓库工是常青解谜。" },
+  blackjack: { score: 80, label: "纸牌博弈", signal: "21 点规则简单、决策深度高，单人养成式刷分。" }
 };
 
 function gameVisualStyle(key) {
@@ -726,9 +738,9 @@ const registrations = [
   defineLocalGame(
     {
       id: "survivor",
-      title: "割草生存",
-      subtitle: "拖动走位，自动攻击，升级构筑技能",
-      tag: "割草成长",
+      title: "魔盒幸存者",
+      subtitle: "百鬼夜行，执匣人活到天明",
+      tag: "百鬼夜行",
       category: "arcade",
       secondaryCategories: ["quick"],
       complexity: "中等",
@@ -740,12 +752,25 @@ const registrations = [
       accent: "jade",
       icon: "./public/games/arcade/icons/survivor.svg",
       assets: ["./public/games/arcade/icons/survivor.svg"],
+      setupFields: [
+        {
+          id: "character",
+          label: "角色职业",
+          defaultValue: "ranger",
+          options: [
+            { value: "ranger", label: "沈灯：镇魂飞刃，均衡灵活" },
+            { value: "engineer", label: "陆青岚：机关傀儡，资源收益" },
+            { value: "arcanist", label: "白烬：鬼火咒术，爆发更强" }
+          ]
+        }
+      ],
       rules: [
-        "在画布上拖动角色移动，武器会自动攻击最近敌人。",
-        "拾取经验升级后可从飞刃、灵能环、护身轮、雷链、疾行、体魄和磁吸中选择强化。",
-        "游戏采用 60 关怪潮推进，每 5 关出现 Boss 压力点。",
-        "怪物会逐步解锁高速、远程、重甲、冲锋、护盾和精英类型。",
-        "经验、治疗、清屏炸弹和 Boss 宝箱会形成局内成长节奏。"
+        "在长夜战场中拖动执匣人移动，匣术会自动攻击最近的百鬼。",
+        "开局可选择沈灯、陆青岚或白烬，不同执匣人拥有不同初始匣术、属性和成长倾向。",
+        "拾取魂火升级后，可从匣术、符牌、稀有卡和进化卡中选择强化。",
+        "当前试玩版采用 60 关怪潮推进，每 5 关出现鬼王压力点。",
+        "百鬼会逐步解锁疾行、远程、重甲、冲锋、护盾和精英词缀。",
+        "地图目标、夜行事件、遗物、角色主动技和鬼王技能会随关卡逐步加入。"
       ]
     },
     () => import("./survivor/game.js").then((module) => module.mountSurvivor)
@@ -833,6 +858,158 @@ const registrations = [
       ]
     },
     () => import("./breakout/game.js").then((module) => module.mountBreakout)
+  ),
+  defineLocalGame(
+    {
+      id: "tetris",
+      title: "俄罗斯方块",
+      subtitle: "落子成行，越堆越快",
+      tag: "方块鼻祖",
+      category: "arcade",
+      secondaryCategories: ["number", "quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      progressType: "score",
+      ...gamePluginMeta("tetris", "number", { sessionSave: true }),
+      ...gameVisualStyle("classicArcade"),
+      accent: "sky",
+      icon: "./public/games/extra/icons/tetris.svg",
+      assets: ["./public/games/extra/icons/tetris.svg"],
+      rules: [
+        "方块自动下落，移动和旋转使其填满整行即可消除得分。",
+        "一次消除 1/2/3/4 行分别记 100/300/500/800，并随等级翻倍。",
+        "消除行数越多，等级越高、下落越快。",
+        "移动端用底部按钮或滑动，桌面端方向键移动、空格瞬降。"
+      ]
+    },
+    () => import("./tetris/game.js").then((module) => module.mountTetris)
+  ),
+  defineLocalGame(
+    {
+      id: "connect4",
+      title: "四子棋",
+      subtitle: "重力落子，先连四子获胜",
+      tag: "对弈快局",
+      category: "classic",
+      secondaryCategories: ["quick", "strategy"],
+      complexity: "简单",
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "match",
+      ...gamePluginMeta("connect4", "board", { sessionSave: true }),
+      ...gameVisualStyle("guofengBoard"),
+      accent: "cinnabar",
+      icon: "./public/games/extra/icons/connect4.svg",
+      assets: ["./public/games/extra/icons/connect4.svg"],
+      rules: [
+        "点击列，棋子受重力落到该列最低空位。",
+        "横、竖、斜任一方向先连成四子即获胜。",
+        "魔鬼难度做 6 层搜索，兼顾进攻成形和拦截威胁。",
+        "可悔棋、重开，支持续玩。"
+      ]
+    },
+    () => import("./connect4/game.js").then((module) => module.mountConnect4)
+  ),
+  defineLocalGame(
+    {
+      id: "memory-match",
+      title: "记忆翻牌",
+      subtitle: "翻牌配对，少步通关",
+      tag: "记忆翻牌",
+      category: "puzzle",
+      secondaryCategories: ["quick", "number"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("memory-match", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "lotus",
+      icon: "./public/games/extra/icons/memory-match.svg",
+      assets: ["./public/games/extra/icons/memory-match.svg"],
+      rules: [
+        "每次翻开两张牌，相同则保留，不同则翻回。",
+        "记住牌面位置，全部配对即完成。",
+        "难度决定卡牌对数：6/8/12/18 对。",
+        "步数越少、用时越短，结算分越高。"
+      ]
+    },
+    () => import("./memory-match/game.js").then((module) => module.mountMemoryMatch)
+  ),
+  defineLocalGame(
+    {
+      id: "fifteen",
+      title: "数字华容道",
+      subtitle: "滑动方块，复原 1 到 N",
+      tag: "滑块数字",
+      category: "puzzle",
+      secondaryCategories: ["number", "quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("fifteen", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicNumber"),
+      accent: "jade",
+      icon: "./public/games/extra/icons/fifteen.svg",
+      assets: ["./public/games/extra/icons/fifteen.svg"],
+      rules: [
+        "点击空格相邻的方块即可滑入空格。",
+        "把数字按顺序排回即为通关。",
+        "难度决定棋盘：3x3、4x4、5x5 与重洗 5x5。",
+        "步数与用时越少结算分越高。"
+      ]
+    },
+    () => import("./fifteen/game.js").then((module) => module.mountFifteen)
+  ),
+  defineLocalGame(
+    {
+      id: "sokoban",
+      title: "推箱子",
+      subtitle: "把箱子推上目标点",
+      tag: "推箱闯关",
+      category: "puzzle",
+      secondaryCategories: ["strategy", "quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      progressType: "score",
+      ...gamePluginMeta("sokoban", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "cinnabar",
+      icon: "./public/games/extra/icons/sokoban.svg",
+      assets: ["./public/games/extra/icons/sokoban.svg"],
+      rules: [
+        "只能推不能拉，把所有箱子推到目标点过关。",
+        "9 个内置关卡难度递增，可撤回、重开本关。",
+        "移动端用方向键或滑动，桌面端方向键/WASD。",
+        "支持续玩，保留当前关卡进度。"
+      ]
+    },
+    () => import("./sokoban/game.js").then((module) => module.mountSokoban)
+  ),
+  defineLocalGame(
+    {
+      id: "blackjack",
+      title: "21点",
+      subtitle: "要牌停牌，比庄家更接近 21",
+      tag: "纸牌博弈",
+      category: "number",
+      secondaryCategories: ["quick"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      progressType: "score",
+      ...gamePluginMeta("blackjack", "number", { sessionSave: true }),
+      ...gameVisualStyle("classicNumber"),
+      accent: "lotus",
+      icon: "./public/games/extra/icons/blackjack.svg",
+      assets: ["./public/games/extra/icons/blackjack.svg"],
+      rules: [
+        "下注后要牌或停牌，点数不超 21 且比庄家大即赢。",
+        "庄家点数到 17 必须停；黑杰克赔率 3:2。",
+        "A 可计 1 或 11，初始 1000 筹码。",
+        "筹码用尽结算最高身家，支持续玩保留筹码。"
+      ]
+    },
+    () => import("./blackjack/game.js").then((module) => module.mountBlackjack)
   )
 ];
 

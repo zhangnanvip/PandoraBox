@@ -52,6 +52,23 @@ export function addFloatingText(effects, x, y, text, options = {}) {
   });
 }
 
+export function addBolt(effects, x, y, x2, y2, options = {}) {
+  effects.push({
+    type: "bolt",
+    x,
+    y,
+    x2,
+    y2,
+    age: 0,
+    life: options.life || 0.16,
+    color: options.color || effectColors.white,
+    secondary: options.secondary || effectColors.yellow,
+    width: options.width || 3,
+    jitter: options.jitter || 10,
+    segments: options.segments || 5
+  });
+}
+
 export function updateEffects(effects, dt) {
   for (const effect of effects) {
     effect.age += dt;
@@ -80,6 +97,28 @@ export function drawEffects(ctx, effects) {
       ctx.beginPath();
       ctx.arc(effect.x, effect.y, effect.radius + t * 18, 0, Math.PI * 2);
       ctx.stroke();
+    } else if (effect.type === "bolt") {
+      const dx = effect.x2 - effect.x;
+      const dy = effect.y2 - effect.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+      const segments = Math.max(2, effect.segments || 5);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      for (let pass = 0; pass < 2; pass += 1) {
+        ctx.strokeStyle = pass ? effect.color : effect.secondary;
+        ctx.lineWidth = (effect.width || 3) * (pass ? 0.55 : 1.5) * (1 - t * 0.35);
+        ctx.beginPath();
+        ctx.moveTo(effect.x, effect.y);
+        for (let i = 1; i < segments; i += 1) {
+          const p = i / segments;
+          const wobble = Math.sin((effect.age * 34 + i * 2.1) * (pass ? 1.4 : 1)) * (effect.jitter || 10) * (1 - t);
+          ctx.lineTo(effect.x + dx * p + nx * wobble, effect.y + dy * p + ny * wobble);
+        }
+        ctx.lineTo(effect.x2, effect.y2);
+        ctx.stroke();
+      }
     } else if (effect.type === "text") {
       ctx.font = `${effect.weight} ${effect.size}px system-ui, sans-serif`;
       ctx.textAlign = "center";

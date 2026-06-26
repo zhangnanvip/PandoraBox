@@ -98,7 +98,7 @@ textarea:focus-visible {
   border: 0;
   border-radius: 14px;
   background: url("../public/brand/pandora-sci-fi-mark.svg") center / cover no-repeat;
-  color: var(--cinnabar);
+  color: var(--cinnabar, #c3342a);
   color: transparent;
   box-shadow:
     0 10px 24px rgba(18, 84, 96, 0.22),
@@ -981,7 +981,7 @@ select {
 }
 
 .accent-cinnabar .game-tag {
-  color: var(--cinnabar);
+  color: var(--cinnabar, #c3342a);
 }
 
 .accent-cinnabar::before {
@@ -1971,6 +1971,282 @@ input[type="range"] {
   position: relative;
 }
 
+.survivor-status {
+  align-items: start;
+}
+
+.survivor-camp {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.survivor-camp-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.survivor-camp-head strong {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.survivor-camp-head button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid rgba(17, 104, 82, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--jade);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.survivor-talent-row {
+  display: none;
+  gap: 7px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.survivor-camp.is-open .survivor-talent-row {
+  display: flex;
+}
+
+.survivor-codex-row {
+  display: none;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 1px;
+  scrollbar-width: none;
+}
+
+.survivor-camp.is-open .survivor-codex-row {
+  display: flex;
+}
+
+.survivor-codex-row::-webkit-scrollbar {
+  display: none;
+}
+
+.survivor-codex-title,
+.survivor-codex-chip {
+  flex: 0 0 auto;
+}
+
+.survivor-codex-title {
+  display: grid;
+  place-items: center;
+  min-height: 36px;
+  padding: 0 9px;
+  border-radius: 8px;
+  background: rgba(195, 52, 42, 0.1);
+  color: var(--cinnabar);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.survivor-codex-chip {
+  display: grid;
+  grid-template-columns: 22px max-content;
+  gap: 2px 6px;
+  align-items: center;
+  min-height: 36px;
+  max-width: 190px;
+  padding: 5px 8px;
+  border: 1px solid rgba(17, 104, 82, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--ink);
+}
+
+.survivor-codex-chip i {
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 209, 102, 0.18);
+  color: var(--cinnabar);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.survivor-codex-chip b {
+  font-size: 0.7rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.survivor-codex-chip small {
+  max-width: 150px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.survivor-chapter-row .survivor-codex-title {
+  background: rgba(17, 104, 82, 0.1);
+  color: var(--jade);
+}
+
+.survivor-chapter-row .survivor-codex-chip i {
+  background: rgba(123, 212, 255, 0.14);
+  color: var(--jade);
+}
+
+.survivor-talent-row::-webkit-scrollbar {
+  display: none;
+}
+
+.survivor-talent {
+  display: grid;
+  grid-template-columns: 24px max-content;
+  gap: 6px;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 5px 8px;
+  border: 1px solid rgba(17, 104, 82, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.46);
+  color: var(--ink);
+  text-align: left;
+}
+
+.survivor-talent:disabled {
+  opacity: 0.58;
+}
+
+.survivor-talent i {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: rgba(17, 104, 82, 0.12);
+  color: var(--jade);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.survivor-talent span {
+  display: grid;
+  gap: 1px;
+}
+
+.survivor-talent b {
+  font-size: 0.72rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.survivor-talent small {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.arcade-play-frame .survivor-camp {
+  pointer-events: auto;
+}
+
+.arcade-play-frame .survivor-camp-head {
+  justify-content: flex-start;
+  gap: 6px;
+  color: rgba(248, 251, 255, 0.7);
+}
+
+.arcade-play-frame .survivor-camp-head strong {
+  color: #f8fbff;
+}
+
+.arcade-play-frame .survivor-camp-head button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-color: rgba(248, 251, 255, 0.14);
+  background: rgba(248, 251, 255, 0.08);
+  color: #ffd166;
+}
+
+.arcade-play-frame .survivor-talent {
+  min-height: 28px;
+  padding: 3px 6px;
+  border-color: rgba(248, 251, 255, 0.14);
+  background: rgba(248, 251, 255, 0.08);
+  color: #f8fbff;
+}
+
+.arcade-play-frame .survivor-talent i {
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 209, 102, 0.14);
+  color: #ffd166;
+}
+
+.arcade-play-frame .survivor-codex-title {
+  min-height: 28px;
+  border: 1px solid rgba(255, 209, 102, 0.18);
+  background: rgba(255, 209, 102, 0.08);
+  color: #ffd166;
+}
+
+.arcade-play-frame .survivor-codex-chip {
+  min-height: 28px;
+  padding: 3px 6px;
+  border-color: rgba(248, 251, 255, 0.14);
+  background: rgba(248, 251, 255, 0.08);
+  color: #f8fbff;
+}
+
+.arcade-play-frame .survivor-codex-chip i {
+  width: 20px;
+  height: 20px;
+  background: rgba(195, 52, 42, 0.28);
+  color: #ffd166;
+}
+
+.arcade-play-frame .survivor-codex-chip small {
+  color: rgba(248, 251, 255, 0.62);
+}
+
+.arcade-play-frame .survivor-chapter-row .survivor-codex-title {
+  border-color: rgba(123, 212, 255, 0.2);
+  background: rgba(123, 212, 255, 0.09);
+  color: #7bd4ff;
+}
+
+.arcade-play-frame .survivor-chapter-row .survivor-codex-chip i {
+  background: rgba(123, 212, 255, 0.16);
+  color: #7bd4ff;
+}
+
+.arcade-play-frame .survivor-status .mini-stats span[data-survivor-threat] {
+  flex-basis: 100%;
+  justify-content: flex-start;
+  color: rgba(255, 209, 102, 0.9);
+}
+
+.arcade-play-frame .survivor-talent small {
+  color: rgba(248, 251, 255, 0.62);
+}
+
 .survivor-upgrades {
   position: absolute;
   left: max(14px, env(safe-area-inset-left));
@@ -1980,17 +2256,49 @@ input[type="range"] {
   display: grid;
   gap: 10px;
   max-width: 420px;
+  max-height: min(78vh, 680px);
   margin: 0 auto;
-  padding: 14px;
-  border: 1px solid rgba(66, 242, 255, 0.28);
-  border-radius: 10px;
+  padding: 16px 14px 14px;
+  border: 1px solid rgba(255, 209, 102, 0.34);
+  border-radius: 12px;
   background:
-    linear-gradient(135deg, rgba(66, 242, 255, 0.14), rgba(56, 210, 124, 0.12)),
-    rgba(9, 13, 28, 0.94);
+    radial-gradient(circle at 50% 0%, rgba(255, 209, 102, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(74, 21, 25, 0.94), rgba(9, 28, 24, 0.95)),
+    rgba(9, 13, 28, 0.96);
   color: #f8fbff;
-  box-shadow: 0 22px 42px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(248, 251, 255, 0.08);
+  box-shadow: 0 22px 42px rgba(0, 0, 0, 0.46), inset 0 0 0 1px rgba(248, 251, 255, 0.08), inset 0 12px 32px rgba(255, 209, 102, 0.08);
   transform: translateY(-50%);
   backdrop-filter: blur(16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.survivor-upgrades::before,
+.survivor-upgrades::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 209, 102, 0.56), transparent);
+}
+
+.survivor-upgrades::before {
+  top: 8px;
+}
+
+.survivor-upgrades::after {
+  bottom: 8px;
+}
+
+.survivor-upgrade-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 4px;
+  text-align: left;
 }
 
 .survivor-upgrades strong {
@@ -1999,28 +2307,172 @@ input[type="range"] {
   letter-spacing: 0;
 }
 
-.survivor-upgrades button {
+.survivor-upgrade-title span {
   display: grid;
-  gap: 3px;
-  min-height: 62px;
-  padding: 10px 12px;
-  border: 1px solid rgba(248, 251, 255, 0.16);
-  border-radius: 8px;
-  background:
-    linear-gradient(90deg, rgba(66, 242, 255, 0.16), rgba(56, 210, 124, 0.1)),
-    rgba(248, 251, 255, 0.08);
-  color: #f8fbff;
-  text-align: left;
+  gap: 2px;
+  min-width: 0;
 }
 
-.survivor-upgrades button b {
+.survivor-upgrade-title small {
+  color: rgba(255, 209, 102, 0.72);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.survivor-upgrade-title button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(123, 212, 255, 0.36);
+  border-radius: 999px;
+  background: rgba(123, 212, 255, 0.12);
+  color: #dffbff;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.survivor-upgrade-title button:disabled {
+  border-color: rgba(248, 251, 255, 0.14);
+  background: rgba(248, 251, 255, 0.06);
+  color: rgba(248, 251, 255, 0.42);
+}
+
+.survivor-upgrade-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  gap: 3px;
+  align-items: center;
+  min-height: 84px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 209, 102, 0.22);
+  border-radius: 10px;
+  background:
+    linear-gradient(90deg, rgba(255, 245, 215, 0.12), rgba(56, 210, 124, 0.08)),
+    rgba(248, 251, 255, 0.07);
+  color: #f8fbff;
+  text-align: left;
+  box-shadow: inset 4px 0 0 rgba(195, 52, 42, 0.74);
+  overflow: hidden;
+}
+
+.survivor-upgrade-card::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: 9px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 209, 102, 0.18);
+  border-radius: 50%;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.survivor-upgrade-card i {
+  grid-row: 1 / 5;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 209, 102, 0.34);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 209, 102, 0.24), rgba(195, 52, 42, 0.12));
+  color: #ffd166;
+  font-style: normal;
+  font-weight: 900;
+  box-shadow: 0 0 18px rgba(255, 209, 102, 0.13);
+}
+
+.survivor-upgrade-card b {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
   font-size: 0.92rem;
 }
 
-.survivor-upgrades button span {
+.survivor-upgrade-card b mark {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 209, 102, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.18);
+  color: #fff2ba;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.survivor-upgrade-card em {
+  justify-self: end;
+  align-self: start;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(248, 251, 255, 0.1);
+  color: rgba(248, 251, 255, 0.8);
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.survivor-upgrade-card span {
+  grid-column: 2 / 4;
   color: rgba(248, 251, 255, 0.72);
   font-size: 0.76rem;
   line-height: 1.35;
+}
+
+.survivor-upgrade-card small {
+  grid-column: 2 / 4;
+  display: block;
+  min-width: 0;
+  font-size: 0.68rem;
+  font-weight: 850;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.survivor-upgrade-flow {
+  color: rgba(123, 212, 255, 0.78);
+}
+
+.survivor-upgrade-recommend {
+  color: rgba(140, 232, 189, 0.92);
+}
+
+.survivor-upgrade-evolution {
+  color: rgba(255, 209, 102, 0.9);
+}
+
+.survivor-upgrade-card.is-rare {
+  border-color: rgba(123, 212, 255, 0.34);
+  background:
+    linear-gradient(90deg, rgba(123, 212, 255, 0.22), rgba(66, 242, 255, 0.1)),
+    rgba(248, 251, 255, 0.08);
+  box-shadow: inset 4px 0 0 rgba(123, 212, 255, 0.72);
+}
+
+.survivor-upgrade-card.is-epic {
+  border-color: rgba(212, 92, 255, 0.38);
+  background:
+    linear-gradient(90deg, rgba(212, 92, 255, 0.2), rgba(123, 212, 255, 0.12)),
+    rgba(248, 251, 255, 0.08);
+  box-shadow: inset 4px 0 0 rgba(212, 92, 255, 0.72);
+}
+
+.survivor-upgrade-card.is-evolve {
+  border-color: rgba(255, 209, 102, 0.48);
+  background:
+    linear-gradient(90deg, rgba(255, 209, 102, 0.24), rgba(212, 92, 255, 0.12)),
+    rgba(248, 251, 255, 0.1);
+  box-shadow: inset 4px 0 0 rgba(255, 209, 102, 0.84), 0 0 24px rgba(255, 209, 102, 0.13);
+}
+
+.survivor-upgrade-card.is-evolve .survivor-upgrade-evolution {
+  color: #fff2ba;
+  text-shadow: 0 0 14px rgba(255, 209, 102, 0.34);
 }
 
 .arcade-controls {
@@ -6122,3 +6574,8 @@ input[type="range"] {
   color: var(--ink);
 }
 
+.arcade-play-frame .survivor-status .mini-stats span[data-survivor-threat] {
+  display: inline-flex;
+  flex-basis: 100%;
+  justify-content: flex-start;
+}
