@@ -43,7 +43,13 @@ const GAME_ENTRIES = {
   "memory-match": "./src/games/memory-match/game.js",
   fifteen: "./src/games/fifteen/game.js",
   sokoban: "./src/games/sokoban/game.js",
-  blackjack: "./src/games/blackjack/game.js"
+  blackjack: "./src/games/blackjack/game.js",
+  solitaire: "./src/games/solitaire/game.js",
+  "peg-solitaire": "./src/games/peg-solitaire/game.js",
+  nonogram: "./src/games/nonogram/game.js",
+  "dots-and-boxes": "./src/games/dots-and-boxes/game.js",
+  "snakes-ladders": "./src/games/snakes-ladders/game.js",
+  pong: "./src/games/pong/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -98,7 +104,13 @@ const MARKET_HEAT = {
   "memory-match": { score: 79, label: "记忆翻牌", signal: "翻牌配对适合全年龄段，关卡与限时易扩展。" },
   fifteen: { score: 73, label: "滑块数字", signal: "数字华容道是经典滑块解谜，步数与计时排行耐玩。" },
   sokoban: { score: 71, label: "推箱闯关", signal: "推箱子靠关卡设计形成长线，仓库工是常青解谜。" },
-  blackjack: { score: 80, label: "纸牌博弈", signal: "21 点规则简单、决策深度高，单人养成式刷分。" }
+  blackjack: { score: 80, label: "纸牌博弈", signal: "21 点规则简单、决策深度高，单人养成式刷分。" },
+  solitaire: { score: 90, label: "纸牌常青", signal: "克朗代克接龙是桌面与移动端长青单人纸牌，复玩极强。" },
+  "peg-solitaire": { score: 66, label: "独立钻石", signal: "孔明棋是经典跳棋解谜，残局收尾耐玩。" },
+  nonogram: { score: 76, label: "数织绘图", signal: "数织靠逻辑推理与图案揭示，关卡可大量生成。" },
+  "dots-and-boxes": { score: 70, label: "圈地对弈", signal: "点格棋上手快、策略链条深，适合人机或双人。" },
+  "snakes-ladders": { score: 67, label: "骰子竞速", signal: "蛇梯棋是合家欢运气竞速，适合双人快局。" },
+  pong: { score: 72, label: "弹球对战", signal: "乒乓街机鼻祖，单局短、节奏快、难度可调。" }
 };
 
 function gameVisualStyle(key) {
@@ -1010,6 +1022,158 @@ const registrations = [
       ]
     },
     () => import("./blackjack/game.js").then((module) => module.mountBlackjack)
+  ),
+  defineLocalGame(
+    {
+      id: "solitaire",
+      title: "接龙纸牌",
+      subtitle: "克朗代克接龙，按花色归位",
+      tag: "纸牌常青",
+      category: "puzzle",
+      secondaryCategories: ["number", "quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      progressType: "score",
+      ...gamePluginMeta("solitaire", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "cinnabar",
+      icon: "./public/games/extra/icons/solitaire.svg",
+      assets: ["./public/games/extra/icons/solitaire.svg"],
+      rules: [
+        "翻牌堆补牌，列内按颜色交替递减叠放。",
+        "把四门花色从 A 到 K 收齐到基础堆即获胜。",
+        "点选牌再点目标移动，双击送入基础堆。",
+        "可撤销、重开，支持续玩。"
+      ]
+    },
+    () => import("./solitaire/game.js").then((module) => module.mountSolitaire)
+  ),
+  defineLocalGame(
+    {
+      id: "peg-solitaire",
+      title: "孔明棋",
+      subtitle: "跳吃棋子，留一子为胜",
+      tag: "独立钻石",
+      category: "puzzle",
+      secondaryCategories: ["classic", "quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("peg-solitaire", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "jade",
+      icon: "./public/games/extra/icons/peg-solitaire.svg",
+      assets: ["./public/games/extra/icons/peg-solitaire.svg"],
+      rules: [
+        "选一枚棋子跨过相邻棋子跳入空位，被跨者移除。",
+        "目标是棋盘最终只剩一子。",
+        "困难要求最后一子落在中心。",
+        "无子可跳即结束，可悔棋、重开。"
+      ]
+    },
+    () => import("./peg-solitaire/game.js").then((module) => module.mountPegSolitaire)
+  ),
+  defineLocalGame(
+    {
+      id: "nonogram",
+      title: "数织",
+      subtitle: "按行列数字涂格成图",
+      tag: "数织绘图",
+      category: "puzzle",
+      secondaryCategories: ["number", "quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("nonogram", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "sky",
+      icon: "./public/games/extra/icons/nonogram.svg",
+      assets: ["./public/games/extra/icons/nonogram.svg"],
+      rules: [
+        "行列数字表示该行/列连续填涂的长度。",
+        "点击填涂，标记模式可打叉排除。",
+        "正确涂满全部目标格即完成。",
+        "难度决定棋盘 5x5、10x10、15x15 与高密度。"
+      ]
+    },
+    () => import("./nonogram/game.js").then((module) => module.mountNonogram)
+  ),
+  defineLocalGame(
+    {
+      id: "dots-and-boxes",
+      title: "点格棋",
+      subtitle: "连线圈地，占格多者胜",
+      tag: "圈地对弈",
+      category: "strategy",
+      secondaryCategories: ["classic", "quick"],
+      complexity: "中等",
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "match",
+      ...gamePluginMeta("dots-and-boxes", "board", { sessionSave: true }),
+      ...gameVisualStyle("guofengBoard"),
+      accent: "cinnabar",
+      icon: "./public/games/extra/icons/dots-and-boxes.svg",
+      assets: ["./public/games/extra/icons/dots-and-boxes.svg"],
+      rules: [
+        "在两点之间连边，围成一格即占格并加一手。",
+        "占格多者获胜；棋盘按难度 4x4 到 6x6。",
+        "AI 会贪心吃格并尽量不送格，困难考虑长链。",
+        "支持悔局、重开与续玩。"
+      ]
+    },
+    () => import("./dots-and-boxes/game.js").then((module) => module.mountDotsBoxes)
+  ),
+  defineLocalGame(
+    {
+      id: "snakes-ladders",
+      title: "蛇梯棋",
+      subtitle: "掷骰前进，爬梯避蛇",
+      tag: "骰子竞速",
+      category: "race",
+      secondaryCategories: ["quick"],
+      complexity: "简单",
+      progressType: "match",
+      ...gamePluginMeta("snakes-ladders", "board", { sessionSave: true }),
+      ...gameVisualStyle("guofengBoard"),
+      accent: "lotus",
+      icon: "./public/games/extra/icons/snakes-ladders.svg",
+      assets: ["./public/games/extra/icons/snakes-ladders.svg"],
+      rules: [
+        "点击骰子前进，踩到梯底上升、蛇头下滑。",
+        "先精确到 100 的一方获胜。",
+        "支持人机或本地双人。",
+        "可重开，支持续玩。"
+      ]
+    },
+    () => import("./snakes-ladders/game.js").then((module) => module.mountSnakesLadders)
+  ),
+  defineLocalGame(
+    {
+      id: "pong",
+      title: "弹球对战",
+      subtitle: "挡板互拼，先到 7 分",
+      tag: "弹球对战",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("pong", "arcade"),
+      ...gameVisualStyle("classicArcade"),
+      accent: "sky",
+      icon: "./public/games/extra/icons/pong.svg",
+      assets: ["./public/games/extra/icons/pong.svg"],
+      rules: [
+        "拖动挡板反弹小球，让对手接不住得分。",
+        "先到 7 分获胜，球速逐拍加快。",
+        "难度影响 AI 反应与球速。",
+        "移动端拖动，桌面端方向键，可重开。"
+      ]
+    },
+    () => import("./pong/game.js").then((module) => module.mountPong)
   )
 ];
 

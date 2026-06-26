@@ -196,6 +196,79 @@ const STAGE_PHASES = [
   }
 ];
 
+const SPAWN_PATTERNS = [
+  {
+    id: "scatter",
+    title: "游散入场",
+    icon: "散",
+    unlock: 1,
+    weight: 1.25,
+    phaseBias: { intro: 1.35, boss: 0.7 },
+    profileBias: { opening: 1.35, rebuild: 1.28 }
+  },
+  {
+    id: "surround",
+    title: "百鬼合围",
+    icon: "围",
+    unlock: 1,
+    weight: 1,
+    phaseBias: { mid: 1.12, late: 1.22, bossReady: 1.16 },
+    profileBias: { swarm: 1.48, seal: 1.18 },
+    eventBias: { horde: 1.45, rush: 1.12, volatile: 1.08 }
+  },
+  {
+    id: "frontline",
+    title: "正面压线",
+    icon: "线",
+    unlock: 4,
+    weight: 0.82,
+    phaseBias: { mid: 1.12, late: 1.25, bossReady: 1.18 },
+    profileBias: { objective: 1.12, pressure: 1.45, seal: 1.18 },
+    eventBias: { armored: 1.28, siege: 1.42, void: 1.1 }
+  },
+  {
+    id: "flank",
+    title: "双翼夹击",
+    icon: "翼",
+    unlock: 7,
+    weight: 0.78,
+    phaseBias: { mid: 1.18, late: 1.24, bossReady: 1.16 },
+    profileBias: { mixed: 1.18, pressure: 1.24, ambush: 1.16 },
+    eventBias: { spitters: 1.22, siege: 1.18, rush: 1.12 }
+  },
+  {
+    id: "backstab",
+    title: "背刺伏击",
+    icon: "伏",
+    unlock: 11,
+    weight: 0.72,
+    phaseBias: { mid: 1.08, late: 1.32, bossReady: 1.28 },
+    profileBias: { ambush: 1.75, rift: 1.12, pressure: 1.18 },
+    eventBias: { ambush: 1.65, rush: 1.22, void: 1.12 }
+  },
+  {
+    id: "riftRing",
+    title: "裂隙环生",
+    icon: "隙",
+    unlock: 10,
+    weight: 0.66,
+    phaseBias: { mid: 1.08, late: 1.3, bossReady: 1.35 },
+    profileBias: { rift: 1.85, seal: 1.22, boss: 1.12 },
+    eventBias: { void: 1.55, ambush: 1.12 },
+    modifierBias: { voidVeil: 1.6, staticStorm: 1.08 }
+  },
+  {
+    id: "bossEscort",
+    title: "鬼王护卫",
+    icon: "护",
+    unlock: 5,
+    weight: 1.35,
+    bossOnly: true,
+    phaseBias: { boss: 1.8 },
+    profileBias: { boss: 1.24, seal: 1.32 }
+  }
+];
+
 const ENEMIES = {
   crawler: { title: "游魂", family: "魂", weakness: "灵", unlock: 1, hp: 12, speed: 38, damage: 7, xp: 3, score: 18, radius: 10, color: "#ff7a7a", weight: 8 },
   bat: { title: "灯笼鬼", family: "火", weakness: "雷", unlock: 2, hp: 8, speed: 68, damage: 5, xp: 3, score: 16, radius: 8, color: "#7bd4ff", weight: 5 },
@@ -663,8 +736,9 @@ const BOSS_ARCHETYPES = [
     damage: 1.12,
     summon: ["charger", "brute", "shield"],
     danger: "meteor",
+    weaknessSkills: ["frost", "orbit", "mine"],
     intro: "冲锋、震荡弹幕与尸火压场",
-    hint: "绕开冲锋，别站在尸火圈里"
+    hint: "绕开冲锋，寒咒和护身轮能抓破绽"
   },
   {
     id: "hive",
@@ -677,8 +751,9 @@ const BOSS_ARCHETYPES = [
     damage: 0.96,
     summon: ["swarmer", "bat", "spitter"],
     danger: "rift",
+    weaknessSkills: ["aura", "mine", "lightning"],
     intro: "红线召唤、高速纸人和包围弹幕",
-    hint: "先清纸人，远离红线裂隙"
+    hint: "先清纸人，符阵和雷符可破红线"
   },
   {
     id: "artillery",
@@ -691,8 +766,9 @@ const BOSS_ARCHETYPES = [
     damage: 1.2,
     summon: ["bomber", "spitter", "sniper"],
     danger: "laser",
+    weaknessSkills: ["speed", "drone", "knife"],
     intro: "雨夜炮击、扫射光束与红伞爆潮",
-    hint: "横向躲扫射，预判伞影落点"
+    hint: "横向躲扫射，远程飞刃和纸人抓空档"
   },
   {
     id: "warden",
@@ -705,8 +781,9 @@ const BOSS_ARCHETYPES = [
     damage: 0.92,
     summon: ["shield", "warden", "brute"],
     danger: "acid",
+    weaknessSkills: ["focus", "lightning", "knife"],
     intro: "治疗护卫、腐蚀地带与重甲推进",
-    hint: "先断护卫，离开审判腐蚀区"
+    hint: "先断护卫，镇念爆发和雷法破审判"
   }
 ];
 
@@ -1028,6 +1105,124 @@ function stageHazardRate(state) {
   return stagePhaseForState(state).hazardRate || 1;
 }
 
+function biasFromMap(map, id) {
+  return Math.max(0.05, Number(map?.[id]) || 1);
+}
+
+function movementAngle(state, fallback = null) {
+  const ax = Number(state.controls?.axisX) || 0;
+  const ay = Number(state.controls?.axisY) || 0;
+  if (Math.hypot(ax, ay) > 0.15) return Math.atan2(ay, ax);
+  if (fallback !== null) return fallback;
+  return Math.atan2(state.player.y - WORLD / 2, state.player.x - WORLD / 2);
+}
+
+function chooseSpawnPattern(state, activeEvent = null) {
+  const phase = stagePhaseForState(state);
+  const profile = stageProfileForLevel(state.level);
+  const modifier = stageModifierSpec(state);
+  let available = SPAWN_PATTERNS.filter((pattern) => state.level >= pattern.unlock);
+  available = state.bossAlive
+    ? available.filter((pattern) => pattern.bossOnly || pattern.id === "scatter" || pattern.id === "surround" || pattern.id === "flank")
+    : available.filter((pattern) => !pattern.bossOnly);
+  return weightedPick(available, (pattern) => {
+    const eventBias = activeEvent ? biasFromMap(pattern.eventBias, activeEvent.id) : 1;
+    return (pattern.weight || 1)
+      * biasFromMap(pattern.phaseBias, phase.id)
+      * biasFromMap(pattern.profileBias, profile.id)
+      * biasFromMap(pattern.modifierBias, modifier.id)
+      * eventBias;
+  }) || SPAWN_PATTERNS[0];
+}
+
+function activeRiftOrigin(state) {
+  const candidates = [
+    ...(state.dangerZones || []).filter((zone) => zone.type === "rift"),
+    ...(state.objects || []).filter((object) => object.active && object.type === "riftSeal")
+  ];
+  if (!candidates.length) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function spawnPointForPattern(state, pattern, index = 0, count = 1) {
+  const id = typeof pattern === "string" ? pattern : pattern?.id;
+  const base = 305 + Math.min(115, state.level * 2.4);
+  const spreadIndex = index - (count - 1) / 2;
+  const moveAngle = movementAngle(state, Math.random() * Math.PI * 2);
+  const jitter = (Math.random() - 0.5) * 32;
+
+  if (id === "surround") {
+    const angle = index * Math.PI * 2 / Math.max(1, count) + state.time * 0.18 + Math.random() * 0.22;
+    return {
+      x: clamp(state.player.x + Math.cos(angle) * (base + jitter), 24, WORLD - 24),
+      y: clamp(state.player.y + Math.sin(angle) * (base + jitter), 24, WORLD - 24)
+    };
+  }
+
+  if (id === "frontline") {
+    const angle = moveAngle;
+    const side = angle + Math.PI / 2;
+    return {
+      x: clamp(state.player.x + Math.cos(angle) * base + Math.cos(side) * spreadIndex * 54 + jitter, 24, WORLD - 24),
+      y: clamp(state.player.y + Math.sin(angle) * base + Math.sin(side) * spreadIndex * 54 + jitter, 24, WORLD - 24)
+    };
+  }
+
+  if (id === "flank") {
+    const sideSign = index % 2 === 0 ? 1 : -1;
+    const row = Math.floor(index / 2);
+    const angle = moveAngle + sideSign * Math.PI / 2;
+    const forward = moveAngle + (row % 2 ? 0.2 : -0.2);
+    return {
+      x: clamp(state.player.x + Math.cos(angle) * (base * 0.9 + row * 18) + Math.cos(forward) * (spreadIndex * 18), 24, WORLD - 24),
+      y: clamp(state.player.y + Math.sin(angle) * (base * 0.9 + row * 18) + Math.sin(forward) * (spreadIndex * 18), 24, WORLD - 24)
+    };
+  }
+
+  if (id === "backstab") {
+    const angle = moveAngle + Math.PI + (Math.random() - 0.5) * 0.34;
+    const side = angle + Math.PI / 2;
+    return {
+      x: clamp(state.player.x + Math.cos(angle) * (base * 0.78) + Math.cos(side) * spreadIndex * 34, 24, WORLD - 24),
+      y: clamp(state.player.y + Math.sin(angle) * (base * 0.78) + Math.sin(side) * spreadIndex * 34, 24, WORLD - 24)
+    };
+  }
+
+  if (id === "riftRing") {
+    const origin = activeRiftOrigin(state) || spawnPointNearPlayer(state, base * 0.86);
+    const angle = index * Math.PI * 2 / Math.max(1, count) + Math.random() * 0.35;
+    const radius = 48 + Math.min(54, state.level * 1.4);
+    return {
+      x: clamp(origin.x + Math.cos(angle) * radius, 24, WORLD - 24),
+      y: clamp(origin.y + Math.sin(angle) * radius, 24, WORLD - 24)
+    };
+  }
+
+  if (id === "bossEscort") {
+    const boss = state.enemies.find((enemy) => enemy.boss && !enemy.dead);
+    if (boss) {
+      const angle = index * Math.PI * 2 / Math.max(1, count) + boss.phase + Math.random() * 0.18;
+      const radius = 86 + Math.min(45, state.level * 1.2);
+      return {
+        x: clamp(boss.x + Math.cos(angle) * radius, 24, WORLD - 24),
+        y: clamp(boss.y + Math.sin(angle) * radius, 24, WORLD - 24)
+      };
+    }
+  }
+
+  return spawnPointNearPlayer(state, base + Math.random() * 110);
+}
+
+function maybeAnnounceSpawnPattern(state, pattern, count) {
+  if (!pattern || pattern.id === "scatter" || count < 3) return;
+  const cooldown = pattern.id === state.lastSpawnPatternId ? 8 : 4;
+  if (state.time - (state.lastSpawnPatternAt || -99) < cooldown) return;
+  state.lastSpawnPatternId = pattern.id;
+  state.lastSpawnPatternAt = state.time;
+  state.message = pattern.title;
+  addFloatingText(state.effects, state.player.x, state.player.y - 62, pattern.title, { color: pattern.id === "bossEscort" ? RARITIES.evolve.color : classicArcade.cyan, size: 13, life: 0.95 });
+}
+
 function topChapterBiasIds(level, group, count = 3) {
   const chapter = chapterForLevel(level);
   return Object.entries(chapter?.[group] || {})
@@ -1191,6 +1386,8 @@ function initialState(meta = loadMeta(), options = {}) {
     stageObjective: null,
     objectiveStreak: 0,
     pressureDebt: 0,
+    lastSpawnPatternId: "",
+    lastSpawnPatternAt: -99,
     message: "拖动画布移动，匣术会自动镇鬼",
     lastDamageSource: null,
     damageStats: {},
@@ -1381,6 +1578,15 @@ function skillRecommendations(state) {
   if (state.lastDamageSource?.sourceType && state.time - (state.lastDamageSource.time || 0) <= 32) {
     addThreatRecommendation(recommendations, state.lastDamageSource.sourceType, 4.2, `刚受伤：${state.lastDamageSource.name || "百鬼"}`);
   }
+  const bossEnemy = state.enemies?.find((enemy) => enemy.boss && !enemy.dead);
+  if (bossEnemy) {
+    addSkillRecommendations(
+      recommendations,
+      bossSpec(bossEnemy).weaknessSkills,
+      bossEnemy.weakWindow > 0 ? 5.8 : 2.6,
+      bossEnemy.weakWindow > 0 ? `鬼王弱点：${enemyTitle(bossEnemy)}` : `鬼王机制：${enemyTitle(bossEnemy)}`
+    );
+  }
 
   const enemyPressure = new Map();
   for (const enemy of state.enemies || []) {
@@ -1490,7 +1696,9 @@ function resultExtra(state, won) {
 
 function threatLabel(state) {
   const bossEnemy = state.enemies?.find((enemy) => enemy.boss);
-  if (bossEnemy) return `鬼王 ${enemyTitle(bossEnemy)} · ${bossSpec(bossEnemy).hint}`;
+  if (bossEnemy) return bossEnemy.weakWindow > 0
+    ? `鬼王 ${enemyTitle(bossEnemy)} · 弱点 ${bossWeaknessText(bossEnemy)}`
+    : `鬼王 ${enemyTitle(bossEnemy)} · ${bossSpec(bossEnemy).hint}`;
   const threat = nearestEnemy(state, 260) || state.enemies?.find((enemy) => !enemy.dead);
   if (threat) return `百鬼 ${enemyTitle(threat)} · 弱 ${threat.weakness || enemySpec(threat.type).weakness}`;
   const codex = unlockedEnemyCodex(state.level);
@@ -1531,6 +1739,41 @@ function bossArchetypeForLevel(level) {
 function bossSpec(idOrEnemy) {
   const id = typeof idOrEnemy === "string" ? idOrEnemy : idOrEnemy?.bossKind;
   return BOSS_ARCHETYPES.find((boss) => boss.id === id) || BOSS_ARCHETYPES[0];
+}
+
+function sourceSkillId(source) {
+  return {
+    crescent: "knife",
+    shadowVolley: "knife",
+    sentry: "drone",
+    hive: "drone",
+    plague: "aura",
+    plagueAura: "aura",
+    saw: "orbit",
+    seismicMine: "mine",
+    storm: "lightning",
+    iceNova: "frost",
+    vortex: "focus"
+  }[source] || source;
+}
+
+function bossWeaknessText(enemyOrSpec) {
+  const spec = enemyOrSpec?.id ? enemyOrSpec : bossSpec(enemyOrSpec);
+  return (spec.weaknessSkills || ["focus"])
+    .map((id) => UPGRADE_BY_ID.get(id)?.title || id)
+    .join(" / ");
+}
+
+function openBossWeakWindow(state, boss, duration = 2.2, reason = "弱点暴露") {
+  if (!boss || boss.dead || !boss.boss) return;
+  boss.weakWindow = Math.max(boss.weakWindow || 0, duration);
+  boss.weakWindowTotal = Math.max(boss.weakWindowTotal || 0, duration);
+  boss.weakWindowReason = reason;
+  const spec = bossSpec(boss);
+  state.message = `${spec.title} ${reason}`;
+  addFloatingText(state.effects, boss.x, boss.y - 52, reason, { color: RARITIES.evolve.color, size: 16, life: 1.35 });
+  addFloatingText(state.effects, boss.x, boss.y - 69, `弱 ${bossWeaknessText(spec)}`, { color: classicArcade.cyan, size: 10, life: 1.35 });
+  addBurst(state.effects, boss.x, boss.y, { count: 18, color: RARITIES.evolve.color, secondary: classicArcade.cyan, radius: boss.radius + 18, ringLife: 0.32 });
 }
 
 function skillLevel(state, id) {
@@ -1874,6 +2117,9 @@ function makeEnemy(state, type, point, boss = false, options = {}) {
     boss,
     bossKind: bossInfo?.id || null,
     bossTitle: bossInfo?.title || null,
+    weakWindow: 0,
+    weakWindowTotal: 0,
+    weakWindowReason: "",
     empowered,
     affix: affix?.id || null,
     mutation: mutation?.id || null,
@@ -1890,18 +2136,25 @@ function makeEnemy(state, type, point, boss = false, options = {}) {
   };
 }
 
-function spawnEnemy(state) {
+function spawnEnemy(state, options = {}) {
   const tuning = levelTuning(state.level);
   if (state.enemies.length >= tuning.maxEnemies || state.choices.length) return;
   const activeEvent = state.activeEvent;
-  const type = chooseEnemyType(state, activeEvent);
+  const pattern = options.pattern || chooseSpawnPattern(state, activeEvent);
+  const bossEnemy = pattern.id === "bossEscort" ? state.enemies.find((enemy) => enemy.boss && !enemy.dead) : null;
+  const escortPool = bossEnemy ? bossSpec(bossEnemy).summon : null;
+  const type = escortPool?.length ? escortPool[Math.floor(Math.random() * escortPool.length)] : chooseEnemyType(state, activeEvent);
   const ambientEliteChance = Math.max(0, (state.level - 3) * 0.004);
   const debtChance = Math.min(0.16, (state.pressureDebt || 0) * 0.025);
   const modifierEliteChance = stageModifierValue(state, "elite", 0);
   const profileEliteChance = stageProfileForLevel(state.level).eliteBonus || 0;
   const phaseEliteChance = stagePhaseForState(state).eliteBonus || 0;
-  const empowered = Boolean((activeEvent?.eliteChance && Math.random() < activeEvent.eliteChance) || Math.random() < ambientEliteChance + debtChance + modifierEliteChance + profileEliteChance + phaseEliteChance);
-  state.enemies.push(makeEnemy(state, type, spawnPointNearPlayer(state), false, { empowered }));
+  const escortEliteChance = bossEnemy ? 0.08 + bossEnemy.phaseIndex * 0.08 : 0;
+  const empowered = Boolean((activeEvent?.eliteChance && Math.random() < activeEvent.eliteChance) || Math.random() < ambientEliteChance + debtChance + modifierEliteChance + profileEliteChance + phaseEliteChance + escortEliteChance);
+  const point = spawnPointForPattern(state, pattern, options.index || 0, options.count || 1);
+  const enemy = makeEnemy(state, type, point, false, { empowered });
+  enemy.spawnPattern = pattern.id;
+  state.enemies.push(enemy);
 }
 
 function spawnAmbush(state, point, reason = "补给惊动怪群") {
@@ -2041,8 +2294,18 @@ function damageEnemy(state, enemy, amount, source = "hit") {
   const affix = affixSpec(enemy.affix);
   let finalAmount = enemy.frozen > 0 ? amount * 1.18 : amount;
   if (enemy.affix === "bulwark" && enemy.frozen <= 0) finalAmount *= 0.72;
-  if (enemy.boss) finalAmount *= 1 + relicLevel(state, "hunterMark") * 0.12;
-  else if (enemy.empowered) finalAmount *= 1 + relicLevel(state, "hunterMark") * 0.05;
+  if (enemy.boss) {
+    finalAmount *= 1 + relicLevel(state, "hunterMark") * 0.12;
+    if (enemy.weakWindow > 0) {
+      const spec = bossSpec(enemy);
+      const matchedWeakness = (spec.weaknessSkills || []).includes(sourceSkillId(source));
+      finalAmount *= matchedWeakness ? 1.52 : 1.28;
+      if (matchedWeakness) {
+        enemy.weakHitPulse = 0.32;
+        state.overdriveCharge = Math.min(100, (state.overdriveCharge || 0) + 0.55);
+      }
+    }
+  } else if (enemy.empowered) finalAmount *= 1 + relicLevel(state, "hunterMark") * 0.05;
   enemy.hp -= finalAmount;
   enemy.flash = 0.12;
   if (enemy.hp > 0) {
@@ -2998,6 +3261,8 @@ function triggerBossSpecial(state, enemy, spec, angle) {
 
 function updateBossEnemy(state, enemy, dt, angle) {
   const spec = bossSpec(enemy);
+  enemy.weakWindow = Math.max(0, (enemy.weakWindow || 0) - dt);
+  enemy.weakHitPulse = Math.max(0, (enemy.weakHitPulse || 0) - dt);
   const hpRatio = clamp(enemy.hp / enemy.maxHp, 0, 1);
   const nextPhase = hpRatio < 0.34 ? 2 : hpRatio < 0.67 ? 1 : 0;
   if (nextPhase !== enemy.phaseIndex) {
@@ -3007,6 +3272,7 @@ function updateBossEnemy(state, enemy, dt, angle) {
     addFloatingText(state.effects, enemy.x, enemy.y - 36, state.message, { color: RARITIES.evolve.color, size: 18 });
     addFloatingText(state.effects, enemy.x, enemy.y - 55, spec.hint, { color: classicArcade.white, size: 10, life: 1.45 });
     addBurst(state.effects, enemy.x, enemy.y, { count: 28, color: classicArcade.red, secondary: RARITIES.evolve.color, radius: 30 });
+    openBossWeakWindow(state, enemy, 3.2 + nextPhase * 0.35, nextPhase === 2 ? "狂暴破绽" : "转阶段破绽");
   }
 
   if (enemy.chargeTime > 0) {
@@ -3042,6 +3308,7 @@ function updateBossEnemy(state, enemy, dt, angle) {
   enemy.special -= dt;
   if (enemy.special <= 0) {
     triggerBossSpecial(state, enemy, spec, angle);
+    openBossWeakWindow(state, enemy, 1.55 + enemy.phaseIndex * 0.28, "大招后摇");
     enemy.special = Math.max(2.05, 4.25 - enemy.phaseIndex * 0.62 - state.level * 0.018);
   }
 }
@@ -3347,7 +3614,9 @@ function update(state, dt, context) {
   if (state.spawnTimer <= 0) {
     const phase = stagePhaseForState(state);
     const burst = Math.max(1, tuning.spawnBurst + (phase.burstBonus || 0) + (state.activeEvent?.burst || 1) - 1);
-    for (let i = 0; i < burst; i += 1) spawnEnemy(state);
+    const pattern = chooseSpawnPattern(state, state.activeEvent);
+    maybeAnnounceSpawnPattern(state, pattern, burst);
+    for (let i = 0; i < burst; i += 1) spawnEnemy(state, { pattern, index: i, count: burst });
     state.spawnTimer = tuning.spawnEvery * stageSpawnScale(state) * (state.activeEvent?.spawnScale || 1) * stageModifierValue(state, "spawn", 1);
   }
   const progressReady = (state.stageProgress || 0) >= stageProgressGoal(state.level);
@@ -4433,6 +4702,24 @@ function drawEnemyTelegraph(ctx, state, enemy, p) {
       ctx.setLineDash([]);
       ctx.restore();
     }
+    if (enemy.weakWindow > 0) {
+      const ratio = clamp(enemy.weakWindow / Math.max(0.1, enemy.weakWindowTotal || 2.2), 0, 1);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.globalAlpha = 0.34 + ratio * 0.42;
+      ctx.strokeStyle = enemy.weakHitPulse > 0 ? classicArcade.cyan : RARITIES.evolve.color;
+      ctx.lineWidth = enemy.weakHitPulse > 0 ? 5 : 3;
+      ctx.setLineDash([12, 6]);
+      ctx.beginPath();
+      ctx.arc(0, 0, enemy.radius + 35 + Math.sin(state.time * 10) * 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ratio);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = enemy.weakHitPulse > 0 ? classicArcade.cyan : RARITIES.evolve.color;
+      ctx.font = "900 10px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("弱点", 0, -enemy.radius - 42);
+      ctx.restore();
+    }
   }
 }
 
@@ -4845,7 +5132,7 @@ function drawHud(ctx, state) {
   const overdriveProgress = state.overdrive > 0 ? clamp(state.overdrive / overdriveDuration(state), 0, 1) : clamp((state.overdriveCharge || 0) / 100, 0, 1);
   const bossEnemy = state.enemies.find((enemy) => enemy.boss);
   const eventText = bossEnemy ? `${bossEnemy.bossTitle || "鬼王"} ${bossEnemy.phaseIndex >= 2 ? "狂暴" : bossEnemy.phaseIndex === 1 ? "二阶段" : "入场"}` : state.activeEvent?.title || "游走";
-  const bossHint = bossEnemy ? bossSpec(bossEnemy).hint : "";
+  const bossHint = bossEnemy ? bossEnemy.weakWindow > 0 ? `弱点 ${bossWeaknessText(bossEnemy)}` : bossSpec(bossEnemy).hint : "";
   const objectiveText = objectiveLabel(state);
   const character = characterSpec(state);
   const ability = abilitySpec(state);
