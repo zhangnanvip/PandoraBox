@@ -73,7 +73,12 @@ const GAME_ENTRIES = {
   hex: "./src/games/hex/game.js",
   "nine-mens-morris": "./src/games/nine-mens-morris/game.js",
   ataxx: "./src/games/ataxx/game.js",
-  "word-search": "./src/games/word-search/game.js"
+  "word-search": "./src/games/word-search/game.js",
+  invaders: "./src/games/invaders/game.js",
+  frogger: "./src/games/frogger/game.js",
+  asteroids: "./src/games/asteroids/game.js",
+  stack: "./src/games/stack/game.js",
+  "tap-black": "./src/games/tap-black/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -201,7 +206,12 @@ const MARKET_HEAT = {
   hex: { score: 60, label: "六贯棋", signal: "六贯棋连接必有胜者，规则极简策略极深。" },
   "nine-mens-morris": { score: 62, label: "九子棋", signal: "九子棋成三吃子，落子+走子双阶段经典。" },
   ataxx: { score: 61, label: "同化棋", signal: "同化棋克隆扩张+翻转，节奏快策略强。" },
-  "word-search": { score: 68, label: "成语找词", signal: "成语找词寓教于乐，划线找词全年龄。" }
+  "word-search": { score: 68, label: "成语找词", signal: "成语找词寓教于乐，划线找词全年龄。" },
+  invaders: { score: 77, label: "太空入侵", signal: "太空入侵是射击鼻祖，清波次刷分常青。" },
+  frogger: { score: 70, label: "过马路", signal: "过马路躲车过河，紧张休闲全年龄。" },
+  asteroids: { score: 69, label: "小行星", signal: "小行星惯性飞行射击，街机经典手感。" },
+  stack: { score: 79, label: "方块叠塔", signal: "叠塔一指点击，完美对齐刷高度，传播性强。" },
+  "tap-black": { score: 74, label: "别踩白块", signal: "别踩白块手速节奏休闲，越快越上头。" }
 };
 
 function gameVisualStyle(key) {
@@ -1668,6 +1678,26 @@ const registrations = [
   defineLocalGame(
     { id: "word-search", title: "成语找词", subtitle: "划线找出隐藏成语", tag: "成语找词", category: "number", secondaryCategories: ["puzzle", "quick"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("word-search", "puzzle"), ...gameVisualStyle("classicPuzzle"), accent: "lotus", icon: "./public/games/extra/icons/word-search.svg", assets: ["./public/games/extra/icons/word-search.svg"], rules: ["拖动连成直线选出成语。", "横竖斜均可，找全过关。", "难度决定字阵大小与词数。", "可重开换一局。"] },
     () => import("./word-search/game.js").then((m) => m.mountWordSearch)
+  ),
+  defineLocalGame(
+    { id: "invaders", title: "太空入侵", subtitle: "清波次，守住地球", tag: "太空入侵", category: "arcade", secondaryCategories: ["quick"], complexity: "中等", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("invaders", "arcade"), ...gameVisualStyle("classicArcade"), accent: "jade", icon: "./public/games/extra/icons/invaders.svg", assets: ["./public/games/extra/icons/invaders.svg"], rules: ["拖动战机射击下压的外星军团。", "清完一波进下一波, 越来越快。", "被击中或外星人压境扣命, 三命用尽结束。", "桌面方向键移动空格射击。"] },
+    () => import("./invaders/game.js").then((m) => m.mountInvaders)
+  ),
+  defineLocalGame(
+    { id: "frogger", title: "过马路", subtitle: "躲车过河，安全抵达", tag: "过马路", category: "arcade", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("frogger", "arcade"), ...gameVisualStyle("classicArcade"), accent: "sky", icon: "./public/games/extra/icons/frogger.svg", assets: ["./public/games/extra/icons/frogger.svg"], rules: ["向上跳跃, 躲车、踩木过河。", "每次抵达终点得分。", "撞车或落水扣命, 三命用尽结束。", "滑动或方向键移动。"] },
+    () => import("./frogger/game.js").then((m) => m.mountFrogger)
+  ),
+  defineLocalGame(
+    { id: "asteroids", title: "小行星", subtitle: "惯性飞行，击碎陨石", tag: "小行星", category: "arcade", secondaryCategories: ["quick"], complexity: "中等", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("asteroids", "arcade"), ...gameVisualStyle("classicArcade"), accent: "ink", icon: "./public/games/extra/icons/asteroids.svg", assets: ["./public/games/extra/icons/asteroids.svg"], rules: ["旋转推进飞船, 射击陨石。", "大陨石击中会裂成小块, 全清进下一波。", "撞到陨石扣命, 三命用尽结束。", "屏幕环绕, 桌面方向键空格。"] },
+    () => import("./asteroids/game.js").then((m) => m.mountAsteroids)
+  ),
+  defineLocalGame(
+    { id: "stack", title: "方块叠塔", subtitle: "一指对齐，越叠越高", tag: "方块叠塔", category: "arcade", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("stack", "arcade"), ...gameVisualStyle("classicArcade"), accent: "lotus", icon: "./public/games/extra/icons/stack.svg", assets: ["./public/games/extra/icons/stack.svg"], rules: ["方块左右滑动, 点击落下。", "对齐才不削边, 完美连击有奖励。", "叠得越高分越高, 削没了就结束。", "点屏或空格落块。"] },
+    () => import("./stack/game.js").then((m) => m.mountStack)
+  ),
+  defineLocalGame(
+    { id: "tap-black", title: "别踩白块", subtitle: "只点黑块，越快越高", tag: "别踩白块", category: "arcade", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("tap-black", "arcade"), ...gameVisualStyle("classicArcade"), accent: "cinnabar", icon: "./public/games/extra/icons/tap-black.svg", assets: ["./public/games/extra/icons/tap-black.svg"], rules: ["每行点最底的黑块前进。", "踩白块或漏点即结束。", "速度逐渐加快, 比拼手速。", "清完 50 行通关。"] },
+    () => import("./tap-black/game.js").then((m) => m.mountTapBlack)
   )
 ];
 
