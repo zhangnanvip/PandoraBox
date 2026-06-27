@@ -78,7 +78,12 @@ const GAME_ENTRIES = {
   frogger: "./src/games/frogger/game.js",
   asteroids: "./src/games/asteroids/game.js",
   stack: "./src/games/stack/game.js",
-  "tap-black": "./src/games/tap-black/game.js"
+  "tap-black": "./src/games/tap-black/game.js",
+  "fruit-slice": "./src/games/fruit-slice/game.js",
+  "mahjong-solitaire": "./src/games/mahjong-solitaire/game.js",
+  unblock: "./src/games/unblock/game.js",
+  "hangman-idiom": "./src/games/hangman-idiom/game.js",
+  "video-poker": "./src/games/video-poker/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -211,7 +216,12 @@ const MARKET_HEAT = {
   frogger: { score: 70, label: "过马路", signal: "过马路躲车过河，紧张休闲全年龄。" },
   asteroids: { score: 69, label: "小行星", signal: "小行星惯性飞行射击，街机经典手感。" },
   stack: { score: 79, label: "方块叠塔", signal: "叠塔一指点击，完美对齐刷高度，传播性强。" },
-  "tap-black": { score: 74, label: "别踩白块", signal: "别踩白块手速节奏休闲，越快越上头。" }
+  "tap-black": { score: 74, label: "别踩白块", signal: "别踩白块手速节奏休闲，越快越上头。" },
+  "fruit-slice": { score: 83, label: "切水果", signal: "切水果滑动爽快、躲炸弹刺激，移动端常青。" },
+  "mahjong-solitaire": { score: 80, label: "上海麻将", signal: "麻将连连消是层叠配对常青解谜，耐玩。" },
+  unblock: { score: 78, label: "华容车阵", signal: "华容车阵关卡海量、滑块解谜全球爆款。" },
+  "hangman-idiom": { score: 67, label: "成语猜字", signal: "成语补字寓教于乐，词库可扩。" },
+  "video-poker": { score: 71, label: "视频扑克", signal: "杰克高对扑克，留牌博赔率单人耐玩。" }
 };
 
 function gameVisualStyle(key) {
@@ -1698,6 +1708,26 @@ const registrations = [
   defineLocalGame(
     { id: "tap-black", title: "别踩白块", subtitle: "只点黑块，越快越高", tag: "别踩白块", category: "arcade", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("tap-black", "arcade"), ...gameVisualStyle("classicArcade"), accent: "cinnabar", icon: "./public/games/extra/icons/tap-black.svg", assets: ["./public/games/extra/icons/tap-black.svg"], rules: ["每行点最底的黑块前进。", "踩白块或漏点即结束。", "速度逐渐加快, 比拼手速。", "清完 50 行通关。"] },
     () => import("./tap-black/game.js").then((m) => m.mountTapBlack)
+  ),
+  defineLocalGame(
+    { id: "fruit-slice", title: "切水果", subtitle: "滑动切果，躲开炸弹", tag: "切水果", category: "arcade", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("fruit-slice", "arcade"), ...gameVisualStyle("classicArcade"), accent: "cinnabar", icon: "./public/games/extra/icons/fruit-slice.svg", assets: ["./public/games/extra/icons/fruit-slice.svg"], rules: ["滑动划过水果即切开得分。", "连切有连击奖励。", "切到炸弹或漏三个即结束。", "随时重开冲高分。"] },
+    () => import("./fruit-slice/game.js").then((m) => m.mountFruitSlice)
+  ),
+  defineLocalGame(
+    { id: "mahjong-solitaire", title: "上海麻将", subtitle: "层叠配对，清空牌山", tag: "上海麻将", category: "puzzle", secondaryCategories: ["classic", "quick"], complexity: "中等", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("mahjong-solitaire", "puzzle", { sessionSave: true }), ...gameVisualStyle("classicPuzzle"), accent: "jade", icon: "./public/games/extra/icons/mahjong-solitaire.svg", assets: ["./public/games/extra/icons/mahjong-solitaire.svg"], rules: ["点两张左右无挡、顶部裸露的相同牌消除。", "全部消完即胜。", "可提示、洗牌、重开。", "牌局会自动避免死局。"] },
+    () => import("./mahjong-solitaire/game.js").then((m) => m.mountMahjongSolitaire)
+  ),
+  defineLocalGame(
+    { id: "unblock", title: "华容车阵", subtitle: "挪车让路，红车出口", tag: "华容车阵", category: "puzzle", secondaryCategories: ["strategy", "quick"], complexity: "中等", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("unblock", "puzzle", { sessionSave: true }), ...gameVisualStyle("classicPuzzle"), accent: "cinnabar", icon: "./public/games/extra/icons/unblock.svg", assets: ["./public/games/extra/icons/unblock.svg"], rules: ["拖动车辆沿轴滑动。", "让红车开到右侧出口过关。", "8 关递进, 步数越少越好。", "可重开, 支持续玩。"] },
+    () => import("./unblock/game.js").then((m) => m.mountUnblock)
+  ),
+  defineLocalGame(
+    { id: "hangman-idiom", title: "成语猜字", subtitle: "补全空缺的成语", tag: "成语猜字", category: "number", secondaryCategories: ["puzzle", "quick"], complexity: "简单", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("hangman-idiom", "puzzle", { sessionSave: true }), ...gameVisualStyle("classicPuzzle"), accent: "ink", icon: "./public/games/extra/icons/hangman-idiom.svg", assets: ["./public/games/extra/icons/hangman-idiom.svg"], rules: ["从候选汉字中选字填入空格。", "补全成语进入下一题。", "错 5 次揭晓答案, 提示可揭一字。", "通关多题计分。"] },
+    () => import("./hangman-idiom/game.js").then((m) => m.mountHangman)
+  ),
+  defineLocalGame(
+    { id: "video-poker", title: "视频扑克", subtitle: "留牌换牌，对子起赔", tag: "视频扑克", category: "number", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("video-poker", "number", { sessionSave: true }), ...gameVisualStyle("classicNumber"), accent: "lotus", icon: "./public/games/extra/icons/video-poker.svg", assets: ["./public/games/extra/icons/video-poker.svg"], rules: ["发五张, 点牌保留再换牌。", "J 对子起赔, 最高皇家同花顺。", "初始 1000 筹码, 可调注。", "筹码用尽结算身家。"] },
+    () => import("./video-poker/game.js").then((m) => m.mountVideoPoker)
   )
 ];
 
