@@ -83,6 +83,29 @@ type EnemyConfig = {
 - 不被命中特效、掉落物和场景装饰盖住。
 - 低端机降级时保留线/圈，优先去掉粒子。
 
+## 3.2 动态识别与死亡反馈字段
+
+试玩版已把 `visual` 从“颜色 + 谱系字”扩展为轻量动态层：
+
+```ts
+type EnemyVisualConfig = {
+  color: string;
+  mark: string;
+  silhouette: string;
+  motionCue: string;
+  deathText: string;
+  deathColor: string;
+  spawnPatternBadges?: Record<string, string>;
+};
+```
+
+当前验证结果：
+
+- 同类怪物可以共用静态 sprite，但必须叠加动态识别层。
+- 危险行为的预警线/圈优先级高于装饰动态。
+- 死亡反馈不只显示分数，高风险怪和特殊怪要显示死亡短语。
+- 护卫、裂隙、背刺等刷怪阵型需要额外局内标记，帮助玩家理解“这批怪为什么这么进场”。
+
 ## 4. DamageSource 建议
 
 试玩版已经开始记录：
