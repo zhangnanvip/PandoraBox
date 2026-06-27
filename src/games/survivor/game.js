@@ -1082,7 +1082,7 @@ function levelTuning(level) {
     duration: Math.round((84 + Math.min(64, level * 2.6)) * (profile.duration || 1)),
     spawnEvery: Math.max(0.18, (0.58 - level * 0.01 - chapter * 0.035) * (profile.spawn || 1)),
     spawnBurst: 1 + Math.floor((level + 2) / 6) + (chapter >= 2 ? 1 : 0) + (profile.burstBonus || 0),
-    maxEnemies: Math.min(168, 52 + level * 3 + chapter * 10),
+    maxEnemies: Math.min(120, 48 + level * 2 + chapter * 8),
     hpScale: 1.12 + level * 0.16 + chapter * 0.3,
     damageScale: 1.05 + level * 0.035 + chapter * 0.09,
     speedScale: 1.02 + level * 0.014,
@@ -2530,7 +2530,7 @@ function enemyDeathFeedback(state, enemy, source = "hit") {
       : enemy.type === "shield" ? classicArcade.cyan
         : enemy.type === "warden" ? "#ffd166"
           : classicArcade.yellow;
-  const count = enemy.boss ? 42 : (visual.particles || 14) + (enemy.empowered ? 8 : 0) + (enemy.mutation ? 4 : 0);
+  const count = enemy.boss ? 24 : Math.round(((visual.particles || 14) + (enemy.empowered ? 8 : 0) + (enemy.mutation ? 4 : 0)) * 0.55);
   addEnemyDeathEcho(state, enemy);
   addBurst(state.effects, enemy.x, enemy.y, {
     count,
@@ -3940,6 +3940,9 @@ function update(state, dt, context) {
   updatePlayerDamage(state);
   updateDeathEchoes(state, dt);
   updateEffects(state.effects, dt);
+  if (state.effects.length > 220) state.effects.splice(0, state.effects.length - 220);
+  if (state.pickups.length > 160) state.pickups.splice(0, state.pickups.length - 160);
+  if (state.projectiles.length > 180) state.projectiles.splice(0, state.projectiles.length - 180);
   updateFeedback(state, dt, [state.enemies]);
   state.shake = Math.max(0, state.shake - dt * 18);
   if (state.player.hp <= 0) finish(state, false, context);
@@ -4028,15 +4031,28 @@ function roundedRectPath(ctx, x, y, w, h, r) {
   ctx.quadraticCurveTo(x, y, x + radius, y);
 }
 
+const GLOW_CACHE = new Map();
+function cachedGlow(ctx, radius, color) {
+  const key = `${color}|${Math.round(radius / 6)}`;
+  let glow = GLOW_CACHE.get(key);
+  if (!glow) {
+    glow = ctx.createRadialGradient(0, 0, 1, 0, 0, radius);
+    glow.addColorStop(0, color);
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    if (GLOW_CACHE.size > 64) GLOW_CACHE.clear();
+    GLOW_CACHE.set(key, glow);
+  }
+  return glow;
+}
+
 function glowCircle(ctx, x, y, radius, color, alpha = 0.28) {
-  const glow = ctx.createRadialGradient(x, y, 1, x, y, radius);
-  glow.addColorStop(0, color);
-  glow.addColorStop(1, `rgba(0,0,0,0)`);
+  // 复用以原点为中心的缓存渐变 + translate, 避免每帧每实体新建 radial gradient
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.fillStyle = glow;
+  ctx.translate(x, y);
+  ctx.fillStyle = cachedGlow(ctx, radius, color);
   ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
@@ -4113,7 +4129,7 @@ function renderEnemySprite(ctx, type, color, affixId, boss = false, bossKind = "
     ctx.scale(1 + frameProgress * 0.16, Math.max(0.58, 1 - frameProgress * 0.28));
   }
   ctx.shadowColor = color;
-  ctx.shadowBlur = boss ? 18 : affix ? 12 : 7;
+  ctx.shadowBlur = boss ? 16 : affix ? 8 : 0; // 普通敌人去 shadowBlur, 移动端高密度时省大量 GPU
   ctx.fillStyle = "rgba(0,0,0,.24)";
   ctx.beginPath();
   ctx.ellipse(0, 25, boss ? 28 : 22, boss ? 10 : 8, 0, 0, Math.PI * 2);
@@ -4691,14 +4707,8 @@ function drawPickup(ctx, state, pickup) {
   const bob = Math.sin(state.time * 5 + pickup.x * 0.02) * 2;
   ctx.translate(0, bob);
   glowCircle(ctx, 0, 0, pickup.radius * 3.2, pickup.type === "heal" ? classicArcade.green : pickup.type === "bomb" ? classicArcade.red : pickup.type === "chest" ? classicArcade.yellow : classicArcade.cyan, 0.34);
-  ctx.shadowColor = "rgba(248,251,255,.28)";
-  ctx.shadowBlur = 8;
   if (pickup.type === "xp") {
-    const gem = ctx.createLinearGradient(-pickup.radius, -pickup.radius, pickup.radius, pickup.radius);
-    gem.addColorStop(0, "#f8fbff");
-    gem.addColorStop(0.35, classicArcade.cyan);
-    gem.addColorStop(1, "#2377ff");
-    ctx.fillStyle = gem;
+    ctx.fillStyle = classicArcade.cyan;
     ctx.beginPath();
     ctx.moveTo(0, -pickup.radius);
     ctx.lineTo(pickup.radius * 0.82, -1);
