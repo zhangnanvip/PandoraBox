@@ -88,7 +88,12 @@ const GAME_ENTRIES = {
   "air-hockey": "./src/games/air-hockey/game.js",
   "color-switch": "./src/games/color-switch/game.js",
   kenken: "./src/games/kenken/game.js",
-  tents: "./src/games/tents/game.js"
+  tents: "./src/games/tents/game.js",
+  battleship: "./src/games/battleship/game.js",
+  anagram: "./src/games/anagram/game.js",
+  hanoi: "./src/games/hanoi/game.js",
+  threes: "./src/games/threes/game.js",
+  typing: "./src/games/typing/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -231,7 +236,12 @@ const MARKET_HEAT = {
   "air-hockey": { score: 70, label: "空气球", signal: "空气曲棍人机对攻，节奏快即时反应。" },
   "color-switch": { score: 73, label: "换色", signal: "换色穿环爆款超休闲，一指上瘾。" },
   kenken: { score: 63, label: "数谜", signal: "KenKen 拉丁方+运算笼，数独进阶逻辑。" },
-  tents: { score: 60, label: "帐篷", signal: "帐篷与树逻辑布点，行列计数解谜。" }
+  tents: { score: 60, label: "帐篷", signal: "帐篷与树逻辑布点，行列计数解谜。" },
+  battleship: { score: 71, label: "海战棋", signal: "海战猜位人机对轰，搜索与运气并重。" },
+  anagram: { score: 65, label: "乱序成词", signal: "乱序成语还原，限时拼字寓教于乐。" },
+  hanoi: { score: 61, label: "汉诺塔", signal: "汉诺塔递归经典，最少步数挑战益智。" },
+  threes: { score: 76, label: "三数合成", signal: "Threes 是 2048 鼻祖，1+2 起步策略更深。" },
+  typing: { score: 64, label: "打字飞行", signal: "落字消除练手速键速，节奏渐快。" }
 };
 
 function gameVisualStyle(key) {
@@ -1758,6 +1768,26 @@ const registrations = [
   defineLocalGame(
     { id: "tents", title: "帐篷", subtitle: "每棵树配一帐篷", tag: "帐篷", category: "puzzle", secondaryCategories: ["number", "quick"], complexity: "中等", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("tents", "puzzle", { sessionSave: true }), ...gameVisualStyle("classicPuzzle"), accent: "jade", icon: "./public/games/extra/icons/tents.svg", assets: ["./public/games/extra/icons/tents.svg"], rules: ["每棵树旁放一顶相邻帐篷。", "帐篷彼此不相邻含斜角。", "行列数字为该行列帐篷数。", "可换题、重开。"] },
     () => import("./tents/game.js").then((m) => m.mountTents)
+  ),
+  defineLocalGame(
+    { id: "battleship", title: "海战棋", subtitle: "搜索炮位, 击沉舰队", tag: "海战棋", category: "strategy", secondaryCategories: ["quick"], complexity: "中等", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "match", ...gamePluginMeta("battleship", "board", { sessionSave: true }), ...gameVisualStyle("guofengBoard"), accent: "sky", icon: "./public/games/extra/icons/battleship.svg", assets: ["./public/games/extra/icons/battleship.svg"], rules: ["点敌方海域开火, 命中续手。", "先击沉对方全部战舰获胜。", "AI 会追猎命中点周围。", "可重开, 支持续玩。"] },
+    () => import("./battleship/game.js").then((m) => m.mountBattleship)
+  ),
+  defineLocalGame(
+    { id: "anagram", title: "乱序成词", subtitle: "还原乱序成语", tag: "乱序成词", category: "number", secondaryCategories: ["puzzle", "quick"], complexity: "简单", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("anagram", "puzzle", { sessionSave: true }), ...gameVisualStyle("classicPuzzle"), accent: "lotus", icon: "./public/games/extra/icons/anagram.svg", assets: ["./public/games/extra/icons/anagram.svg"], rules: ["按正确顺序点出四字成语。", "限时挑战, 提示扣时。", "连过多题计分。", "可换题、重开。"] },
+    () => import("./anagram/game.js").then((m) => m.mountAnagram)
+  ),
+  defineLocalGame(
+    { id: "hanoi", title: "汉诺塔", subtitle: "搬塔, 大不压小", tag: "汉诺塔", category: "puzzle", secondaryCategories: ["strategy", "quick"], complexity: "中等", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("hanoi", "puzzle"), ...gameVisualStyle("classicPuzzle"), accent: "ink", icon: "./public/games/extra/icons/hanoi.svg", assets: ["./public/games/extra/icons/hanoi.svg"], rules: ["点柱子取放最上层圆盘。", "大盘不能压小盘。", "整塔移到最右柱过关。", "步数越接近最优分越高。"] },
+    () => import("./hanoi/game.js").then((m) => m.mountHanoi)
+  ),
+  defineLocalGame(
+    { id: "threes", title: "三数合成", subtitle: "1+2=3, 同数翻倍", tag: "三数合成", category: "number", secondaryCategories: ["quick"], complexity: "中等", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("threes", "number", { sessionSave: true }), ...gameVisualStyle("classicNumber"), accent: "cinnabar", icon: "./public/games/extra/icons/threes.svg", assets: ["./public/games/extra/icons/threes.svg"], rules: ["滑动移动, 1 和 2 合成 3。", "相同数字相加翻倍。", "棋盘塞满无法合成即结束。", "高数越多分越高。"] },
+    () => import("./threes/game.js").then((m) => m.mountThrees)
+  ),
+  defineLocalGame(
+    { id: "typing", title: "打字飞行", subtitle: "落字消除练手速", tag: "打字飞行", category: "quick", secondaryCategories: ["arcade"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("typing", "arcade"), ...gameVisualStyle("classicArcade"), accent: "jade", icon: "./public/games/extra/icons/typing.svg", assets: ["./public/games/extra/icons/typing.svg"], rules: ["点或键入匹配的字消除落字。", "漏到底部扣命, 三命用尽结束。", "速度逐渐加快。", "比拼手速键速。"] },
+    () => import("./typing/game.js").then((m) => m.mountTyping)
   )
 ];
 
