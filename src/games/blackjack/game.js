@@ -199,10 +199,10 @@ export function mountBlackjack(root, context) {
 
   function cardHtml(card, hidden) {
     if (hidden) {
-      return `<span style="display:inline-flex;width:44px;height:64px;border-radius:8px;background:repeating-linear-gradient(45deg,#5b6b9a,#5b6b9a 5px,#43507a 5px,#43507a 10px);border:1px solid rgba(0,0,0,.25)"></span>`;
+      return `<span style="display:inline-flex;width:52px;height:72px;border-radius:8px;background:repeating-linear-gradient(45deg,#5b6b9a,#5b6b9a 5px,#43507a 5px,#43507a 10px);border:1px solid rgba(0,0,0,.25)"></span>`;
     }
     const color = card.red ? "#d62828" : "#1b1b1b";
-    return `<span style="display:inline-flex;flex-direction:column;justify-content:space-between;width:44px;height:64px;padding:4px 5px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,.2);color:${color};font-weight:700;font-size:14px;line-height:1"><span>${card.rank}</span><span style="text-align:right">${card.glyph}</span></span>`;
+    return `<span style="display:inline-flex;flex-direction:column;justify-content:space-between;width:52px;height:72px;padding:4px 5px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,.2);color:${color};font-weight:700;font-size:16px;line-height:1.05"><span>${card.rank}</span><span style="text-align:right">${card.glyph}</span></span>`;
   }
 
   function handHtml(cards, hideHole) {

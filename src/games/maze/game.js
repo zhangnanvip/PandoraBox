@@ -124,7 +124,7 @@ export function mountMaze(root, context) {
   }
 
   function render() {
-    const tile = clamp(Math.floor(336 / state.size), 8, 40);
+    const tile = clamp(Math.floor(336 / state.size), 12, 40);
     const cells = [];
     for (let y = 0; y < state.size; y += 1) {
       for (let x = 0; x < state.size; x += 1) {

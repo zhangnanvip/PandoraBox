@@ -259,7 +259,7 @@ export function mountSolitaire(root, context) {
   }
 
   function cardStyle(top, sel) {
-    return `width:34px;height:48px;border-radius:5px;border:1px solid #1f2a44;`
+    return `width:40px;height:56px;border-radius:5px;border:1px solid #1f2a44;`
       + `display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;`
       + `box-sizing:border-box;${top ? "" : "position:absolute;left:0;"}`
       + (sel ? "outline:2px solid #4f9cff;outline-offset:1px;" : "");
@@ -286,24 +286,24 @@ export function mountSolitaire(root, context) {
       </section>
       <section class="board-wrap">
         <div style="display:flex;gap:6px;margin-bottom:10px;">
-          <div data-stock style="width:34px;height:48px;border-radius:5px;border:1px solid #1f2a44;background:${state.stock.length ? "#26365c" : "rgba(38,54,92,.25)"};color:#cdd;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;">${state.stock.length ? "🂠" : "↻"}</div>
-          <div data-waste style="width:34px;height:48px;position:relative;">${state.waste.length ? cardHtml(state.waste[state.waste.length - 1], 0, true, selected?.zone === "waste", "data-waste-card") : `<div style="width:34px;height:48px;border-radius:5px;border:1px dashed #2a3a5c;"></div>`}</div>
+          <div data-stock style="width:40px;height:56px;border-radius:5px;border:1px solid #1f2a44;background:${state.stock.length ? "#26365c" : "rgba(38,54,92,.25)"};color:#cdd;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;">${state.stock.length ? "🂠" : "↻"}</div>
+          <div data-waste style="width:40px;height:56px;position:relative;">${state.waste.length ? cardHtml(state.waste[state.waste.length - 1], 0, true, selected?.zone === "waste", "data-waste-card") : `<div style="width:40px;height:56px;border-radius:5px;border:1px dashed #2a3a5c;"></div>`}</div>
           <div style="flex:1;"></div>
           ${state.foundations.map((f, i) => {
             const c = f[f.length - 1];
-            return `<div data-found="${i}" style="width:34px;height:48px;position:relative;cursor:pointer;">${c ? cardHtml(c, 0, true, false, `data-found="${i}"`) : `<div data-found="${i}" style="width:34px;height:48px;border-radius:5px;border:1px dashed #2a3a5c;color:#456;display:flex;align-items:center;justify-content:center;font-size:14px;">${SUITS[i]}</div>`}</div>`;
+            return `<div data-found="${i}" style="width:40px;height:56px;position:relative;cursor:pointer;">${c ? cardHtml(c, 0, true, false, `data-found="${i}"`) : `<div data-found="${i}" style="width:40px;height:56px;border-radius:5px;border:1px dashed #2a3a5c;color:#456;display:flex;align-items:center;justify-content:center;font-size:14px;">${SUITS[i]}</div>`}</div>`;
           }).join("")}
         </div>
         <div style="display:flex;gap:6px;align-items:flex-start;">
           ${state.tableau.map((col, ci) => {
-            const h = Math.max(48, 16 + (col.length - 1) * 14 + 48);
+            const h = Math.max(56, 16 + (col.length - 1) * 18 + 56);
             const cells = col.length
               ? col.map((card, ri) => {
                   const sel = selected?.zone === "tableau" && selected.col === ci && ri >= selected.index;
-                  return `<div data-tab="${ci}" data-row="${ri}" data-face="${card.faceUp ? 1 : 0}" style="position:absolute;top:${ri * 14}px;cursor:pointer;">${cardHtml(card, 0, true, sel, `data-tab="${ci}" data-row="${ri}" data-face="${card.faceUp ? 1 : 0}"`)}</div>`;
+                  return `<div data-tab="${ci}" data-row="${ri}" data-face="${card.faceUp ? 1 : 0}" style="position:absolute;top:${ri * 18}px;cursor:pointer;">${cardHtml(card, 0, true, sel, `data-tab="${ci}" data-row="${ri}" data-face="${card.faceUp ? 1 : 0}"`)}</div>`;
                 }).join("")
-              : `<div data-tab="${ci}" data-row="-1" data-face="0" style="width:34px;height:48px;border-radius:5px;border:1px dashed #2a3a5c;cursor:pointer;"></div>`;
-            return `<div data-col="${ci}" style="position:relative;width:34px;height:${h}px;">${cells}</div>`;
+              : `<div data-tab="${ci}" data-row="-1" data-face="0" style="width:40px;height:56px;border-radius:5px;border:1px dashed #2a3a5c;cursor:pointer;"></div>`;
+            return `<div data-col="${ci}" style="position:relative;width:40px;height:${h}px;">${cells}</div>`;
           }).join("")}
         </div>
       </section>

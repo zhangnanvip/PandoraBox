@@ -188,7 +188,7 @@ export function mountNonogram(root, context) {
   function render() {
     const n = state.size;
     const avail = Math.min((root.clientWidth || 360), 400) - 56; // 预留行号槽 + 间隙
-    const cellPx = clamp(Math.floor(avail / n), 14, 44);
+    const cellPx = clamp(Math.floor(avail / n), 18, 44);
     const head = `${labels.mode || "单人"} · ${labels.difficulty || ""} · ${n}×${n}`;
     const wrong = mistakes();
     root.innerHTML = `
