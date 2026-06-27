@@ -63,7 +63,12 @@ const GAME_ENTRIES = {
   "lights-out": "./src/games/lights-out/game.js",
   reaction: "./src/games/reaction/game.js",
   doodle: "./src/games/doodle/game.js",
-  catcher: "./src/games/catcher/game.js"
+  catcher: "./src/games/catcher/game.js",
+  spider: "./src/games/spider/game.js",
+  freecell: "./src/games/freecell/game.js",
+  yahtzee: "./src/games/yahtzee/game.js",
+  mastermind: "./src/games/mastermind/game.js",
+  kakuro: "./src/games/kakuro/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -181,7 +186,12 @@ const MARKET_HEAT = {
   "lights-out": { score: 61, label: "关灯解谜", signal: "关灯是异或逻辑解谜，最少步通关耐玩。" },
   reaction: { score: 62, label: "反应测试", signal: "反应靶测手速，单局极短适合碎片对比。" },
   doodle: { score: 76, label: "弹跳爬升", signal: "弹跳无尽爬升刷高分，倾斜操作经典休闲。" },
-  catcher: { score: 65, label: "接物刷分", signal: "接好物躲炸弹，节奏渐快，老少皆宜。" }
+  catcher: { score: 65, label: "接物刷分", signal: "接好物躲炸弹，节奏渐快，老少皆宜。" },
+  spider: { score: 86, label: "蜘蛛纸牌", signal: "蜘蛛接龙是 Windows 经典，难度可选花色，长线复玩。" },
+  freecell: { score: 84, label: "空当接龙", signal: "空当接龙策略性强、几乎必胜，纸牌常青款。" },
+  yahtzee: { score: 75, label: "快艇骰子", signal: "快艇骰子组合记分，单人多人皆宜的常青桌游。" },
+  mastermind: { score: 66, label: "猜色破译", signal: "猜色逻辑推理，回合短，难度可调。" },
+  kakuro: { score: 64, label: "数字填字", signal: "数字填字是数独近亲，加法逻辑解谜耐玩。" }
 };
 
 function gameVisualStyle(key) {
@@ -1608,6 +1618,26 @@ const registrations = [
       ]
     },
     () => import("./catcher/game.js").then((module) => module.mountCatcher)
+  ),
+  defineLocalGame(
+    { id: "spider", title: "蜘蛛纸牌", subtitle: "同花顺收 K 到 A", tag: "蜘蛛纸牌", category: "puzzle", secondaryCategories: ["number", "quick"], complexity: "中等", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard"], progressType: "score", ...gamePluginMeta("spider", "puzzle", { sessionSave: true }), ...gameVisualStyle("classicPuzzle"), accent: "cinnabar", icon: "./public/games/extra/icons/spider.svg", assets: ["./public/games/extra/icons/spider.svg"], rules: ["列内同花从 K 到 A 顺连可整组收走。", "牌堆发牌时每列补一张。", "收齐 8 组即胜，难度决定花色数。", "可撤销重开，支持续玩。"] },
+    () => import("./spider/game.js").then((m) => m.mountSpider)
+  ),
+  defineLocalGame(
+    { id: "freecell", title: "空当接龙", subtitle: "借空格归位四花色", tag: "空当接龙", category: "puzzle", secondaryCategories: ["number", "quick"], complexity: "中等", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("freecell", "puzzle", { sessionSave: true }), ...gameVisualStyle("classicPuzzle"), accent: "sky", icon: "./public/games/extra/icons/freecell.svg", assets: ["./public/games/extra/icons/freecell.svg"], rules: ["列内异色递减叠放，4 个空格暂存。", "把四门花色 A 到 K 收齐获胜。", "点选牌再点目标，双击送基础堆。", "可撤销重开，支持续玩。"] },
+    () => import("./freecell/game.js").then((m) => m.mountFreecell)
+  ),
+  defineLocalGame(
+    { id: "yahtzee", title: "快艇骰子", subtitle: "三投留骰，组合记分", tag: "快艇骰子", category: "number", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("yahtzee", "number", { sessionSave: true }), ...gameVisualStyle("classicNumber"), accent: "jade", icon: "./public/games/extra/icons/yahtzee.svg", assets: ["./public/games/extra/icons/yahtzee.svg"], rules: ["每回合最多投三次，点骰子保留。", "13 个记分项各用一次。", "上区满 63 加 35 分。", "13 回合后结算总分。"] },
+    () => import("./yahtzee/game.js").then((m) => m.mountYahtzee)
+  ),
+  defineLocalGame(
+    { id: "mastermind", title: "猜色", subtitle: "十次破译颜色密码", tag: "猜色破译", category: "quick", secondaryCategories: ["puzzle"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("mastermind", "arcade"), ...gameVisualStyle("classicArcade"), accent: "lotus", icon: "./public/games/extra/icons/mastermind.svg", assets: ["./public/games/extra/icons/mastermind.svg"], rules: ["选 4 个颜色提交猜测。", "黑钉=位色全对，白钉=色对位错。", "10 次内破译密码获胜。", "难度决定颜色与长度。"] },
+    () => import("./mastermind/game.js").then((m) => m.mountMastermind)
+  ),
+  defineLocalGame(
+    { id: "kakuro", title: "数字填字", subtitle: "加法宫格填 1-9", tag: "数字填字", category: "number", secondaryCategories: ["puzzle"], complexity: "困难", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("kakuro", "number", { sessionSave: true }), ...gameVisualStyle("classicNumber"), accent: "ink", icon: "./public/games/extra/icons/kakuro.svg", assets: ["./public/games/extra/icons/kakuro.svg"], rules: ["每段填入和为提示数。", "同段数字不可重复，仅 1-9。", "全部填对即过关。", "难度决定棋盘与给定数。"] },
+    () => import("./kakuro/game.js").then((m) => m.mountKakuro)
   )
 ];
 
