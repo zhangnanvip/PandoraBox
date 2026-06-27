@@ -68,7 +68,12 @@ const GAME_ENTRIES = {
   freecell: "./src/games/freecell/game.js",
   yahtzee: "./src/games/yahtzee/game.js",
   mastermind: "./src/games/mastermind/game.js",
-  kakuro: "./src/games/kakuro/game.js"
+  kakuro: "./src/games/kakuro/game.js",
+  mancala: "./src/games/mancala/game.js",
+  hex: "./src/games/hex/game.js",
+  "nine-mens-morris": "./src/games/nine-mens-morris/game.js",
+  ataxx: "./src/games/ataxx/game.js",
+  "word-search": "./src/games/word-search/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -191,7 +196,12 @@ const MARKET_HEAT = {
   freecell: { score: 84, label: "空当接龙", signal: "空当接龙策略性强、几乎必胜，纸牌常青款。" },
   yahtzee: { score: 75, label: "快艇骰子", signal: "快艇骰子组合记分，单人多人皆宜的常青桌游。" },
   mastermind: { score: 66, label: "猜色破译", signal: "猜色逻辑推理，回合短，难度可调。" },
-  kakuro: { score: 64, label: "数字填字", signal: "数字填字是数独近亲，加法逻辑解谜耐玩。" }
+  kakuro: { score: 64, label: "数字填字", signal: "数字填字是数独近亲，加法逻辑解谜耐玩。" },
+  mancala: { score: 63, label: "播棋", signal: "播棋是非洲千年策略桌游，撒子捕子深度足。" },
+  hex: { score: 60, label: "六贯棋", signal: "六贯棋连接必有胜者，规则极简策略极深。" },
+  "nine-mens-morris": { score: 62, label: "九子棋", signal: "九子棋成三吃子，落子+走子双阶段经典。" },
+  ataxx: { score: 61, label: "同化棋", signal: "同化棋克隆扩张+翻转，节奏快策略强。" },
+  "word-search": { score: 68, label: "成语找词", signal: "成语找词寓教于乐，划线找词全年龄。" }
 };
 
 function gameVisualStyle(key) {
@@ -1638,6 +1648,26 @@ const registrations = [
   defineLocalGame(
     { id: "kakuro", title: "数字填字", subtitle: "加法宫格填 1-9", tag: "数字填字", category: "number", secondaryCategories: ["puzzle"], complexity: "困难", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("kakuro", "number", { sessionSave: true }), ...gameVisualStyle("classicNumber"), accent: "ink", icon: "./public/games/extra/icons/kakuro.svg", assets: ["./public/games/extra/icons/kakuro.svg"], rules: ["每段填入和为提示数。", "同段数字不可重复，仅 1-9。", "全部填对即过关。", "难度决定棋盘与给定数。"] },
     () => import("./kakuro/game.js").then((m) => m.mountKakuro)
+  ),
+  defineLocalGame(
+    { id: "mancala", title: "播棋", subtitle: "撒子入仓，捕子取胜", tag: "播棋", category: "strategy", secondaryCategories: ["classic"], complexity: "中等", difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "match", ...gamePluginMeta("mancala", "board", { sessionSave: true }), ...gameVisualStyle("guofengBoard"), accent: "jade", icon: "./public/games/extra/icons/mancala.svg", assets: ["./public/games/extra/icons/mancala.svg"], rules: ["点自己一坑撒子，落仓加一手。", "最后一子落空坑可捕对面。", "一方清空后结算多子者胜。", "可重开，支持续玩。"] },
+    () => import("./mancala/game.js").then((m) => m.mountMancala)
+  ),
+  defineLocalGame(
+    { id: "hex", title: "六贯棋", subtitle: "连通两边即胜", tag: "六贯棋", category: "strategy", secondaryCategories: ["classic"], complexity: "困难", difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "match", ...gamePluginMeta("hex", "board", { sessionSave: true }), ...gameVisualStyle("guofengBoard"), accent: "cinnabar", icon: "./public/games/extra/icons/hex.svg", assets: ["./public/games/extra/icons/hex.svg"], rules: ["落子连成一线接通对侧两边获胜。", "六边棋盘必有一方胜出。", "可人机或本地双人。", "可重开，支持续玩。"] },
+    () => import("./hex/game.js").then((m) => m.mountHex)
+  ),
+  defineLocalGame(
+    { id: "nine-mens-morris", title: "九子棋", subtitle: "成三吃子，逼死对手", tag: "九子棋", category: "classic", secondaryCategories: ["strategy"], complexity: "中等", difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "match", ...gamePluginMeta("nine-mens-morris", "board", { sessionSave: true }), ...gameVisualStyle("guofengBoard"), accent: "ink", icon: "./public/games/extra/icons/nine-mens-morris.svg", assets: ["./public/games/extra/icons/nine-mens-morris.svg"], rules: ["先放子再走子，连成三子吃对方一子。", "对方少于三子或无路可走即负。", "三子时可飞行任意点。", "可重开，支持续玩。"] },
+    () => import("./nine-mens-morris/game.js").then((m) => m.mountNineMens)
+  ),
+  defineLocalGame(
+    { id: "ataxx", title: "同化棋", subtitle: "克隆扩张，翻满全盘", tag: "同化棋", category: "strategy", secondaryCategories: ["quick"], complexity: "中等", difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "match", ...gamePluginMeta("ataxx", "board", { sessionSave: true }), ...gameVisualStyle("guofengBoard"), accent: "sky", icon: "./public/games/extra/icons/ataxx.svg", assets: ["./public/games/extra/icons/ataxx.svg"], rules: ["近格克隆、隔格跳，落子翻转相邻敌子。", "棋盘填满多子者胜。", "可人机或本地双人。", "可重开，支持续玩。"] },
+    () => import("./ataxx/game.js").then((m) => m.mountAtaxx)
+  ),
+  defineLocalGame(
+    { id: "word-search", title: "成语找词", subtitle: "划线找出隐藏成语", tag: "成语找词", category: "number", secondaryCategories: ["puzzle", "quick"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("word-search", "puzzle"), ...gameVisualStyle("classicPuzzle"), accent: "lotus", icon: "./public/games/extra/icons/word-search.svg", assets: ["./public/games/extra/icons/word-search.svg"], rules: ["拖动连成直线选出成语。", "横竖斜均可，找全过关。", "难度决定字阵大小与词数。", "可重开换一局。"] },
+    () => import("./word-search/game.js").then((m) => m.mountWordSearch)
   )
 ];
 
