@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="boss-titan-phase-1 尸山鬼王">
+  <defs>
+    <radialGradient id="boss-titan-phase-1-aura" cx="50%" cy="42%" r="64%">
+      <stop offset="0" stop-color="#ffe0c7" stop-opacity=".98"/>
+      <stop offset=".38" stop-color="#ff4d5e" stop-opacity=".86"/>
+      <stop offset=".7" stop-color="#ffb84d" stop-opacity=".66"/>
+      <stop offset="1" stop-color="#050712" stop-opacity=".08"/>
+    </radialGradient>
+    <linearGradient id="boss-titan-phase-1-body" x1="19" y1="10" x2="78" y2="86">
+      <stop offset="0" stop-color="#ffe0c7"/>
+      <stop offset=".38" stop-color="#ff4d5e"/>
+      <stop offset=".68" stop-color="#ffb84d"/>
+      <stop offset="1" stop-color="#1b0910"/>
+    </linearGradient>
+    <linearGradient id="boss-titan-phase-1-mask" x1="30" y1="19" x2="67" y2="72">
+      <stop offset="0" stop-color="#ffe0c7"/>
+      <stop offset=".56" stop-color="#ffb84d"/>
+      <stop offset="1" stop-color="#1b0910"/>
+    </linearGradient>
+    <filter id="boss-titan-phase-1-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <g opacity="1" transform="translate(0 -2.351) scale(1.094) translate(-4.514 -4.89)">
+    <ellipse cx="48" cy="83" rx="31" ry="7" fill="#050a0f" opacity=".3"/>
+    <ellipse cx="48" cy="49" rx="40" ry="41" fill="url(#boss-titan-phase-1-aura)" opacity=".42" filter="url(#boss-titan-phase-1-soft)"/>
+    <circle cx="48" cy="48" r="27.8" fill="none" stroke="#ffb84d" stroke-width="3" stroke-dasharray="5 6" opacity="0.7"/><circle cx="48" cy="48" r="37.2" fill="none" stroke="#f8fbff" stroke-width="2" stroke-dasharray="8 6" opacity="0.473"/>
+    <path d="M24.688 43.295 l-6.799 -1.189 l3.478 -3.592 Z" fill="#ff4d5e" opacity=".2"/><path d="M28.114 32.25 l-5.354 -3.221 l4.711 -1.675 Z" fill="#ffb84d" opacity=".2"/><path d="M36.818 23.33 l-2.795 -4.584 l4.965 0.591 Z" fill="#ff4d5e" opacity=".2"/><path d="M49.476 19.036 l0.344 -4.994 l4.187 2.733 Z" fill="#ffb84d" opacity=".2"/><path d="M63.599 21.06 l3.412 -4.366 l2.538 4.308 Z" fill="#ff4d5e" opacity=".2"/><path d="M66.138 36.549 l5.771 -2.83 l0.362 4.987 Z" fill="#ffb84d" opacity=".2"/>
+    
+    <path d="M30 72 C24 55 25 38 36 27 C41 34 45 42 48 55 C51 42 55 34 60 27 C71 38 72 55 66 72" fill="#1b0910" opacity=".58"/>
+    <path d="M25 34 C16 24 14 11 23 8 C31 15 35 23 37 34" fill="#2b0d14" stroke="#ffe0c7" stroke-opacity=".36" stroke-width="1.8"/>
+    <path d="M71 34 C80 24 82 11 73 8 C65 15 61 23 59 34" fill="#2b0d14" stroke="#ffe0c7" stroke-opacity=".36" stroke-width="1.8"/>
+    <path d="M28 70 C34 61.237 40 63 46 70M50 70 C56 61.237 62 63 68 70" fill="none" stroke="#ffe0c7" stroke-width="3.4" stroke-linecap="round" opacity=".68"/>
+    <path d="M25 36 C25 23 34 14 48 13 C62 14 71 23 71 36 C76 49 70 68 58 78 C53 83 43 83 38 78 C26 68 20 49 25 36Z" fill="url(#boss-titan-phase-1-body)" stroke="#ffe0c7" stroke-opacity=".54" stroke-width="1.8"/>
+    <path d="M31 34 C34 21 42 18 48 18 C54 18 62 21 65 34 C65 48 59 61 48 66 C37 61 31 48 31 34Z" fill="url(#boss-titan-phase-1-mask)" stroke="#ffe0c7" stroke-width="1.6"/>
+    <path d="M37 37 C41 34 44 35 46 39" fill="none" stroke="#1b0910" stroke-width="4" stroke-linecap="round"/>
+    <path d="M59 37 C55 34 52 35 50 39" fill="none" stroke="#1b0910" stroke-width="4" stroke-linecap="round"/>
+    <path d="M39 55.94 C44 65.351 52 65.351 57 55.94" fill="none" stroke="#1b0910" stroke-width="4" stroke-linecap="round"/>
+    <path d="M48 21 L41.84 35 L52.08 48 L43.92 66" fill="none" stroke="#ffe0c7" stroke-width="2.556" stroke-linecap="round" opacity="0.605"/>
+    <path d="M23 61 C10 62 8 76 22 81M73 61 C86 62 88 76 74 81" fill="none" stroke="#ffb84d" stroke-width="4" stroke-linecap="round" opacity=".52"/>
+    <g id="boss-titan-phase-1-sparks"><circle cx="17.506" cy="38.9" r="1.48" fill="#ffb84d" opacity="0.4"/><circle cx="10.776" cy="17.732" r="1.86" fill="#ff4d5e" opacity="0.48"/><circle cx="32.872" cy="20.003" r="2.24" fill="#f8fbff" opacity="0.56"/><circle cx="43.081" cy="0.276" r="1.1" fill="#ffb84d" opacity="0.64"/><circle cx="57.1" cy="17.506" r="1.48" fill="#ff4d5e" opacity="0.32"/><circle cx="78.268" cy="10.776" r="1.86" fill="#f8fbff" opacity="0.4"/><circle cx="75.997" cy="32.872" r="2.24" fill="#ffb84d" opacity="0.48"/><circle cx="95.724" cy="43.081" r="1.1" fill="#ff4d5e" opacity="0.56"/><circle cx="78.494" cy="57.1" r="1.48" fill="#f8fbff" opacity="0.64"/><circle cx="85.224" cy="78.268" r="1.86" fill="#ffb84d" opacity="0.32"/><circle cx="63.128" cy="75.997" r="2.24" fill="#ff4d5e" opacity="0.4"/><circle cx="52.919" cy="95.724" r="1.1" fill="#f8fbff" opacity="0.48"/><circle cx="38.9" cy="78.494" r="1.48" fill="#ffb84d" opacity="0.56"/><circle cx="17.732" cy="85.224" r="1.86" fill="#ff4d5e" opacity="0.64"/><circle cx="20.003" cy="63.128" r="2.24" fill="#f8fbff" opacity="0.32"/><circle cx="0.276" cy="52.919" r="1.1" fill="#ffb84d" opacity="0.4"/></g>
+  </g>
+</svg>

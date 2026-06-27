@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="spitter-hit-1">
+  <defs>
+    <radialGradient id="spitter-hit-1-glow" cx="50%" cy="42%" r="60%">
+      <stop offset="0" stop-color="#f8fbff" stop-opacity=".96"/>
+      <stop offset=".42" stop-color="#8ce8bd" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#08131d" stop-opacity=".05"/>
+    </radialGradient>
+    <linearGradient id="spitter-hit-1-shade" x1="24" y1="18" x2="72" y2="82">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".9"/>
+      <stop offset=".42" stop-color="#8ce8bd" stop-opacity=".96"/>
+      <stop offset="1" stop-color="#07131d" stop-opacity=".88"/>
+    </linearGradient>
+    <filter id="spitter-hit-1-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+  </defs>
+  <g opacity="1" transform="translate(0 2.1956588025421975) scale(1.12 0.9) translate(-5.760000000000005 4.799999999999997)">
+    <ellipse cx="48" cy="77" rx="22" ry="6" fill="#050a0f" opacity=".28"/>
+    <ellipse cx="48" cy="55" rx="27" ry="21" fill="#0a2b24" opacity=".92"/>
+    <circle cx="48" cy="34" r="21" fill="url(#spitter-hit-1-shade)" stroke="#d7ffe9" stroke-opacity=".42" stroke-width="1.5"/>
+    <ellipse cx="48" cy="36" rx="27" ry="25" fill="url(#spitter-hit-1-glow)" opacity=".22" filter="url(#spitter-hit-1-soft)"/>
+    <path d="M30 56 C21 52 19 42 27 36M66 56 C76 52 77 42 69 36" fill="none" stroke="#8ce8bd" stroke-width="3" stroke-linecap="round" stroke-opacity=".56"/>
+    <circle cx="40" cy="34" r="3.6" fill="#07131d"/>
+    <circle cx="56" cy="34" r="3.6" fill="#07131d"/>
+    <path d="M41 48 C45 51 51 51 55 48" fill="none" stroke="#07131d" stroke-width="2.2" stroke-linecap="round" opacity=".62"/>
+    <circle cx="33" cy="50" r="3.3" fill="#8ce8bd" opacity=".48"/>
+    <circle cx="64" cy="53" r="2.8" fill="#d7ffe9" opacity=".52"/>
+    
+    
+    <path d="M25 34 C17 46 21 61 34 68" fill="none" stroke="#f8fbff" stroke-width="4" stroke-linecap="round" opacity=".78"/><path d="M71 31 C80 43 76 60 64 69" fill="none" stroke="#ffd166" stroke-width="3" stroke-linecap="round" opacity=".68"/>
+  </g>
+</svg>

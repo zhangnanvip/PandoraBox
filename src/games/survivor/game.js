@@ -319,6 +319,20 @@ const COUNTER_SKILLS = {
   laser: "疾步符 / 青灯寒咒"
 };
 
+const ENEMY_CODEX = {
+  crawler: { origin: "旧城阴沟", lore: "未散魂火聚成的游影，数量越多越容易拖住执匣人的步伐。", drops: "魂火" },
+  bat: { origin: "废灯巷", lore: "纸灯笼吞了孤魂后长出薄翼，常从侧面贴近。", drops: "灯芯" },
+  swarmer: { origin: "纸扎铺", lore: "被夜门吹活的纸扎小人，单个脆弱，成群时最危险。", drops: "残纸" },
+  brute: { origin: "白骨桥", lore: "骨节缝着铜钉的苦役鬼，行动迟缓但能顶住大量伤害。", drops: "骨钉" },
+  spitter: { origin: "毒灯井", lore: "灯壳里盛着咒毒，喜欢保持距离吐出阴火。", drops: "毒灯油" },
+  bomber: { origin: "红伞戏台", lore: "伞面越亮越接近爆裂，贪输出会被卷进火伞。", drops: "伞骨" },
+  charger: { origin: "夜门裂道", lore: "夜叉会先压低身形再直线冲锋，看见红线就侧移。", drops: "夜叉角" },
+  shield: { origin: "断首营", lore: "失去头颅的阴兵只认正面推进，雷法能撕开甲缝。", drops: "残甲" },
+  warden: { origin: "缝尸间", lore: "用金针续接鬼群，拖得越久越难清场。", drops: "金针" },
+  sniper: { origin: "雨夜戏楼", lore: "戏腔落下时弦线已经瞄准，贴近能打乱节奏。", drops: "断弦" },
+  elite: { origin: "画皮巷", lore: "披人面、借鬼形，常带着异变词缀试探构筑短板。", drops: "画皮碎片" }
+};
+
 const COUNTER_SKILL_IDS = {
   crawler: ["aura", "orbit"],
   bat: ["lightning", "frost"],
@@ -349,6 +363,68 @@ const ENEMY_VISUALS = {
   warden: { mark: "愈", death: "针断", deathColor: "#ffd166", particles: 18 },
   sniper: { mark: "伶", death: "弦断", deathColor: "#9fb7ff", particles: 15 },
   elite: { mark: "面", death: "画皮裂", deathColor: "#d45cff", particles: 22 }
+};
+
+const ENEMY_ANIMATIONS = {
+  crawler: { rate: 2.6, bob: 2.2, sway: 0.08, squash: 0.035, lean: 0.04 },
+  bat: { rate: 7.8, bob: 5.2, sway: 0.18, squash: 0.055, lean: 0.08, alphaPulse: 0.08 },
+  swarmer: { rate: 9.5, bob: 1.5, sway: 0.22, squash: 0.075, lean: 0.12, jitter: 1.5 },
+  brute: { rate: 2.05, bob: 0.9, sway: 0.035, squash: 0.025, lean: 0.02, stomp: 1.6 },
+  spitter: { rate: 3.2, bob: 2.0, sway: 0.09, squash: 0.045, lean: 0.03 },
+  bomber: { rate: 4.8, bob: 2.6, sway: 0.12, squash: 0.08, lean: 0.05 },
+  charger: { rate: 5.6, bob: 1.4, sway: 0.05, squash: 0.045, lean: 0.18 },
+  shield: { rate: 2.2, bob: 0.7, sway: 0.025, squash: 0.018, lean: 0.015, stomp: 1.1 },
+  warden: { rate: 2.8, bob: 1.4, sway: 0.055, squash: 0.028, lean: 0.025 },
+  sniper: { rate: 3.4, bob: 1.2, sway: 0.065, squash: 0.025, lean: 0.06 },
+  elite: { rate: 3.7, bob: 2.6, sway: 0.12, squash: 0.045, lean: 0.08, alphaPulse: 0.06 }
+};
+
+function survivorEnemyFrameAsset(id, state, index) {
+  return `./public/games/survivor/enemies/${id}/${state}-${index}.svg`;
+}
+
+function enemyFrameAssets(id, states) {
+  return Object.fromEntries(Object.entries(states).map(([state, count]) => [
+    state,
+    Array.from({ length: count }, (_, index) => survivorEnemyFrameAsset(id, state, index))
+  ]));
+}
+
+function survivorHeroFrameAsset(id, state, index) {
+  return `./public/games/survivor/heroes/${id}/${state}-${index}.svg`;
+}
+
+function heroFrameAssets(id, states) {
+  return Object.fromEntries(Object.entries(states).map(([state, count]) => [
+    state,
+    Array.from({ length: count }, (_, index) => survivorHeroFrameAsset(id, state, index))
+  ]));
+}
+
+const HERO_FRAME_SETS = {
+  ranger: { asset: "heroes/ranger", anchor: { x: 0.5, y: 0.66 }, frames: heroFrameAssets("ranger", { idle: 4, move: 6, hit: 3, overdrive: 6 }), states: { idle: { frames: 4, fps: 5 }, move: { frames: 6, fps: 10 }, hit: { frames: 3, fps: 14 }, overdrive: { frames: 6, fps: 12 } } }
+};
+
+const BOSS_FRAME_ASSET_COUNTS = { move: 8, attack: 6, phase: 6, hit: 3, death: 10 };
+const BOSS_FRAME_STATES = { idle: { frames: 6, fps: 4 }, move: { frames: 8, fps: 7 }, attack: { frames: 6, fps: 10 }, phase: { frames: 6, fps: 8 }, hit: { frames: 3, fps: 11 }, death: { frames: 10, fps: 12 } };
+
+const ENEMY_FRAME_SETS = {
+  crawler: { asset: "enemies/crawler", anchor: { x: 0.5, y: 0.62 }, frames: enemyFrameAssets("crawler", { move: 4, hit: 2, death: 5 }), states: { idle: { frames: 4, fps: 5 }, move: { frames: 6, fps: 8 }, hit: { frames: 2, fps: 14 }, death: { frames: 5, fps: 13 } } },
+  bat: { asset: "enemies/bat", anchor: { x: 0.5, y: 0.58 }, frames: enemyFrameAssets("bat", { move: 4, hit: 2, death: 5 }), states: { idle: { frames: 4, fps: 8 }, move: { frames: 8, fps: 14 }, hit: { frames: 2, fps: 16 }, death: { frames: 5, fps: 15 } } },
+  swarmer: { asset: "enemies/swarmer", anchor: { x: 0.5, y: 0.6 }, frames: enemyFrameAssets("swarmer", { move: 4, hit: 2, death: 5 }), states: { idle: { frames: 4, fps: 7 }, move: { frames: 8, fps: 15 }, hit: { frames: 2, fps: 18 }, death: { frames: 6, fps: 16 } } },
+  brute: { asset: "enemies/brute", anchor: { x: 0.5, y: 0.66 }, frames: enemyFrameAssets("brute", { move: 6, hit: 3, death: 6 }), states: { idle: { frames: 4, fps: 4 }, move: { frames: 6, fps: 7 }, hit: { frames: 3, fps: 12 }, death: { frames: 6, fps: 10 } } },
+  spitter: { asset: "enemies/spitter", anchor: { x: 0.5, y: 0.62 }, frames: enemyFrameAssets("spitter", { move: 6, attack: 4, hit: 2, death: 5 }), states: { idle: { frames: 4, fps: 5 }, move: { frames: 6, fps: 8 }, attack: { frames: 4, fps: 14 }, hit: { frames: 2, fps: 14 }, death: { frames: 5, fps: 13 } } },
+  bomber: { asset: "enemies/bomber", anchor: { x: 0.5, y: 0.62 }, frames: enemyFrameAssets("bomber", { move: 6, attack: 5, hit: 2, death: 7 }), states: { idle: { frames: 4, fps: 6 }, move: { frames: 6, fps: 10 }, attack: { frames: 5, fps: 12 }, hit: { frames: 2, fps: 15 }, death: { frames: 7, fps: 17 } } },
+  charger: { asset: "enemies/charger", anchor: { x: 0.5, y: 0.62 }, frames: enemyFrameAssets("charger", { move: 8, attack: 4, hit: 2, death: 5 }), states: { idle: { frames: 3, fps: 5 }, move: { frames: 8, fps: 13 }, attack: { frames: 4, fps: 16 }, hit: { frames: 2, fps: 15 }, death: { frames: 5, fps: 14 } } },
+  shield: { asset: "enemies/shield", anchor: { x: 0.5, y: 0.68 }, frames: enemyFrameAssets("shield", { move: 6, hit: 3, death: 6 }), states: { idle: { frames: 4, fps: 4 }, move: { frames: 6, fps: 6 }, hit: { frames: 3, fps: 11 }, death: { frames: 6, fps: 10 } } },
+  warden: { asset: "enemies/warden", anchor: { x: 0.5, y: 0.66 }, frames: enemyFrameAssets("warden", { move: 6, attack: 4, hit: 2, death: 6 }), states: { idle: { frames: 4, fps: 5 }, move: { frames: 6, fps: 7 }, attack: { frames: 4, fps: 10 }, hit: { frames: 2, fps: 12 }, death: { frames: 6, fps: 11 } } },
+  sniper: { asset: "enemies/sniper", anchor: { x: 0.5, y: 0.64 }, frames: enemyFrameAssets("sniper", { move: 6, attack: 5, hit: 2, death: 5 }), states: { idle: { frames: 4, fps: 5 }, move: { frames: 6, fps: 9 }, attack: { frames: 5, fps: 13 }, hit: { frames: 2, fps: 14 }, death: { frames: 5, fps: 12 } } },
+  elite: { asset: "enemies/elite", anchor: { x: 0.5, y: 0.62 }, frames: enemyFrameAssets("elite", { move: 8, attack: 5, hit: 3, death: 8 }), states: { idle: { frames: 6, fps: 5 }, move: { frames: 8, fps: 9 }, attack: { frames: 5, fps: 12 }, hit: { frames: 3, fps: 14 }, death: { frames: 8, fps: 14 } } },
+  "boss-titan": { asset: "enemies/boss-titan", anchor: { x: 0.5, y: 0.68 }, frames: enemyFrameAssets("boss-titan", BOSS_FRAME_ASSET_COUNTS), states: BOSS_FRAME_STATES },
+  "boss-hive": { asset: "enemies/boss-hive", anchor: { x: 0.5, y: 0.64 }, frames: enemyFrameAssets("boss-hive", BOSS_FRAME_ASSET_COUNTS), states: BOSS_FRAME_STATES },
+  "boss-artillery": { asset: "enemies/boss-artillery", anchor: { x: 0.5, y: 0.66 }, frames: enemyFrameAssets("boss-artillery", BOSS_FRAME_ASSET_COUNTS), states: BOSS_FRAME_STATES },
+  "boss-warden": { asset: "enemies/boss-warden", anchor: { x: 0.5, y: 0.67 }, frames: enemyFrameAssets("boss-warden", BOSS_FRAME_ASSET_COUNTS), states: BOSS_FRAME_STATES },
+  boss: { asset: "enemies/boss", anchor: { x: 0.5, y: 0.66 }, frames: enemyFrameAssets("boss", BOSS_FRAME_ASSET_COUNTS), states: BOSS_FRAME_STATES }
 };
 
 const WAVE_EVENT_SKILL_IDS = {
@@ -878,6 +954,7 @@ const WEAPON_HIT_EFFECTS = {
 
 const SPRITE_SIZE = 96;
 const SPRITE_CACHE = new Map();
+const IMAGE_SPRITE_CACHE = new Map();
 
 function defaultMeta() {
   return {
@@ -1366,6 +1443,7 @@ function initialState(meta = loadMeta(), options = {}) {
     enemyShots: [],
     pickups: [],
     effects: [],
+    deathEchoes: [],
     controls: { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0 },
     spawnTimer: 0.08,
     eventTimer: 3.2,
@@ -1462,6 +1540,7 @@ function restoreState(saved, meta = loadMeta(), options = {}) {
     modifierTimer: Number.isFinite(next.modifierTimer) ? next.modifierTimer : base.modifierTimer,
     controls: { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0 },
     effects: [],
+    deathEchoes: [],
     choices: [],
     shake: 0,
     over: false,
@@ -1473,6 +1552,7 @@ function serializeState(state) {
   const snapshot = clonePlain(state);
   snapshot.controls = { up: false, down: false, left: false, right: false, axisX: 0, axisY: 0 };
   snapshot.effects = [];
+  snapshot.deathEchoes = [];
   snapshot.choices = [];
   snapshot.shake = 0;
   snapshot.over = false;
@@ -1512,6 +1592,101 @@ function enemySpec(type) {
 
 function enemyVisual(type) {
   return ENEMY_VISUALS[type] || ENEMY_VISUALS.crawler;
+}
+
+function enemyAnimation(type) {
+  return ENEMY_ANIMATIONS[type] || ENEMY_ANIMATIONS.crawler;
+}
+
+function enemyFrameSet(enemyOrType) {
+  if (!enemyOrType) return ENEMY_FRAME_SETS.crawler;
+  if (typeof enemyOrType !== "string" && enemyOrType.boss) {
+    const bossKey = enemyOrType.bossKind ? `boss-${enemyOrType.bossKind}` : "boss";
+    return ENEMY_FRAME_SETS[bossKey] || ENEMY_FRAME_SETS.boss;
+  }
+  const type = typeof enemyOrType === "string" ? enemyOrType : enemyOrType.type;
+  return ENEMY_FRAME_SETS[type] || ENEMY_FRAME_SETS.crawler;
+}
+
+function enemyFrameConfig(enemyOrType, frameState = "move") {
+  const set = enemyFrameSet(enemyOrType);
+  return set.states[frameState] || set.states.move || set.states.idle || { frames: 1, fps: 1 };
+}
+
+function enemyHasFrameState(enemyOrType, frameState) {
+  return Boolean(enemyFrameSet(enemyOrType).states[frameState]);
+}
+
+function enemyFrameState(enemy) {
+  if (enemy.frameState) return enemy.frameState;
+  if (enemy.dead) return "death";
+  if ((enemy.hitPulse || 0) > 0.035 || enemy.flash > 0) return "hit";
+  if (enemyHasFrameState(enemy, "phase") && (enemy.phasePulse || 0) > 0) return "phase";
+  if (enemyHasFrameState(enemy, "attack")) {
+    if ((enemy.attackPulse || 0) > 0) return "attack";
+    if (enemy.chargeTime > 0 || enemy.fuse > 0 || enemy.healPulse > 0.06) return "attack";
+    if ((enemy.type === "spitter" || enemy.type === "sniper") && enemy.shoot > 0 && enemy.shoot < 0.22) return "attack";
+  }
+  if (enemy.frozen > 0 && enemy.type !== "bat" && enemy.type !== "charger") return "idle";
+  return "move";
+}
+
+function enemyFrameIndex(state, enemy, frameState = enemyFrameState(enemy)) {
+  const config = enemyFrameConfig(enemy, frameState);
+  const frames = Math.max(1, config.frames || 1);
+  if (frameState === "death" && Number.isFinite(enemy.age) && Number.isFinite(enemy.life) && enemy.life > 0) {
+    return Math.min(frames - 1, Math.floor(clamp(enemy.age / enemy.life, 0, 0.999) * frames));
+  }
+  const fps = Math.max(0.5, (config.fps || 8) * (enemy.frozen > 0 ? 0.38 : 1));
+  const seed = (enemy.id || 0) * 0.173 + (enemy.phase || 0);
+  const t = Number.isFinite(enemy.animTime) ? enemy.animTime : state.time || 0;
+  return Math.floor((t + seed) * fps) % frames;
+}
+
+function enemyFrameProgress(enemy, frameState, frameIndex) {
+  const config = enemyFrameConfig(enemy, frameState);
+  const frames = Math.max(1, config.frames || 1);
+  if (frameState === "death" && Number.isFinite(enemy.age) && Number.isFinite(enemy.life) && enemy.life > 0) {
+    return clamp(enemy.age / enemy.life, 0, 1);
+  }
+  return frames <= 1 ? 0 : frameIndex / (frames - 1);
+}
+
+function enemyFrameAssetUrl(enemy, frameState, frameIndex) {
+  const set = enemyFrameSet(enemy);
+  const frames = set.frames?.[frameState] || set.frames?.move;
+  if (!Array.isArray(frames) || !frames.length) return "";
+  return frames[frameIndex % frames.length] || "";
+}
+
+function heroFrameSet(character) {
+  return HERO_FRAME_SETS[character?.id] || null;
+}
+
+function heroFrameState(state, character) {
+  const set = heroFrameSet(character);
+  if (!set) return "idle";
+  if (state.overdrive > 0 && set.states.overdrive) return "overdrive";
+  if (state.player.invuln > 0 && state.player.invuln < 0.72 && set.states.hit) return "hit";
+  const moving = Math.hypot(state.controls.axisX || 0, state.controls.axisY || 0)
+    || state.controls.up || state.controls.down || state.controls.left || state.controls.right;
+  if (moving && set.states.move) return "move";
+  return "idle";
+}
+
+function heroFrameIndex(state, character, frameState = heroFrameState(state, character)) {
+  const set = heroFrameSet(character);
+  const config = set?.states?.[frameState] || set?.states?.idle || { frames: 1, fps: 1 };
+  const frames = Math.max(1, config.frames || 1);
+  const fps = Math.max(0.5, config.fps || 8);
+  return Math.floor((state.time || 0) * fps) % frames;
+}
+
+function heroFrameAssetUrl(character, frameState, frameIndex) {
+  const set = heroFrameSet(character);
+  const frames = set?.frames?.[frameState] || set?.frames?.idle;
+  if (!Array.isArray(frames) || !frames.length) return "";
+  return frames[frameIndex % frames.length] || "";
 }
 
 function enemyTitle(enemyOrType) {
@@ -1566,6 +1741,10 @@ function counterTip(type) {
 
 function counterSkills(type) {
   return COUNTER_SKILLS[type] || "进化匣术 / 护命符";
+}
+
+function enemyCodex(type) {
+  return ENEMY_CODEX[type] || { origin: "夜门裂隙", lore: "从长夜里涌出的未知百鬼。", drops: "魂火" };
 }
 
 function addSkillRecommendations(bucket, skillIds, score, reason) {
@@ -1843,7 +2022,7 @@ function unlockedEnemyCodex(level) {
     .filter(([, spec]) => level >= spec.unlock)
     .sort((a, b) => a[1].unlock - b[1].unlock)
     .slice(-6)
-    .map(([type, spec]) => ({ type, ...spec, tip: counterTip(type), skills: counterSkills(type) }));
+    .map(([type, spec]) => ({ type, ...spec, ...enemyCodex(type), tip: counterTip(type), skills: counterSkills(type) }));
 }
 
 function overdriveDuration(state) {
@@ -2150,6 +2329,10 @@ function makeEnemy(state, type, point, boss = false, options = {}) {
     chargeAngle: 0,
     slow: 0,
     phase: Math.random() * Math.PI * 2,
+    animTime: Math.random() * Math.PI * 2,
+    attackPulse: 0,
+    phasePulse: 0,
+    hitPulse: 0,
     flash: 0
   };
 }
@@ -2307,6 +2490,36 @@ function weaponHitEffect(state, enemy, source) {
   });
 }
 
+function addEnemyDeathEcho(state, enemy) {
+  if (!Array.isArray(state.deathEchoes)) state.deathEchoes = [];
+  state.deathEchoes.push({
+    id: `death-${enemy.id || state.enemyId}-${Math.round((state.time || 0) * 1000)}`,
+    type: enemy.type,
+    title: enemy.title,
+    family: enemy.family,
+    x: enemy.x,
+    y: enemy.y,
+    radius: enemy.radius,
+    color: enemy.color,
+    boss: Boolean(enemy.boss),
+    bossKind: enemy.bossKind || null,
+    empowered: Boolean(enemy.empowered),
+    affix: enemy.affix || null,
+    mutation: enemy.mutation || null,
+    spawnPattern: enemy.spawnPattern || "",
+    phase: enemy.phase || 0,
+    animTime: 0,
+    attackPulse: 0,
+    phasePulse: 0,
+    hitPulse: 0,
+    flash: 0,
+    age: 0,
+    life: enemy.boss ? 0.86 : enemy.empowered || enemy.mutation ? 0.58 : 0.42,
+    frameState: "death"
+  });
+  if (state.deathEchoes.length > 42) state.deathEchoes.splice(0, state.deathEchoes.length - 42);
+}
+
 function enemyDeathFeedback(state, enemy, source = "hit") {
   const visual = enemyVisual(enemy.type);
   const affix = affixSpec(enemy.affix);
@@ -2318,6 +2531,7 @@ function enemyDeathFeedback(state, enemy, source = "hit") {
         : enemy.type === "warden" ? "#ffd166"
           : classicArcade.yellow;
   const count = enemy.boss ? 42 : (visual.particles || 14) + (enemy.empowered ? 8 : 0) + (enemy.mutation ? 4 : 0);
+  addEnemyDeathEcho(state, enemy);
   addBurst(state.effects, enemy.x, enemy.y, {
     count,
     color: primary,
@@ -2366,6 +2580,7 @@ function damageEnemy(state, enemy, amount, source = "hit") {
   } else if (enemy.empowered) finalAmount *= 1 + relicLevel(state, "hunterMark") * 0.05;
   enemy.hp -= finalAmount;
   enemy.flash = 0.12;
+  enemy.hitPulse = Math.max(enemy.hitPulse || 0, enemy.boss ? 0.22 : 0.16);
   if (enemy.hp > 0) {
     if (finalAmount > 0) weaponHitEffect(state, enemy, source);
     return false;
@@ -3233,6 +3448,7 @@ function updateCharacterAbility(state, dt) {
 }
 
 function fireEnemyShot(state, enemy, angle, speed, damage, radius = 6) {
+  enemy.attackPulse = Math.max(enemy.attackPulse || 0, enemy.boss ? 0.34 : enemy.type === "sniper" ? 0.28 : 0.22);
   state.enemyShots.push({
     x: enemy.x,
     y: enemy.y,
@@ -3286,6 +3502,7 @@ function bolsterBossAllies(state, boss, phase) {
 
 function triggerBossSpecial(state, enemy, spec, angle) {
   const phase = enemy.phaseIndex;
+  enemy.attackPulse = Math.max(enemy.attackPulse || 0, 0.62);
   if (spec.id === "titan") {
     fireRadialShots(state, enemy, 10 + phase * 5, 92 + phase * 22, 14 + phase * 5, state.time * 0.9);
     spawnDangerZone(state, "meteor", enemy);
@@ -3317,12 +3534,17 @@ function triggerBossSpecial(state, enemy, spec, angle) {
 
 function updateBossEnemy(state, enemy, dt, angle) {
   const spec = bossSpec(enemy);
+  enemy.animTime = (enemy.animTime || 0) + dt * (0.72 + enemy.phaseIndex * 0.15);
+  enemy.attackPulse = Math.max(0, (enemy.attackPulse || 0) - dt);
+  enemy.phasePulse = Math.max(0, (enemy.phasePulse || 0) - dt);
+  enemy.hitPulse = Math.max(0, (enemy.hitPulse || 0) - dt);
   enemy.weakWindow = Math.max(0, (enemy.weakWindow || 0) - dt);
   enemy.weakHitPulse = Math.max(0, (enemy.weakHitPulse || 0) - dt);
   const hpRatio = clamp(enemy.hp / enemy.maxHp, 0, 1);
   const nextPhase = hpRatio < 0.34 ? 2 : hpRatio < 0.67 ? 1 : 0;
   if (nextPhase !== enemy.phaseIndex) {
     enemy.phaseIndex = nextPhase;
+    enemy.phasePulse = Math.max(enemy.phasePulse || 0, 0.72);
     enemy.special = 0.35;
     state.message = nextPhase === 2 ? `${spec.title} 狂暴` : `${spec.title} 二阶段`;
     addFloatingText(state.effects, enemy.x, enemy.y - 36, state.message, { color: RARITIES.evolve.color, size: 18 });
@@ -3381,6 +3603,9 @@ function updateEnemies(state, dt) {
       updateBossEnemy(state, enemy, dt, angle);
       continue;
     }
+    enemy.animTime = (enemy.animTime || 0) + dt * (enemy.chargeTime > 0 ? 2.1 : 1);
+    enemy.attackPulse = Math.max(0, (enemy.attackPulse || 0) - dt);
+    enemy.hitPulse = Math.max(0, (enemy.hitPulse || 0) - dt);
 
     const slow = enemy.frozen > 0 ? 0.25 : enemy.slow > 0 ? 0.55 : 1;
     if (enemy.chargeTime > 0) {
@@ -3393,6 +3618,7 @@ function updateEnemies(state, dt) {
     if (enemy.type === "bomber") {
       if (!enemy.fuse && (playerDistance < 56 || enemy.hp / enemy.maxHp < 0.28)) {
         enemy.fuse = 0.82;
+        enemy.attackPulse = Math.max(enemy.attackPulse || 0, 0.52);
         addFloatingText(state.effects, enemy.x, enemy.y - 20, "警告", { color: "#ffb84d", size: 12 });
       }
       if (enemy.fuse > 0) {
@@ -3409,6 +3635,7 @@ function updateEnemies(state, dt) {
       if (enemy.special <= 0 && playerDistance < 260) {
         enemy.chargeTime = 0.42;
         enemy.chargeAngle = angle;
+        enemy.attackPulse = Math.max(enemy.attackPulse || 0, 0.34);
         enemy.special = 2.4 + Math.random() * 0.8;
         addFloatingText(state.effects, enemy.x, enemy.y - 22, "夜叉冲锋", { color: enemy.color, size: 12 });
       }
@@ -3428,6 +3655,7 @@ function updateEnemies(state, dt) {
         if (healed) {
           addBurst(state.effects, enemy.x, enemy.y, { count: 12, color: "#ffd166", secondary: "#8ce8bd", radius: 20 });
           addFloatingText(state.effects, enemy.x, enemy.y - 24, `治疗 x${healed}`, { color: "#ffd166", size: 12 });
+          enemy.attackPulse = Math.max(enemy.attackPulse || 0, 0.42);
         }
         enemy.special = 2.7;
       }
@@ -3580,6 +3808,18 @@ function updateEnemyShots(state, dt) {
   }
 }
 
+function updateDeathEchoes(state, dt) {
+  if (!Array.isArray(state.deathEchoes)) {
+    state.deathEchoes = [];
+    return;
+  }
+  for (const echo of state.deathEchoes) {
+    echo.age = (echo.age || 0) + dt;
+    echo.animTime = (echo.animTime || 0) + dt;
+  }
+  state.deathEchoes = state.deathEchoes.filter((echo) => (echo.age || 0) < (echo.life || 0.45));
+}
+
 function updatePlayerDamage(state) {
   if (state.player.invuln > 0) return;
   const hit = state.enemies.find((enemy) => distance(enemy, state.player) <= enemy.radius + state.player.radius);
@@ -3620,6 +3860,7 @@ function advanceLevel(state, context) {
   state.projectiles = [];
   state.enemyShots = [];
   state.pickups = [];
+  state.deathEchoes = [];
   setupStageObjects(state);
   state.spawnTimer = 0.55;
   state.eventTimer = (7 + Math.random() * 3) / stageEventRate(state);
@@ -3697,6 +3938,7 @@ function update(state, dt, context) {
   fireWeapons(state, dt);
   collectPickups(state);
   updatePlayerDamage(state);
+  updateDeathEchoes(state, dt);
   updateEffects(state.effects, dt);
   updateFeedback(state, dt, [state.enemies]);
   state.shake = Math.max(0, state.shake - dt * 18);
@@ -3811,6 +4053,25 @@ function createSprite(key, draw) {
   return canvas;
 }
 
+function imageSpriteForUrl(url) {
+  if (!url || typeof Image === "undefined") return null;
+  let record = IMAGE_SPRITE_CACHE.get(url);
+  if (!record) {
+    const image = new Image();
+    record = { image, ready: false, error: false };
+    image.onload = () => {
+      record.ready = true;
+    };
+    image.onerror = () => {
+      record.error = true;
+    };
+    image.src = url;
+    IMAGE_SPRITE_CACHE.set(url, record);
+  }
+  if (record.error || !record.ready) return null;
+  return record.image;
+}
+
 function spriteGradient(ctx, color, dark = "#08131d", light = "#f8fbff") {
   const gradient = ctx.createLinearGradient(-30, -34, 30, 34);
   gradient.addColorStop(0, light);
@@ -3824,9 +4085,33 @@ function drawSpriteImage(ctx, sprite, scale = 1) {
   ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
 }
 
-function renderEnemySprite(ctx, type, color, affixId, boss = false, bossKind = "titan") {
+function drawFrameImage(ctx, image, scale = 1, anchor = { x: 0.5, y: 0.5 }) {
+  const size = SPRITE_SIZE * scale;
+  const anchorX = Number.isFinite(anchor?.x) ? anchor.x : 0.5;
+  const anchorY = Number.isFinite(anchor?.y) ? anchor.y : 0.5;
+  ctx.drawImage(image, -size * anchorX, -size * anchorY, size, size);
+}
+
+function renderEnemySprite(ctx, type, color, affixId, boss = false, bossKind = "titan", frameState = "move", frameIndex = 0, frameProgress = 0) {
   const affix = affixSpec(affixId);
+  const frameWave = Math.sin((frameIndex + 1) * 1.67);
   ctx.save();
+  if (frameState === "move") {
+    ctx.translate(frameWave * (boss ? 0.7 : 1.35), -Math.abs(frameWave) * (boss ? 0.4 : 1.05));
+    ctx.rotate(frameWave * (boss ? 0.012 : 0.025));
+  } else if (frameState === "attack") {
+    ctx.translate(frameWave * (boss ? 1.2 : 2.1), -2.4);
+    ctx.rotate(frameWave * (boss ? 0.03 : 0.055));
+    ctx.scale(1.06, 1.02);
+  } else if (frameState === "hit") {
+    ctx.translate(frameWave * 1.8, -1.2);
+    ctx.scale(1.08, 0.93);
+  } else if (frameState === "death") {
+    ctx.globalAlpha *= 1 - frameProgress * 0.56;
+    ctx.translate(frameWave * 2.6, frameProgress * 8);
+    ctx.rotate(frameWave * 0.06 + frameProgress * (boss ? -0.18 : 0.22));
+    ctx.scale(1 + frameProgress * 0.16, Math.max(0.58, 1 - frameProgress * 0.28));
+  }
   ctx.shadowColor = color;
   ctx.shadowBlur = boss ? 18 : affix ? 12 : 7;
   ctx.fillStyle = "rgba(0,0,0,.24)";
@@ -4105,13 +4390,57 @@ function renderEnemySprite(ctx, type, color, affixId, boss = false, bossKind = "
     ctx.arc(0, 0, 39, -Math.PI * 0.82, Math.PI * 0.82);
     ctx.stroke();
   }
+  if (frameState === "attack") {
+    ctx.strokeStyle = "rgba(255,209,102,.76)";
+    ctx.lineWidth = boss ? 5 : 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, boss ? 47 : 36, -Math.PI * 0.95, Math.PI * 0.15);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,209,102,.5)";
+    ctx.beginPath();
+    ctx.moveTo(0, -42);
+    ctx.lineTo(7, -27);
+    ctx.lineTo(-7, -27);
+    ctx.closePath();
+    ctx.fill();
+  } else if (frameState === "hit") {
+    ctx.strokeStyle = "rgba(248,251,255,.82)";
+    ctx.lineWidth = boss ? 5 : 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, boss ? 44 : 34, -Math.PI * 0.72, Math.PI * 0.72);
+    ctx.stroke();
+  } else if (frameState === "death") {
+    ctx.strokeStyle = `rgba(248,251,255,${0.58 - frameProgress * 0.28})`;
+    ctx.lineWidth = boss ? 4 : 2.4;
+    ctx.beginPath();
+    ctx.moveTo(-18, -22 + frameProgress * 12);
+    ctx.lineTo(-4, -2);
+    ctx.lineTo(-13, 22);
+    ctx.moveTo(11, -24);
+    ctx.lineTo(2, -4 + frameProgress * 8);
+    ctx.lineTo(17, 18);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(255,209,102,${0.44 - frameProgress * 0.2})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, 32 + frameProgress * 12, frameProgress * Math.PI, frameProgress * Math.PI + Math.PI * 1.4);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
-function drawEnemySprite(ctx, enemy, scale) {
-  const key = `enemy:${enemy.type}:${enemy.color}:${enemy.affix || "none"}:${enemy.boss ? enemy.bossKind || "boss" : "normal"}`;
-  const sprite = createSprite(key, (spriteCtx) => renderEnemySprite(spriteCtx, enemy.type, enemy.color, enemy.affix, enemy.boss, enemy.bossKind));
+function drawEnemySprite(ctx, enemy, scale, frameState = "move", frameIndex = 0) {
+  const frameProgress = enemyFrameProgress(enemy, frameState, frameIndex);
   const sizeScale = scale * (enemy.boss ? 0.92 : 0.58);
+  const frameUrl = enemyFrameAssetUrl(enemy, frameState, frameIndex);
+  if (frameUrl) {
+    const image = imageSpriteForUrl(frameUrl);
+    if (image) {
+      drawFrameImage(ctx, image, sizeScale, enemyFrameSet(enemy).anchor);
+      return true;
+    }
+  }
+  const key = `enemy:${enemy.type}:${enemy.color}:${enemy.affix || "none"}:${enemy.boss ? enemy.bossKind || "boss" : "normal"}:${frameState}:${frameIndex}`;
+  const sprite = createSprite(key, (spriteCtx) => renderEnemySprite(spriteCtx, enemy.type, enemy.color, enemy.affix, enemy.boss, enemy.bossKind, frameState, frameIndex, frameProgress));
   drawSpriteImage(ctx, sprite, sizeScale);
   return true;
 }
@@ -4196,11 +4525,21 @@ function renderHeroSprite(ctx, character) {
 }
 
 function drawHeroSprite(ctx, state, character) {
-  const key = `hero:${character.id}`;
-  const sprite = createSprite(key, (spriteCtx) => renderHeroSprite(spriteCtx, character));
+  const frameSet = heroFrameSet(character);
+  const frameState = heroFrameState(state, character);
+  const frameIndex = heroFrameIndex(state, character, frameState);
+  const frameUrl = heroFrameAssetUrl(character, frameState, frameIndex);
+  const frameImage = imageSpriteForUrl(frameUrl);
   const bob = Math.sin(state.time * 5) * 1.2;
   ctx.save();
   ctx.translate(0, bob);
+  if (frameImage && frameSet) {
+    drawFrameImage(ctx, frameImage, 0.74, frameSet.anchor);
+    ctx.restore();
+    return;
+  }
+  const key = `hero:${character.id}`;
+  const sprite = createSprite(key, (spriteCtx) => renderHeroSprite(spriteCtx, character));
   drawSpriteImage(ctx, sprite, 0.62);
   ctx.restore();
 }
@@ -4928,8 +5267,8 @@ function drawEnemyDynamicMarks(ctx, state, enemy, scale) {
   ctx.restore();
 }
 
-function drawEnemyBody(ctx, enemy, scale) {
-  if (drawEnemySprite(ctx, enemy, scale)) return;
+function drawEnemyBody(ctx, enemy, scale, frameState = "move", frameIndex = 0) {
+  if (drawEnemySprite(ctx, enemy, scale, frameState, frameIndex)) return;
   if (enemy.boss) {
     ctx.fillStyle = "#5a1024";
     ctx.beginPath();
@@ -5160,15 +5499,43 @@ function drawEnemyBody(ctx, enemy, scale) {
   ctx.fill();
 }
 
+function enemyMotionTransform(state, enemy) {
+  const anim = enemy.boss
+    ? { rate: 2.1 + (enemy.phaseIndex || 0) * 0.45, bob: 1.5, sway: 0.04, squash: 0.02, lean: 0.06, alphaPulse: 0.02 }
+    : enemyAnimation(enemy.type);
+  const t = (enemy.animTime || state.time) * anim.rate + enemy.phase;
+  const hit = clamp((enemy.hitPulse || 0) / (enemy.boss ? 0.22 : 0.16), 0, 1);
+  const frozen = enemy.frozen > 0;
+  const fuse = enemy.type === "bomber" && enemy.fuse > 0 ? clamp(1 - enemy.fuse / 0.82, 0, 1) : 0;
+  const charge = enemy.chargeTime > 0;
+  const stomp = anim.stomp ? Math.max(0, Math.sin(t * 0.5)) * anim.stomp : 0;
+  const jitter = anim.jitter ? Math.sin(t * 3.1) * anim.jitter : 0;
+  const slowFactor = frozen ? 0.35 : 1;
+  return {
+    x: jitter * slowFactor,
+    y: (Math.sin(t) * (anim.bob || 0) - stomp) * slowFactor,
+    rotate: Math.sin(t * 0.72) * (anim.sway || 0) * slowFactor + (charge ? 0.12 : 0),
+    scaleX: 1 + Math.sin(t * 1.15) * (anim.squash || 0) + hit * 0.16 + fuse * 0.08,
+    scaleY: 1 - Math.sin(t * 1.15) * (anim.squash || 0) - hit * 0.12 + fuse * 0.08,
+    lean: charge ? 0.15 : Math.sin(t * 0.58) * (anim.lean || 0) * slowFactor,
+    alpha: 1 - (anim.alphaPulse || 0) * (0.5 + Math.sin(t) * 0.5)
+  };
+}
+
 function drawEnemy(ctx, state, enemy) {
   const p = worldToScreen(state, enemy.x, enemy.y);
   const scale = enemy.radius / 12;
   const angle = Math.atan2(state.player.y - enemy.y, state.player.x - enemy.x) + Math.PI / 2;
+  const motion = enemyMotionTransform(state, enemy);
+  const frameState = enemyFrameState(enemy);
+  const frameIndex = enemyFrameIndex(state, enemy, frameState);
   drawEnemyTelegraph(ctx, state, enemy, p);
   ctx.save();
-  ctx.translate(p.x, p.y);
-  ctx.rotate(angle);
-  ctx.globalAlpha = enemy.flash ? 0.68 : 1;
+  ctx.translate(p.x + motion.x, p.y + motion.y);
+  ctx.rotate(angle + motion.rotate);
+  ctx.transform(1, motion.lean, 0, 1, 0, 0);
+  ctx.scale(motion.scaleX, motion.scaleY);
+  ctx.globalAlpha = (enemy.flash ? 0.68 : 1) * motion.alpha;
   glowCircle(ctx, 0, 0, enemy.radius * (enemy.boss ? 3.4 : enemy.empowered ? 2.7 : 2.15), enemy.color, enemy.boss ? 0.24 : enemy.empowered ? 0.22 : 0.12);
   ctx.shadowColor = enemy.color;
   ctx.shadowBlur = enemy.flash ? 16 : enemy.empowered ? 10 : 4;
@@ -5176,7 +5543,7 @@ function drawEnemy(ctx, state, enemy) {
   ctx.beginPath();
   ctx.ellipse(0, enemy.radius * 0.55, enemy.radius * 0.95, enemy.radius * 0.28, 0, 0, Math.PI * 2);
   ctx.fill();
-  drawEnemyBody(ctx, enemy, scale);
+  drawEnemyBody(ctx, enemy, scale, frameState, frameIndex);
   drawEnemyDynamicMarks(ctx, state, enemy, scale);
   if (enemy.family && enemy.radius >= 7) {
     ctx.fillStyle = enemy.boss ? "rgba(255,209,102,.92)" : "rgba(10,18,20,.72)";
@@ -5238,6 +5605,25 @@ function drawEnemy(ctx, state, enemy) {
   drawHealthBar(ctx, p, enemy);
 }
 
+function drawDeathEcho(ctx, state, echo) {
+  const p = worldToScreen(state, echo.x, echo.y);
+  const progress = clamp((echo.age || 0) / (echo.life || 0.45), 0, 1);
+  const frameState = "death";
+  const frameIndex = enemyFrameIndex(state, echo, frameState);
+  const color = echo.color || enemyVisual(echo.type).deathColor || classicArcade.yellow;
+  ctx.save();
+  ctx.translate(p.x, p.y - progress * (echo.boss ? 13 : 8));
+  ctx.rotate((echo.phase || 0) * 0.04 + progress * (echo.boss ? -0.18 : 0.24));
+  ctx.globalAlpha = Math.max(0, 1 - progress) * (echo.boss ? 0.78 : echo.empowered || echo.mutation ? 0.58 : 0.42);
+  drawEnemySprite(ctx, echo, (echo.radius / 12) * (1 + progress * 0.12), frameState, frameIndex);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = echo.boss ? 3 : 1.8;
+  ctx.beginPath();
+  ctx.arc(0, 0, echo.radius * (1.2 + progress * 1.4), -Math.PI * 0.25, Math.PI * (1.2 + progress * 0.2));
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawPlayer(ctx, state) {
   const p = worldToScreen(state, state.player.x, state.player.y);
   const character = characterSpec(state);
@@ -5275,6 +5661,7 @@ function draw(state, ctx) {
   state.pickups.forEach((pickup) => drawPickup(ctx, state, pickup));
   state.projectiles.forEach((projectile) => drawProjectile(ctx, state, projectile));
   state.enemyShots.forEach((shot) => drawEnemyShot(ctx, state, shot));
+  state.deathEchoes?.forEach((echo) => drawDeathEcho(ctx, state, echo));
   state.enemies.forEach((enemy) => drawEnemy(ctx, state, enemy));
   if (state.skills.aura) {
     const plague = hasEvolution(state, "plagueAura");
@@ -5574,10 +5961,10 @@ export function mountSurvivor(root, context) {
       <div class="survivor-codex-row">
         <span class="survivor-codex-title">百鬼录</span>
         ${unlockedEnemyCodex(state.level).map((entry) => `
-          <span class="survivor-codex-chip">
+          <span class="survivor-codex-chip" title="${entry.title} · ${entry.origin}：${entry.lore}">
             <i>${entry.family}</i>
             <b>${entry.title}</b>
-            <small>弱 ${entry.weakness} · 荐 ${entry.skills} · ${entry.tip}</small>
+            <small>${entry.origin} · 弱 ${entry.weakness} · 掉 ${entry.drops} · ${entry.tip}</small>
           </span>
         `).join("")}
       </div>

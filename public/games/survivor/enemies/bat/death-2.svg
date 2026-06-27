@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="bat-death-2">
+  <defs>
+    <radialGradient id="bat-death-2-glow" cx="50%" cy="42%" r="56%">
+      <stop offset="0" stop-color="#f8fbff" stop-opacity=".95"/>
+      <stop offset=".38" stop-color="#7bd4ff" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#08131d" stop-opacity=".06"/>
+    </radialGradient>
+    <linearGradient id="bat-death-2-shade" x1="24" y1="18" x2="72" y2="82">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".92"/>
+      <stop offset=".42" stop-color="#7bd4ff" stop-opacity=".92"/>
+      <stop offset="1" stop-color="#08131d" stop-opacity=".85"/>
+    </linearGradient>
+    <filter id="bat-death-2-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.4"/>
+    </filter>
+  </defs>
+  <g color="#7bd4ff" opacity="0.5700000000000001" transform="translate(0 5.5)">
+    <ellipse cx="48" cy="76" rx="22" ry="6" fill="#050a0f" opacity=".28"/>
+    <path d="M43 37 C28 41 18 31 12 48.6 C25 46.8 35 49 42 58Z" fill="url(#bat-death-2-shade)" opacity=".9"/>
+    <path d="M53 37 C68 41 78 31 84 48.6 C71 46.8 61 49 54 58Z" fill="url(#bat-death-2-shade)" opacity=".9"/>
+    <ellipse cx="48" cy="47" rx="13" ry="20" fill="#081322" stroke="#a9edff" stroke-opacity=".42" stroke-width="1.5"/>
+    <circle cx="48" cy="35" r="13" fill="url(#bat-death-2-glow)" stroke="#d8f7ff" stroke-opacity=".5"/>
+    <circle cx="43" cy="34" r="2.8" fill="#07131d"/>
+    <circle cx="53" cy="34" r="2.8" fill="#07131d"/>
+    <path d="M42 27 37 19M54 27 59 19" stroke="#d8f7ff" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
+    <path d="M29 65 l-8 14M67 63.5 l9 14M48 72 v15" stroke="#7bd4ff" stroke-width="2.2" stroke-linecap="round" opacity="0.43000000000000005"/>
+    
+  </g>
+</svg>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="boss-titan-attack-3 尸山鬼王">
+  <defs>
+    <radialGradient id="boss-titan-attack-3-aura" cx="50%" cy="42%" r="64%">
+      <stop offset="0" stop-color="#ffe0c7" stop-opacity=".98"/>
+      <stop offset=".38" stop-color="#ff4d5e" stop-opacity=".86"/>
+      <stop offset=".7" stop-color="#ffb84d" stop-opacity=".66"/>
+      <stop offset="1" stop-color="#050712" stop-opacity=".08"/>
+    </radialGradient>
+    <linearGradient id="boss-titan-attack-3-body" x1="19" y1="10" x2="78" y2="86">
+      <stop offset="0" stop-color="#ffe0c7"/>
+      <stop offset=".38" stop-color="#ff4d5e"/>
+      <stop offset=".68" stop-color="#ffb84d"/>
+      <stop offset="1" stop-color="#1b0910"/>
+    </linearGradient>
+    <linearGradient id="boss-titan-attack-3-mask" x1="30" y1="19" x2="67" y2="72">
+      <stop offset="0" stop-color="#ffe0c7"/>
+      <stop offset=".56" stop-color="#ffb84d"/>
+      <stop offset="1" stop-color="#1b0910"/>
+    </linearGradient>
+    <filter id="boss-titan-attack-3-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <g opacity="1" transform="translate(0 -0.647) scale(1.086) translate(-4.109 -4.451)">
+    <ellipse cx="48" cy="83" rx="31" ry="7" fill="#050a0f" opacity=".3"/>
+    <ellipse cx="48" cy="49" rx="40" ry="41" fill="url(#boss-titan-attack-3-aura)" opacity=".42" filter="url(#boss-titan-attack-3-soft)"/>
+    <path d="M13 62 C27 32.489 69 32.489 83 62" fill="none" stroke="#ff4d5e" stroke-width="6.853" stroke-linecap="round" opacity=".72"/>
+    <path d="M26.949 30.537 l-5.263 -3.297 l4.744 -1.58 Z" fill="#ff4d5e" opacity=".2"/><path d="M36.572 21.262 l-2.666 -4.623 l4.952 0.69 Z" fill="#ffb84d" opacity=".2"/><path d="M50.213 17.077 l0.484 -4.988 l4.131 2.817 Z" fill="#ff4d5e" opacity=".2"/><path d="M59.107 30.009 l3.534 -4.316 l2.451 4.358 Z" fill="#ffb84d" opacity=".2"/><path d="M68.054 35.815 l5.849 -2.747 l0.262 4.993 Z" fill="#ff4d5e" opacity=".2"/><path d="M73.808 45.846 l6.948 -0.606 l-1.982 4.59 Z" fill="#ffb84d" opacity=".2"/>
+    
+    <path d="M30 72 C24 55 25 38 36 27 C41 34 45 42 48 55 C51 42 55 34 60 27 C71 38 72 55 66 72" fill="#1b0910" opacity=".58"/>
+    <path d="M25 34 C16 24 14 11 23 8 C31 15 35 23 37 34" fill="#2b0d14" stroke="#ffe0c7" stroke-opacity=".36" stroke-width="1.8"/>
+    <path d="M71 34 C80 24 82 11 73 8 C65 15 61 23 59 34" fill="#2b0d14" stroke="#ffe0c7" stroke-opacity=".36" stroke-width="1.8"/>
+    <path d="M28 70 C34 60.147 40 63 46 70M50 70 C56 60.147 62 63 68 70" fill="none" stroke="#ffe0c7" stroke-width="3.4" stroke-linecap="round" opacity=".68"/>
+    <path d="M25 36 C25 23 34 14 48 13 C62 14 71 23 71 36 C76 49 70 68 58 78 C53 83 43 83 38 78 C26 68 20 49 25 36Z" fill="url(#boss-titan-attack-3-body)" stroke="#ffe0c7" stroke-opacity=".54" stroke-width="1.8"/>
+    <path d="M31 34 C34 21 42 18 48 18 C54 18 62 21 65 34 C65 48 59 61 48 66 C37 61 31 48 31 34Z" fill="url(#boss-titan-attack-3-mask)" stroke="#ffe0c7" stroke-width="1.6"/>
+    <path d="M37 37 C41 34 44 35 46 39" fill="none" stroke="#1b0910" stroke-width="4" stroke-linecap="round"/>
+    <path d="M59 37 C55 34 52 35 50 39" fill="none" stroke="#1b0910" stroke-width="4" stroke-linecap="round"/>
+    <path d="M39 56.804 C44 67.511 52 67.511 57 56.804" fill="none" stroke="#1b0910" stroke-width="4" stroke-linecap="round"/>
+    <path d="M48 21 L42.88 35 L51.56 48 L44.44 66" fill="none" stroke="#ffe0c7" stroke-width="2.192" stroke-linecap="round" opacity="0.506"/>
+    <path d="M23 61 C10 62 8 76 22 81M73 61 C86 62 88 76 74 81" fill="none" stroke="#ffb84d" stroke-width="4" stroke-linecap="round" opacity=".52"/>
+    <g id="boss-titan-attack-3-sparks"><circle cx="36.319" cy="34.154" r="2.24" fill="#ffb84d" opacity="0.56"/><circle cx="42.773" cy="18.81" r="1.1" fill="#ff4d5e" opacity="0.64"/><circle cx="54.15" cy="30.961" r="1.48" fill="#f8fbff" opacity="0.32"/><circle cx="70.665" cy="28.878" r="1.86" fill="#ffb84d" opacity="0.4"/><circle cx="65.832" cy="44.807" r="2.24" fill="#ff4d5e" opacity="0.48"/><circle cx="75.892" cy="58.068" r="1.1" fill="#f8fbff" opacity="0.56"/><circle cx="59.681" cy="61.846" r="1.48" fill="#ffb84d" opacity="0.64"/><circle cx="53.227" cy="77.19" r="1.86" fill="#ff4d5e" opacity="0.32"/><circle cx="41.85" cy="65.039" r="2.24" fill="#f8fbff" opacity="0.4"/><circle cx="25.335" cy="67.122" r="1.1" fill="#ffb84d" opacity="0.48"/><circle cx="30.168" cy="51.193" r="1.48" fill="#ff4d5e" opacity="0.56"/><circle cx="20.108" cy="37.932" r="1.86" fill="#f8fbff" opacity="0.64"/></g>
+  </g>
+</svg>

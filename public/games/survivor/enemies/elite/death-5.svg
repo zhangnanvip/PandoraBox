@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="elite-death-5">
+  <defs>
+    <radialGradient id="elite-death-5-aura" cx="50%" cy="42%" r="62%">
+      <stop offset="0" stop-color="#fff7f0" stop-opacity=".96"/>
+      <stop offset=".42" stop-color="#d45cff" stop-opacity=".82"/>
+      <stop offset="1" stop-color="#101021" stop-opacity=".05"/>
+    </radialGradient>
+    <linearGradient id="elite-death-5-robe" x1="24" y1="16" x2="72" y2="82">
+      <stop offset="0" stop-color="#fff1de" stop-opacity=".94"/>
+      <stop offset=".46" stop-color="#c45bff" stop-opacity=".96"/>
+      <stop offset="1" stop-color="#20102d" stop-opacity=".95"/>
+    </linearGradient>
+    <linearGradient id="elite-death-5-mask" x1="32" y1="18" x2="64" y2="62">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset=".62" stop-color="#f4dcc3"/>
+      <stop offset="1" stop-color="#a84a9c"/>
+    </linearGradient>
+    <filter id="elite-death-5-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.4"/>
+    </filter>
+  </defs>
+  <g opacity="0.514" transform="translate(0 2.143) rotate(-2.437 48 54)">
+    <ellipse cx="48" cy="80" rx="24" ry="6" fill="#050a0f" opacity=".26"/>
+    <ellipse cx="48" cy="48" rx="34" ry="36" fill="url(#elite-death-5-aura)" opacity=".32" filter="url(#elite-death-5-soft)" transform="scale(1.321) translate(-15.429 -15.429)"/>
+    <path d="M63.778 28.266 l2.937 -3.237 l2.618 3.024 Z" fill="#f5e5d0" opacity="0.67"/><path d="M75.586 43.748 l4.876 -0.884 l-0.025 4 Z" fill="#f5e5d0" opacity="0.67"/><path d="M74.117 64.171 l4.395 1.908 l-2.657 2.99 Z" fill="#f5e5d0" opacity="0.67"/><path d="M58.786 79.216 l1.732 3.752 l-3.969 0.497 Z" fill="#f5e5d0" opacity="0.67"/><path d="M36.333 80.41 l-1.791 3.735 l-3.311 -2.244 Z" fill="#f5e5d0" opacity="0.67"/><path d="M17.912 65.835 l-4.425 1.863 l-1.01 -3.87 Z" fill="#f5e5d0" opacity="0.67"/>
+    <path d="M31 32 C23 44 24 68 37 80 C42 74 44 66 48 59 C52 66 55 74 60 80 C73 67 72 43 65 32 C60 40 55 43 48 43 C41 43 36 40 31 32Z" fill="#190f2b" opacity=".96"/>
+    <path d="M48 15 C64 22 71 39 66 56 C60 69 55 78 48 83 C41 78 36 69 30 56 C25 39 32 22 48 15Z" fill="url(#elite-death-5-robe)" stroke="#ffe8ff" stroke-opacity=".44" stroke-width="1.6"/>
+    <path d="M36 24 C42 17 54 17 60 24 C63 30 63 45 56 55 C52 61 44 61 40 55 C33 45 33 30 36 24Z" fill="url(#elite-death-5-mask)" stroke="#fff7e3" stroke-width="1.6"/>
+    <path d="M48 22 C45 31 47 41 44 51" fill="none" stroke="#7c1d6f" stroke-width="2.991" stroke-linecap="round" opacity="0.728"/>
+    <path d="M23.429 38 C39 36 43 36 46 39" fill="none" stroke="#2d1136" stroke-width="3" stroke-linecap="round" opacity=".72"/>
+    <path d="M72.571 38 C57 36 53 36 50 39" fill="none" stroke="#2d1136" stroke-width="3" stroke-linecap="round" opacity=".72"/>
+    <circle cx="42" cy="34" r="2.4" fill="#07131d"/>
+    <circle cx="54" cy="34" r="2.4" fill="#07131d"/>
+    <path d="M38 50 C43 54 53 54 58 50" fill="none" stroke="#7c1d6f" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+    <path d="M27 56 C17 58 16 72 29 76M69 56 C80 58 80 72 67 76" fill="none" stroke="#f4dcc3" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+    <path d="M25 22 C15 30 14 46 26 54" fill="none" stroke="#d45cff" stroke-width="4" stroke-linecap="round" opacity="0"/>
+    <path d="M70 20 C83 29 84 48 70 59" fill="none" stroke="#ff5f9e" stroke-width="4" stroke-linecap="round" opacity="0"/>
+    <g id="elite-death-5-sparks"><circle cx="17.751" cy="66.702" r="2" fill="#d45cff" opacity="0.43"/><circle cx="18.276" cy="48.598" r="1.1" fill="#d45cff" opacity="0.54"/><circle cx="27.106" cy="36.39" r="1.55" fill="#d45cff" opacity="0.65"/><circle cx="38.667" cy="32.671" r="2" fill="#d45cff" opacity="0.32"/><circle cx="45.892" cy="7.79" r="1.1" fill="#d45cff" opacity="0.43"/><circle cx="62.912" cy="17.636" r="1.55" fill="#d45cff" opacity="0.54"/><circle cx="70.289" cy="32.483" r="2" fill="#d45cff" opacity="0.65"/><circle cx="68.237" cy="45.912" r="1.1" fill="#d45cff" opacity="0.32"/><circle cx="85.834" cy="66.213" r="1.55" fill="#d45cff" opacity="0.43"/><circle cx="67.702" cy="77.249" r="2" fill="#d45cff" opacity="0.54"/><circle cx="49.598" cy="76.724" r="1.1" fill="#d45cff" opacity="0.65"/><circle cx="37.39" cy="67.894" r="1.55" fill="#d45cff" opacity="0.32"/></g>
+  </g>
+</svg>

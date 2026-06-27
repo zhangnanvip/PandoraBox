@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="boss-warden-death-4 百目判官">
+  <defs>
+    <radialGradient id="boss-warden-death-4-aura" cx="50%" cy="42%" r="64%">
+      <stop offset="0" stop-color="#fff7d6" stop-opacity=".98"/>
+      <stop offset=".38" stop-color="#ffd166" stop-opacity=".86"/>
+      <stop offset=".7" stop-color="#8ce8bd" stop-opacity=".66"/>
+      <stop offset="1" stop-color="#050712" stop-opacity=".08"/>
+    </radialGradient>
+    <linearGradient id="boss-warden-death-4-body" x1="19" y1="10" x2="78" y2="86">
+      <stop offset="0" stop-color="#fff7d6"/>
+      <stop offset=".38" stop-color="#ffd166"/>
+      <stop offset=".68" stop-color="#8ce8bd"/>
+      <stop offset="1" stop-color="#20170a"/>
+    </linearGradient>
+    <linearGradient id="boss-warden-death-4-mask" x1="30" y1="19" x2="67" y2="72">
+      <stop offset="0" stop-color="#fff7d6"/>
+      <stop offset=".56" stop-color="#8ce8bd"/>
+      <stop offset="1" stop-color="#20170a"/>
+    </linearGradient>
+    <filter id="boss-warden-death-4-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <g opacity="0.724" transform="translate(0 1.333) scale(1.098) translate(-4.693 -5.084)">
+    <ellipse cx="48" cy="83" rx="31" ry="7" fill="#050a0f" opacity=".3"/>
+    <ellipse cx="48" cy="49" rx="40" ry="41" fill="url(#boss-warden-death-4-aura)" opacity=".42" filter="url(#boss-warden-death-4-soft)"/>
+    
+    <path d="M30.922 24.606 l-4.015 -4.096 l4.983 -0.408 Z" fill="#ffd166" opacity="0.458"/><path d="M43.46 19.121 l-1.052 -4.943 l4.646 1.847 Z" fill="#8ce8bd" opacity="0.458"/><path d="M57.332 19.788 l2.13 -4.763 l3.343 3.718 Z" fill="#ffd166" opacity="0.458"/><path d="M69.64 26.648 l4.869 -3.592 l1.345 4.816 Z" fill="#8ce8bd" opacity="0.458"/><path d="M77.732 38.429 l6.596 -1.675 l-0.933 4.912 Z" fill="#ffd166" opacity="0.458"/><path d="M79.776 52.78 l6.951 0.591 l-3.016 3.988 Z" fill="#8ce8bd" opacity="0.458"/><path d="M75.167 66.737 l5.861 2.733 l-4.473 2.234 Z" fill="#ffd166" opacity="0.458"/><path d="M64.694 77.337 l3.553 4.308 l-5 0.016 Z" fill="#8ce8bd" opacity="0.458"/><path d="M50.411 82.246 l0.506 4.987 l-4.487 -2.205 Z" fill="#ffd166" opacity="0.458"/><path d="M35.233 80.272 l-2.646 4.629 l-3.042 -3.968 Z" fill="#8ce8bd" opacity="0.458"/><path d="M22.344 71.647 l-5.248 3.309 l-0.964 -4.906 Z" fill="#ffd166" opacity="0.458"/><path d="M14.527 58.019 l-6.759 1.301 l1.314 -4.824 Z" fill="#8ce8bd" opacity="0.458"/><path d="M13.567 42.134 l-6.865 -0.978 l3.319 -3.739 Z" fill="#ffd166" opacity="0.458"/><path d="M19.842 27.29 l-5.544 -3.053 l4.634 -1.877 Z" fill="#8ce8bd" opacity="0.458"/><path d="M32.212 16.647 l-3.07 -4.494 l4.986 0.376 Z" fill="#ffd166" opacity="0.458"/><path d="M48.219 12.556 l0.042 -5 l4.301 2.55 Z" fill="#8ce8bd" opacity="0.458"/>
+    
+    <rect x="27" y="18" width="42" height="55" rx="13" fill="#20170a" opacity=".48"/>
+    <ellipse cx="31" cy="27" rx="3" ry="2" fill="#fff7d6"/><circle cx="31" cy="27" r="1" fill="#20170a"/><ellipse cx="39.5" cy="27" rx="3" ry="2" fill="#fff7d6"/><circle cx="39.5" cy="27" r="1" fill="#20170a"/><ellipse cx="48" cy="27" rx="3" ry="2" fill="#fff7d6"/><circle cx="48" cy="27" r="1" fill="#20170a"/><ellipse cx="56.5" cy="27" rx="3" ry="2" fill="#fff7d6"/><circle cx="56.5" cy="27" r="1" fill="#20170a"/><ellipse cx="65" cy="27" rx="3" ry="2" fill="#fff7d6"/><circle cx="65" cy="27" r="1" fill="#20170a"/><ellipse cx="31" cy="39" rx="3" ry="2" fill="#fff7d6"/><circle cx="31" cy="39" r="1" fill="#20170a"/><ellipse cx="39.5" cy="39" rx="3" ry="2" fill="#fff7d6"/><circle cx="39.5" cy="39" r="1" fill="#20170a"/><ellipse cx="48" cy="39" rx="3" ry="2" fill="#fff7d6"/><circle cx="48" cy="39" r="1" fill="#20170a"/><ellipse cx="56.5" cy="39" rx="3" ry="2" fill="#fff7d6"/><circle cx="56.5" cy="39" r="1" fill="#20170a"/><ellipse cx="65" cy="39" rx="3" ry="2" fill="#fff7d6"/><circle cx="65" cy="39" r="1" fill="#20170a"/>
+    <path d="M22 62 C32 55 64 55 74 62" fill="none" stroke="#8ce8bd" stroke-width="4" stroke-linecap="round" opacity="0.676"/>
+    <path d="M48 18 V72M30 45 H66" stroke="#fff7d6" stroke-width="2.5" stroke-linecap="round" opacity=".62"/>
+    <path d="M25 36 C25 23 34 14 48 13 C62 14 71 23 71 36 C76 49 70 68 58 78 C53 83 43 83 38 78 C26 68 20 49 25 36Z" fill="url(#boss-warden-death-4-body)" stroke="#fff7d6" stroke-opacity=".54" stroke-width="1.8"/>
+    <path d="M31 34 C34 21 42 18 48 18 C54 18 62 21 65 34 C65 48 59 61 48 66 C37 61 31 48 31 34Z" fill="url(#boss-warden-death-4-mask)" stroke="#fff7d6" stroke-width="1.6"/>
+    <path d="M37 37 C41 34 44 35 46 39" fill="none" stroke="#20170a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M59 37 C55 34 52 35 50 39" fill="none" stroke="#20170a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M39 54.778 C44 62.444 52 62.444 57 54.778" fill="none" stroke="#20170a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M48 21 L41.289 35 L52.356 48 L43.644 66" fill="none" stroke="#fff7d6" stroke-width="2.749" stroke-linecap="round" opacity="0.658"/>
+    <path d="M23 61 C10 62 8 76 22 81M73 61 C86 62 88 76 74 81" fill="none" stroke="#8ce8bd" stroke-width="4" stroke-linecap="round" opacity=".52"/>
+    <g id="boss-warden-death-4-sparks"><circle cx="31.619" cy="10.393" r="1.1" fill="#8ce8bd" opacity="0.57"/><circle cx="46.537" cy="24.334" r="1.48" fill="#ffd166" opacity="0.25"/><circle cx="59.625" cy="8.662" r="1.86" fill="#d45cff" opacity="0.33"/><circle cx="62.092" cy="28.93" r="2.24" fill="#8ce8bd" opacity="0.41"/><circle cx="82.191" cy="25.338" r="1.1" fill="#ffd166" opacity="0.49"/><circle cx="71.053" cy="42.45" r="1.48" fill="#d45cff" opacity="0.57"/><circle cx="88.759" cy="52.617" r="1.86" fill="#8ce8bd" opacity="0.25"/><circle cx="69.227" cy="58.566" r="2.24" fill="#ffd166" opacity="0.33"/><circle cx="76.255" cy="77.736" r="1.1" fill="#d45cff" opacity="0.41"/><circle cx="57.469" cy="69.739" r="1.48" fill="#8ce8bd" opacity="0.49"/><circle cx="50.531" cy="88.941" r="1.86" fill="#ffd166" opacity="0.57"/><circle cx="41.28" cy="70.739" r="2.24" fill="#d45cff" opacity="0.25"/><circle cx="23.622" cy="80.989" r="1.1" fill="#8ce8bd" opacity="0.33"/><circle cx="28.236" cy="61.1" r="1.48" fill="#ffd166" opacity="0.41"/><circle cx="8.12" cy="57.601" r="1.86" fill="#d45cff" opacity="0.49"/><circle cx="24.439" cy="45.331" r="2.24" fill="#8ce8bd" opacity="0.57"/><circle cx="11.279" cy="29.721" r="1.1" fill="#ffd166" opacity="0.25"/><circle cx="31.667" cy="30.811" r="1.48" fill="#d45cff" opacity="0.33"/></g>
+  </g>
+</svg>

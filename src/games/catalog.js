@@ -88,6 +88,49 @@ const SHARED_PRECACHE = {
   ]
 };
 
+function survivorEnemyFrameAsset(id, state, index) {
+  return `./public/games/survivor/enemies/${id}/${state}-${index}.svg`;
+}
+
+function survivorEnemyFrameAssets(id, states) {
+  return Object.entries(states).flatMap(([state, count]) =>
+    Array.from({ length: count }, (_, index) => survivorEnemyFrameAsset(id, state, index))
+  );
+}
+
+function survivorHeroFrameAsset(id, state, index) {
+  return `./public/games/survivor/heroes/${id}/${state}-${index}.svg`;
+}
+
+function survivorHeroFrameAssets(id, states) {
+  return Object.entries(states).flatMap(([state, count]) =>
+    Array.from({ length: count }, (_, index) => survivorHeroFrameAsset(id, state, index))
+  );
+}
+
+const SURVIVOR_ENEMY_FRAME_ASSETS = [
+  ...survivorEnemyFrameAssets("crawler", { move: 4, hit: 2, death: 5 }),
+  ...survivorEnemyFrameAssets("bat", { move: 4, hit: 2, death: 5 }),
+  ...survivorEnemyFrameAssets("swarmer", { move: 4, hit: 2, death: 5 }),
+  ...survivorEnemyFrameAssets("brute", { move: 6, hit: 3, death: 6 }),
+  ...survivorEnemyFrameAssets("spitter", { move: 6, attack: 4, hit: 2, death: 5 }),
+  ...survivorEnemyFrameAssets("bomber", { move: 6, attack: 5, hit: 2, death: 7 }),
+  ...survivorEnemyFrameAssets("charger", { move: 8, attack: 4, hit: 2, death: 5 }),
+  ...survivorEnemyFrameAssets("shield", { move: 6, hit: 3, death: 6 }),
+  ...survivorEnemyFrameAssets("warden", { move: 6, attack: 4, hit: 2, death: 6 }),
+  ...survivorEnemyFrameAssets("sniper", { move: 6, attack: 5, hit: 2, death: 5 }),
+  ...survivorEnemyFrameAssets("elite", { move: 8, attack: 5, hit: 3, death: 8 }),
+  ...survivorEnemyFrameAssets("boss", { move: 8, attack: 6, phase: 6, hit: 3, death: 10 }),
+  ...survivorEnemyFrameAssets("boss-titan", { move: 8, attack: 6, phase: 6, hit: 3, death: 10 }),
+  ...survivorEnemyFrameAssets("boss-hive", { move: 8, attack: 6, phase: 6, hit: 3, death: 10 }),
+  ...survivorEnemyFrameAssets("boss-artillery", { move: 8, attack: 6, phase: 6, hit: 3, death: 10 }),
+  ...survivorEnemyFrameAssets("boss-warden", { move: 8, attack: 6, phase: 6, hit: 3, death: 10 })
+];
+
+const SURVIVOR_HERO_FRAME_ASSETS = [
+  ...survivorHeroFrameAssets("ranger", { idle: 4, move: 6, hit: 3, overdrive: 6 })
+];
+
 const MARKET_HEAT = {
   "block-blast": { score: 98, label: "方块爆款", signal: "Block Puzzle 是当前下载热度和长线复玩都很强的混合休闲品类。" },
   "tile-match": { score: 97, label: "Tile热门", signal: "三张入槽消除和麻将纸牌是当前移动端热门且耐玩的解谜方向。" },
@@ -791,7 +834,7 @@ const registrations = [
       ...gameVisualStyle("classicArcade"),
       accent: "jade",
       icon: "./public/games/arcade/icons/survivor.svg",
-      assets: ["./public/games/arcade/icons/survivor.svg"],
+      assets: ["./public/games/arcade/icons/survivor.svg", ...SURVIVOR_ENEMY_FRAME_ASSETS, ...SURVIVOR_HERO_FRAME_ASSETS],
       setupFields: [
         {
           id: "character",

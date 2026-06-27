@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="ranger-overdrive-2 沈灯">
+  <defs>
+    <radialGradient id="ranger-overdrive-2-aura" cx="50%" cy="42%" r="62%">
+      <stop offset="0" stop-color="#fff8dc" stop-opacity=".96"/>
+      <stop offset=".42" stop-color="#7bd4ff" stop-opacity=".82"/>
+      <stop offset=".78" stop-color="#ffd166" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#050712" stop-opacity=".06"/>
+    </radialGradient>
+    <linearGradient id="ranger-overdrive-2-coat" x1="26" y1="14" x2="70" y2="84">
+      <stop offset="0" stop-color="#f8fbff"/>
+      <stop offset=".42" stop-color="#7bd4ff"/>
+      <stop offset="1" stop-color="#07131d"/>
+    </linearGradient>
+    <linearGradient id="ranger-overdrive-2-blade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff7c7"/>
+      <stop offset=".55" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#ff6b2c"/>
+    </linearGradient>
+    <filter id="ranger-overdrive-2-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.4"/>
+    </filter>
+  </defs>
+  <g transform="translate(0 -2.283) rotate(1.176 48 54) scale(1.076) translate(-3.652 -4.109)">
+    <ellipse cx="48" cy="80" rx="25" ry="7" fill="#050a0f" opacity=".28"/>
+    <ellipse cx="48" cy="48" rx="34" ry="36" fill="url(#ranger-overdrive-2-aura)" opacity="0.846" filter="url(#ranger-overdrive-2-soft)"/>
+    <path d="M13 63 C31 23.392 66 23.392 83 63" fill="none" stroke="#ffd166" stroke-width="4.902" stroke-linecap="round" opacity=".74"/><path d="M20 72 C36 51 59 51 76 72" fill="none" stroke="#7bd4ff" stroke-width="3" stroke-linecap="round" opacity=".48"/>
+    <rect x="15.981" y="14.733" width="5" height="8" rx="1" fill="#ffd166" opacity="0.48" transform="rotate(-43.352 18.481 18.733)"/><rect x="34.692" y="2.317" width="5" height="8" rx="1" fill="#ffd166" opacity="0.58" transform="rotate(-13.898 37.192 6.317)"/><rect x="55.96" y="8.429" width="5" height="8" rx="1" fill="#ffd166" opacity="0.28" transform="rotate(15.557 58.46 12.429)"/><rect x="74.497" y="17.014" width="5" height="8" rx="1" fill="#ffd166" opacity="0.38" transform="rotate(45.012 76.997 21.014)"/><rect x="86.929" y="34.484" width="5" height="8" rx="1" fill="#ffd166" opacity="0.48" transform="rotate(74.466 89.429 38.484)"/><rect x="89.178" y="56.826" width="5" height="8" rx="1" fill="#ffd166" opacity="0.58" transform="rotate(103.921 91.678 60.826)"/><rect x="73.848" y="72.784" width="5" height="8" rx="1" fill="#ffd166" opacity="0.28" transform="rotate(133.375 76.348 76.784)"/><rect x="57.604" y="85.173" width="5" height="8" rx="1" fill="#ffd166" opacity="0.38" transform="rotate(162.83 60.104 89.173)"/><rect x="36.351" y="88.015" width="5" height="8" rx="1" fill="#ffd166" opacity="0.48" transform="rotate(192.284 38.851 92.015)"/><rect x="15.542" y="79.578" width="5" height="8" rx="1" fill="#ffd166" opacity="0.58" transform="rotate(221.739 18.042 83.578)"/><rect x="8.582" y="58.573" width="5" height="8" rx="1" fill="#ffd166" opacity="0.28" transform="rotate(251.193 11.082 62.573)"/><rect x="5.206" y="38.424" width="5" height="8" rx="1" fill="#ffd166" opacity="0.38" transform="rotate(280.648 7.706 42.424)"/>
+    
+    <path d="M31 35 C32 22 40 15 48 14 C56 15 64 22 65 35 C70 47 66 67 56 78 C51 82 45 82 40 78 C30 67 26 47 31 35Z" fill="#061018" opacity=".95"/>
+    <path d="M48 16 C60 22 66 38 62 55 C59 69 53 78 48 82 C43 78 37 69 34 55 C30 38 36 22 48 16Z" fill="url(#ranger-overdrive-2-coat)" stroke="#f8fbff" stroke-opacity=".48" stroke-width="1.7"/>
+    <path d="M40 26 C43 20 53 20 56 26 C58 35 55 45 48 49 C41 45 38 35 40 26Z" fill="#fff1d0" stroke="#103547" stroke-width="1.4"/>
+    <circle cx="44" cy="33" r="1.8" fill="#07131d"/>
+    <circle cx="52" cy="33" r="1.8" fill="#07131d"/>
+    <path d="M42 43 C45 46 51 46 54 43" fill="none" stroke="#103547" stroke-width="1.6" stroke-linecap="round" opacity=".65"/>
+    <path d="M34 54 C25 58 23 70 34 76M62 54 C71 58 73 70 62 76" fill="none" stroke="#7bd4ff" stroke-width="3" stroke-linecap="round" opacity=".62"/>
+    <g transform="translate(-14.657 0) rotate(-28 29 54)">
+      <path d="M25 51 L9 31" stroke="url(#ranger-overdrive-2-blade)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M12 33 L8 23 L18 29" fill="#fff7c7" opacity=".78"/>
+    </g>
+    <g transform="translate(14.657 0) rotate(28 67 54)">
+      <path d="M71 51 L87 31" stroke="url(#ranger-overdrive-2-blade)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M84 33 L88 23 L78 29" fill="#fff7c7" opacity=".78"/>
+    </g>
+    <path d="M48 20 V64M39 53 H57" stroke="#ffd166" stroke-width="2.2" stroke-linecap="round" opacity=".82"/>
+  </g>
+</svg>

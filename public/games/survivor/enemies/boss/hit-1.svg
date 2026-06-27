@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="boss-hit-1">
+  <defs>
+    <radialGradient id="boss-hit-1-aura" cx="50%" cy="42%" r="64%">
+      <stop offset="0" stop-color="#fff7e8" stop-opacity=".98"/>
+      <stop offset=".34" stop-color="#ff3d6e" stop-opacity=".88"/>
+      <stop offset=".68" stop-color="#7b3cff" stop-opacity=".76"/>
+      <stop offset="1" stop-color="#050712" stop-opacity=".08"/>
+    </radialGradient>
+    <linearGradient id="boss-hit-1-body" x1="20" y1="12" x2="78" y2="86">
+      <stop offset="0" stop-color="#ffe7b4"/>
+      <stop offset=".34" stop-color="#ff5f9e"/>
+      <stop offset=".62" stop-color="#7b3cff"/>
+      <stop offset="1" stop-color="#12091c"/>
+    </linearGradient>
+    <linearGradient id="boss-hit-1-mask" x1="29" y1="18" x2="67" y2="72">
+      <stop offset="0" stop-color="#fff4cf"/>
+      <stop offset=".5" stop-color="#ffb84d"/>
+      <stop offset="1" stop-color="#4b0f38"/>
+    </linearGradient>
+    <filter id="boss-hit-1-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <g opacity="1" transform="translate(0 0) scale(1) translate(0 0)">
+    <ellipse cx="48" cy="82" rx="30" ry="7" fill="#050a0f" opacity=".3"/>
+    <ellipse cx="48" cy="49" rx="39" ry="40" fill="url(#boss-hit-1-aura)" opacity=".42" filter="url(#boss-hit-1-soft)"/>
+    <circle cx="48" cy="48" r="34" fill="none" stroke="#d45cff" stroke-width="2" stroke-dasharray="9 7" opacity="0.24"/>
+    
+    <path d="M27.702 31.753 l-5.465 -3.124 l4.668 -1.792 Z" fill="#d45cff" opacity="0.62"/><path d="M37.724 21.954 l-2.569 -4.651 l4.941 0.764 Z" fill="#ffd166" opacity="0.62"/><path d="M52.311 18.311 l1.006 -4.948 l3.909 3.118 Z" fill="#d45cff" opacity="0.62"/><path d="M67.726 22.803 l4.315 -3.937 l1.842 4.648 Z" fill="#ffd166" opacity="0.62"/><path d="M70.229 38.951 l6.483 -1.885 l-0.711 4.949 Z" fill="#d45cff" opacity="0.62"/><path d="M73.769 51.458 l6.938 0.665 l-3.076 3.942 Z" fill="#ffd166" opacity="0.62"/><path d="M70.232 65.021 l5.558 3.039 l-4.628 1.893 Z" fill="#d45cff" opacity="0.62"/>
+    <path d="M32 28 C20 15 18 4 26 3 C33 8 38 17 39 27" fill="#180915" stroke="#ffd166" stroke-width="1.8" transform="scale(1 1) translate(0 0)"/><path d="M64 28 C76 15 78 4 70 3 C63 8 58 17 57 27" fill="#180915" stroke="#ffd166" stroke-width="1.8" transform="scale(1 1) translate(0 0)"/>
+    <path d="M25 36 C25 23 34 15 48 14 C62 15 71 23 71 36 C75 48 70 67 58 77 C53 82 43 82 38 77 C26 67 21 48 25 36Z" fill="url(#boss-hit-1-body)" stroke="#ffe7b4" stroke-opacity=".54" stroke-width="1.8"/>
+    <path d="M31 34 C34 21 42 18 48 18 C54 18 62 21 65 34 C65 48 59 61 48 66 C37 61 31 48 31 34Z" fill="url(#boss-hit-1-mask)" stroke="#fff2b3" stroke-width="1.6"/>
+    <path d="M37 37 C41 34 44 35 46 39" fill="none" stroke="#160714" stroke-width="4" stroke-linecap="round"/>
+    <path d="M59 37 C55 34 52 35 50 39" fill="none" stroke="#160714" stroke-width="4" stroke-linecap="round"/>
+    <path d="M39 53 C44 58 52 58 57 53" fill="none" stroke="#160714" stroke-width="4" stroke-linecap="round"/>
+    <path d="M48 22 L45 34 L50 44 L45 55 L50 66" fill="none" stroke="#fff2b3" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+    <path d="M23 60 C10 61 8 76 22 80M73 60 C86 61 88 76 74 80" fill="none" stroke="#ffb84d" stroke-width="4" stroke-linecap="round" opacity=".52"/>
+    
+    <g id="boss-hit-1-sparks"><circle cx="61.541" cy="63.051" r="1.55" fill="#7bd4ff" opacity="0.43"/><circle cx="49.159" cy="62.958" r="2" fill="#7bd4ff" opacity="0.54"/><circle cx="30.323" cy="75.457" r="1.1" fill="#7bd4ff" opacity="0.65"/><circle cx="21.604" cy="57.747" r="1.55" fill="#7bd4ff" opacity="0.32"/><circle cx="25.183" cy="41.376" r="2" fill="#7bd4ff" opacity="0.43"/><circle cx="36.071" cy="32.86" r="1.1" fill="#7bd4ff" opacity="0.54"/><circle cx="47.022" cy="33.535" r="1.55" fill="#7bd4ff" opacity="0.65"/><circle cx="64.357" cy="20.667" r="2" fill="#7bd4ff" opacity="0.32"/><circle cx="72.081" cy="37.196" r="1.1" fill="#7bd4ff" opacity="0.43"/><circle cx="68.39" cy="52.026" r="1.55" fill="#7bd4ff" opacity="0.54"/></g>
+  </g>
+</svg>

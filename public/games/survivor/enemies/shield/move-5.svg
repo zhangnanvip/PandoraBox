@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="shield-move-5">
+  <defs>
+    <radialGradient id="shield-move-5-glow" cx="50%" cy="42%" r="60%">
+      <stop offset="0" stop-color="#f8fbff" stop-opacity=".96"/>
+      <stop offset=".42" stop-color="#f8fbff" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#08131d" stop-opacity=".05"/>
+    </radialGradient>
+    <linearGradient id="shield-move-5-shade" x1="24" y1="18" x2="72" y2="82">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".92"/>
+      <stop offset=".45" stop-color="#f8fbff" stop-opacity=".96"/>
+      <stop offset="1" stop-color="#07131d" stop-opacity=".9"/>
+    </linearGradient>
+    <filter id="shield-move-5-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+  </defs>
+  <g opacity="1" transform="translate(0 7) scale(1 1) translate(0 0)">
+    <ellipse cx="48" cy="79" rx="24" ry="6" fill="#050a0f" opacity=".3"/>
+    <path d="M48 11 C67 16 77 26 76 43 C74 64 63 78 48 86 C33 78 22 64 20 43 C19 26 29 16 48 11Z" fill="#1e2b33" opacity=".96"/>
+    <path d="M48 16 C63 20 70 29 70 44 C68 59 60 71 48 78 C36 71 28 59 26 44 C26 29 33 20 48 16Z" fill="url(#shield-move-5-shade)" stroke="#7bd4ff" stroke-opacity=".64" stroke-width="2"/>
+    <path d="M35 37 H61M35 48 H61M39 60 H57" stroke="#1e2b33" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="41" cy="33" r="3" fill="#07131d" opacity=".85"/>
+    <circle cx="55" cy="33" r="3" fill="#07131d" opacity=".85"/>
+    <path d="M24 43 C16 43 13 56 21 64M72 43 C81 43 84 56 75 64" fill="none" stroke="#dfe8ef" stroke-opacity=".58" stroke-width="3" stroke-linecap="round"/>
+    <path d="M48 14 V77" stroke="#7bd4ff" stroke-opacity=".24" stroke-width="2"/>
+    
+    
+  </g>
+</svg>

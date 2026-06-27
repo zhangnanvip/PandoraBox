@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="boss-hive-death-7 鬼新娘">
+  <defs>
+    <radialGradient id="boss-hive-death-7-aura" cx="50%" cy="42%" r="64%">
+      <stop offset="0" stop-color="#ffe6ff" stop-opacity=".98"/>
+      <stop offset=".38" stop-color="#d45cff" stop-opacity=".86"/>
+      <stop offset=".7" stop-color="#ff4d8d" stop-opacity=".66"/>
+      <stop offset="1" stop-color="#050712" stop-opacity=".08"/>
+    </radialGradient>
+    <linearGradient id="boss-hive-death-7-body" x1="19" y1="10" x2="78" y2="86">
+      <stop offset="0" stop-color="#ffe6ff"/>
+      <stop offset=".38" stop-color="#d45cff"/>
+      <stop offset=".68" stop-color="#ff4d8d"/>
+      <stop offset="1" stop-color="#1b0826"/>
+    </linearGradient>
+    <linearGradient id="boss-hive-death-7-mask" x1="30" y1="19" x2="67" y2="72">
+      <stop offset="0" stop-color="#ffe6ff"/>
+      <stop offset=".56" stop-color="#ff4d8d"/>
+      <stop offset="1" stop-color="#1b0826"/>
+    </linearGradient>
+    <filter id="boss-hive-death-7-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <g opacity="0.518" transform="translate(0 2.333) scale(1.171) translate(-8.213 -8.898)">
+    <ellipse cx="48" cy="83" rx="31" ry="7" fill="#050a0f" opacity=".3"/>
+    <ellipse cx="48" cy="49" rx="40" ry="41" fill="url(#boss-hive-death-7-aura)" opacity=".42" filter="url(#boss-hive-death-7-soft)"/>
+    
+    <path d="M52.045 12.11 l0.763 -4.97 l4.015 2.98 Z" fill="#d45cff" opacity="0.591"/><path d="M68.421 17.085 l3.773 -4.212 l2.275 4.452 Z" fill="#ff4d8d" opacity="0.591"/><path d="M81.133 29.067 l5.998 -2.578 l0.062 5 Z" fill="#d45cff" opacity="0.591"/><path d="M87.313 45.785 l6.977 -0.408 l-2.164 4.507 Z" fill="#ff4d8d" opacity="0.591"/><path d="M85.377 63.86 l6.505 1.847 l-3.94 3.078 Z" fill="#d45cff" opacity="0.591"/><path d="M75.415 79.487 l4.681 3.718 l-4.897 1.009 Z" fill="#ff4d8d" opacity="0.591"/><path d="M59.24 89.237 l1.883 4.816 l-4.836 -1.27 Z" fill="#d45cff" opacity="0.591"/><path d="M40.063 90.809 l-1.306 4.912 l-3.77 -3.285 Z" fill="#ff4d8d" opacity="0.591"/><path d="M21.858 83.56 l-4.223 3.988 l-1.919 -4.617 Z" fill="#d45cff" opacity="0.591"/><path d="M8.537 68.709 l-6.262 2.234 l0.33 -4.989 Z" fill="#ff4d8d" opacity="0.591"/><path d="M3.111 49.143 l-7 0.016 l2.51 -4.324 Z" fill="#d45cff" opacity="0.591"/><path d="M7.016 28.857 l-6.282 -2.205 l4.169 -2.76 Z" fill="#ff4d8d" opacity="0.591"/><path d="M19.745 12.139 l-4.258 -3.968 l4.961 -0.622 Z" fill="#d45cff" opacity="0.591"/><path d="M38.897 2.663 l-1.349 -4.906 l4.722 1.645 Z" fill="#ff4d8d" opacity="0.591"/><path d="M60.619 2.688 l1.84 -4.824 l3.501 3.57 Z" fill="#d45cff" opacity="0.591"/><path d="M80.383 12.523 l4.647 -3.739 l1.552 4.753 Z" fill="#ff4d8d" opacity="0.591"/>
+    
+    <path d="M28 20 C39 8 58 8 68 20 C62 25 55 28 48 28 C41 28 34 25 28 20Z" fill="#ffe6ff" opacity=".62"/>
+    <path d="M21 30 C15 48 19 70 36 82M75 30 C81 48 77 70 60 82" fill="none" stroke="#ff4d8d" stroke-width="4" stroke-linecap="round" opacity="0.634"/>
+    <ellipse cx="54.522" cy="26.223" rx="3.8" ry="2.4" fill="#ffe6ff" opacity=".9"/><circle cx="54.522" cy="26.223" r="1.2" fill="#1b0826"/><ellipse cx="64.024" cy="26.501" rx="3.8" ry="2.4" fill="#ffe6ff" opacity=".9"/><circle cx="64.024" cy="26.501" r="1.2" fill="#1b0826"/><ellipse cx="64.579" cy="35.99" rx="3.8" ry="2.4" fill="#ffe6ff" opacity=".9"/><circle cx="64.579" cy="35.99" r="1.2" fill="#1b0826"/><ellipse cx="71" cy="43" rx="3.8" ry="2.4" fill="#ffe6ff" opacity=".9"/><circle cx="71" cy="43" r="1.2" fill="#1b0826"/><ellipse cx="64.579" cy="50.01" rx="3.8" ry="2.4" fill="#ffe6ff" opacity=".9"/><circle cx="64.579" cy="50.01" r="1.2" fill="#1b0826"/><ellipse cx="64.024" cy="59.499" rx="3.8" ry="2.4" fill="#ffe6ff" opacity=".9"/><circle cx="64.024" cy="59.499" r="1.2" fill="#1b0826"/><ellipse cx="54.522" cy="59.777" rx="3.8" ry="2.4" fill="#ffe6ff" opacity=".9"/><circle cx="54.522" cy="59.777" r="1.2" fill="#1b0826"/>
+    <path d="M25 36 C25 23 34 14 48 13 C62 14 71 23 71 36 C76 49 70 68 58 78 C53 83 43 83 38 78 C26 68 20 49 25 36Z" fill="url(#boss-hive-death-7-body)" stroke="#ffe6ff" stroke-opacity=".54" stroke-width="1.8"/>
+    <path d="M31 34 C34 21 42 18 48 18 C54 18 62 21 65 34 C65 48 59 61 48 66 C37 61 31 48 31 34Z" fill="url(#boss-hive-death-7-mask)" stroke="#ffe6ff" stroke-width="1.6"/>
+    <path d="M37 37 C41 34 44 35 46 39" fill="none" stroke="#1b0826" stroke-width="4" stroke-linecap="round"/>
+    <path d="M59 37 C55 34 52 35 50 39" fill="none" stroke="#1b0826" stroke-width="4" stroke-linecap="round"/>
+    <path d="M39 56.111 C44 65.778 52 65.778 57 56.111" fill="none" stroke="#1b0826" stroke-width="4" stroke-linecap="round"/>
+    <path d="M48 21 L40.516 35 L52.742 48 L43.258 66" fill="none" stroke="#ffe6ff" stroke-width="3.02" stroke-linecap="round" opacity="0.731"/>
+    <path d="M23 61 C10 62 8 76 22 81M73 61 C86 62 88 76 74 81" fill="none" stroke="#ff4d8d" stroke-width="4" stroke-linecap="round" opacity=".52"/>
+    <g id="boss-hive-death-7-sparks"><circle cx="69.25" cy="5.024" r="2.24" fill="#ff4d8d" opacity="0.41"/><circle cx="70.152" cy="26.839" r="1.1" fill="#d45cff" opacity="0.49"/><circle cx="91.902" cy="28.738" r="1.48" fill="#8ce8bd" opacity="0.57"/><circle cx="78.571" cy="46.029" r="1.86" fill="#ff4d8d" opacity="0.25"/><circle cx="94.013" cy="61.464" r="2.24" fill="#d45cff" opacity="0.33"/><circle cx="72.686" cy="66.141" r="1.1" fill="#8ce8bd" opacity="0.41"/><circle cx="74.593" cy="87.891" r="1.48" fill="#ff4d8d" opacity="0.49"/><circle cx="55.25" cy="77.764" r="1.86" fill="#d45cff" opacity="0.57"/><circle cx="42.73" cy="95.652" r="2.24" fill="#8ce8bd" opacity="0.25"/><circle cx="34.422" cy="75.461" r="1.1" fill="#ff4d8d" opacity="0.33"/><circle cx="13.333" cy="81.116" r="1.48" fill="#d45cff" opacity="0.41"/><circle cx="19.947" cy="60.308" r="1.86" fill="#8ce8bd" opacity="0.49"/><circle cx="0.157" cy="51.085" r="2.24" fill="#ff4d8d" opacity="0.57"/><circle cx="18.598" cy="39.397" r="1.1" fill="#d45cff" opacity="0.25"/><circle cx="9.367" cy="19.61" r="1.48" fill="#8ce8bd" opacity="0.33"/><circle cx="31.007" cy="22.51" r="1.86" fill="#ff4d8d" opacity="0.41"/><circle cx="36.654" cy="1.42" r="2.24" fill="#d45cff" opacity="0.49"/><circle cx="51.367" cy="17.551" r="1.1" fill="#8ce8bd" opacity="0.57"/></g>
+  </g>
+</svg>

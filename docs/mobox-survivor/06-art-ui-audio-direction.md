@@ -76,6 +76,43 @@ PandoraBox 原型已接入第一批百鬼动态识别层：
 - 画皮鬼：面具环和精英光圈，死亡为“画皮裂”。
 - Boss 护卫：显示“护”字环；裂隙刷怪显示紫色裂隙环；背刺刷怪显示红色警示箭。
 
+PandoraBox 原型已接入第一批百鬼运动 profile：
+
+- 游魂：低频漂浮和轻微左右摆。
+- 灯笼鬼：高频翅翼、明显上下浮动和透明脉冲。
+- 纸人：高频抖动、轻微横向 jitter 和纸片颤动。
+- 骨奴：低频重步，几乎不摆，强调重量。
+- 毒灯鬼：中频漂浮，毒泡围绕身体运动。
+- 红伞妖：伞骨脉冲，自爆前身体轻微膨胀。
+- 夜叉：冲锋时前倾，普通移动也保持尖锐倾斜。
+- 无头将：重甲缓慢压迫，盾弧轻微呼吸。
+- 缝尸匠：治疗十字稳定呼吸，治疗时高亮。
+- 戏伶鬼：准星稳定，轻微摆动，强调远程威胁。
+- 画皮鬼：面具环呼吸，精英光圈增强。
+
+PandoraBox 原型已接入第一批百鬼帧状态规格：
+
+| 帧态 | 用途 | 首批规格 |
+| --- | --- | --- |
+| idle | 冻结、停顿、施法前摇 | 3 到 6 帧，4 到 8 fps |
+| move | 常规追击、游荡、冲锋移动 | 6 到 8 帧，6 到 15 fps |
+| attack | 射击、治疗、自爆、冲锋蓄势、Boss 大招 | 4 到 6 帧，10 到 16 fps |
+| hit | 受击硬直、弱点命中反馈 | 2 到 3 帧，11 到 18 fps |
+| death | 死亡碎裂、消散残影 | 5 到 10 帧，10 到 17 fps |
+
+当前 PandoraBox 仍然用 Canvas 程序图形模拟这些帧，但接口已经按 `idle / move / attack / hit / death` 拆开。正式项目可以直接替换为 PNG 序列帧、图集动画或 Spine/Cocos AnimationClip。低阶怪优先保证 `move + hit + death`，远程/治疗/自爆/冲锋怪补 `attack`，Boss 必须补 `idle / move / attack / hit / phase / death`。
+
+帧图接入规则：
+
+- Web 原型资源放在 `public/games/survivor/enemies/{enemy-id}/`。
+- 主角资源放在 `public/games/survivor/heroes/{hero-id}/`，当前沈灯 `ranger` 已接入 `idle / move / hit / overdrive`。
+- 在 `ENEMY_FRAME_SETS` 中显式填写 `frames.move / frames.hit / frames.death / frames.attack` 路径后，运行时会优先绘制图片。
+- 在 `HERO_FRAME_SETS` 中显式填写 `frames.idle / frames.move / frames.hit / frames.overdrive` 路径后，运行时会优先绘制主角图片。
+- 没有配置路径、图片加载中或图片加载失败时，必须回退到 Canvas 占位帧，避免白怪或白屏。
+- 新增帧图如需首屏离线可用，路径要加入 survivor 游戏 manifest 的 `assets` 或 `precacheAssets`。
+- 当前 Web 原型已接入六批 SVG 帧：游魂、灯笼鬼、纸人、骨奴覆盖 `move / hit / death`；毒灯鬼、红伞妖、夜叉覆盖 `move / attack / hit / death`；无头将、缝尸匠、戏伶鬼覆盖重甲、治疗和远程点射的中后期读图；画皮鬼和通用鬼王补齐高压精英、Boss 攻击、Boss 受击、Boss 死亡和 Boss 转阶段 `phase` 帧；尸山鬼王、鬼新娘、黑伞夜君、百目判官已经按 `bossKind` 拆成四套专属 `move / attack / phase / hit / death` 资源，通用鬼王保留为兜底。
+- 当前 Web 原型已接入第一批主角 SVG 帧：沈灯覆盖 `idle / move / hit / overdrive`，用于验证角色序列帧、过载状态和受击反馈的资源管线。
+
 ## 5. 技能视觉分类
 
 - 符箓系：朱砂线条、符纸飞散、阵纹。

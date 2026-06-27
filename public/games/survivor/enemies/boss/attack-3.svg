@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="boss-attack-3">
+  <defs>
+    <radialGradient id="boss-attack-3-aura" cx="50%" cy="42%" r="64%">
+      <stop offset="0" stop-color="#fff7e8" stop-opacity=".98"/>
+      <stop offset=".34" stop-color="#ff3d6e" stop-opacity=".88"/>
+      <stop offset=".68" stop-color="#7b3cff" stop-opacity=".76"/>
+      <stop offset="1" stop-color="#050712" stop-opacity=".08"/>
+    </radialGradient>
+    <linearGradient id="boss-attack-3-body" x1="20" y1="12" x2="78" y2="86">
+      <stop offset="0" stop-color="#ffe7b4"/>
+      <stop offset=".34" stop-color="#ff5f9e"/>
+      <stop offset=".62" stop-color="#7b3cff"/>
+      <stop offset="1" stop-color="#12091c"/>
+    </linearGradient>
+    <linearGradient id="boss-attack-3-mask" x1="29" y1="18" x2="67" y2="72">
+      <stop offset="0" stop-color="#fff4cf"/>
+      <stop offset=".5" stop-color="#ffb84d"/>
+      <stop offset="1" stop-color="#4b0f38"/>
+    </linearGradient>
+    <filter id="boss-attack-3-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <g opacity="1" transform="translate(0 -0.647) scale(1.076) translate(-3.652 -3.956)">
+    <ellipse cx="48" cy="82" rx="30" ry="7" fill="#050a0f" opacity=".3"/>
+    <ellipse cx="48" cy="49" rx="39" ry="40" fill="url(#boss-attack-3-aura)" opacity=".42" filter="url(#boss-attack-3-soft)"/>
+    <circle cx="48" cy="48" r="34" fill="none" stroke="#d45cff" stroke-width="2" stroke-dasharray="9 7" opacity="0.38"/>
+    
+    <path d="M27.315 26.271 l-4.826 -3.621 l4.867 -1.148 Z" fill="#d45cff" opacity="0.2"/><path d="M40.369 16.923 l-1.669 -4.856 l4.793 1.422 Z" fill="#ffd166" opacity="0.2"/><path d="M54.614 24.929 l1.929 -4.806 l3.453 3.616 Z" fill="#d45cff" opacity="0.2"/><path d="M66.637 29.871 l5.018 -3.486 l1.2 4.854 Z" fill="#ffd166" opacity="0.2"/><path d="M75.118 41.029 l6.78 -1.245 l-1.37 4.809 Z" fill="#d45cff" opacity="0.2"/><path d="M76.926 55.956 l6.749 1.326 l-3.578 3.492 Z" fill="#ffd166" opacity="0.2"/><path d="M70.559 70.695 l4.935 3.546 l-4.841 1.252 Z" fill="#d45cff" opacity="0.2"/>
+    <path d="M32 28 C20 15 18 4 26 3 C33 8 38 17 39 27" fill="#180915" stroke="#ffd166" stroke-width="1.8" transform="scale(1.076 1) translate(-2.435 0)"/><path d="M64 28 C76 15 78 4 70 3 C63 8 58 17 57 27" fill="#180915" stroke="#ffd166" stroke-width="1.8" transform="scale(1.076 1) translate(-4.869 0)"/>
+    <path d="M25 36 C25 23 34 15 48 14 C62 15 71 23 71 36 C75 48 70 67 58 77 C53 82 43 82 38 77 C26 67 21 48 25 36Z" fill="url(#boss-attack-3-body)" stroke="#ffe7b4" stroke-opacity=".54" stroke-width="1.8"/>
+    <path d="M31 34 C34 21 42 18 48 18 C54 18 62 21 65 34 C65 48 59 61 48 66 C37 61 31 48 31 34Z" fill="url(#boss-attack-3-mask)" stroke="#fff2b3" stroke-width="1.6"/>
+    <path d="M37 37 C41 34 44 35 46 39" fill="none" stroke="#160714" stroke-width="4" stroke-linecap="round"/>
+    <path d="M59 37 C55 34 52 35 50 39" fill="none" stroke="#160714" stroke-width="4" stroke-linecap="round"/>
+    <path d="M39 56.424 C44 66.56 52 66.56 57 56.424" fill="none" stroke="#160714" stroke-width="4" stroke-linecap="round"/>
+    <path d="M48 22 L45 34 L50 44 L45 55 L50 66" fill="none" stroke="#fff2b3" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+    <path d="M23 60 C10 61 8 76 22 80M73 60 C86 61 88 76 74 80" fill="none" stroke="#ffb84d" stroke-width="4" stroke-linecap="round" opacity=".52"/>
+    <path d="M18 58 C31 27 66 27 79 58" fill="none" stroke="#ff3d6e" stroke-width="5.902" stroke-linecap="round" opacity=".72"/><path d="M25 67 C37 52 60 52 72 67" fill="none" stroke="#ffd166" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+    <g id="boss-attack-3-sparks"><circle cx="46.127" cy="60.369" r="1.1" fill="#ffd166" opacity="0.65"/><circle cx="28.925" cy="71.436" r="1.55" fill="#ffd166" opacity="0.32"/><circle cx="23.897" cy="56.75" r="2" fill="#ffd166" opacity="0.43"/><circle cx="27.203" cy="44.086" r="1.1" fill="#ffd166" opacity="0.54"/><circle cx="35.388" cy="37.155" r="1.55" fill="#ffd166" opacity="0.65"/><circle cx="35.438" cy="15.945" r="2" fill="#ffd166" opacity="0.32"/><circle cx="51.955" cy="18.776" r="1.1" fill="#ffd166" opacity="0.43"/><circle cx="62.46" cy="28.476" r="1.55" fill="#ffd166" opacity="0.54"/><circle cx="65.15" cy="40.063" r="2" fill="#ffd166" opacity="0.65"/><circle cx="61.369" cy="48.873" r="1.1" fill="#ffd166" opacity="0.32"/><circle cx="72.436" cy="66.075" r="1.55" fill="#ffd166" opacity="0.43"/><circle cx="57.75" cy="71.103" r="2" fill="#ffd166" opacity="0.54"/></g>
+  </g>
+</svg>

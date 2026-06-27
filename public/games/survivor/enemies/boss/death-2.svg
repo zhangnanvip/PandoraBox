@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="boss-death-2">
+  <defs>
+    <radialGradient id="boss-death-2-aura" cx="50%" cy="42%" r="64%">
+      <stop offset="0" stop-color="#fff7e8" stop-opacity=".98"/>
+      <stop offset=".34" stop-color="#ff3d6e" stop-opacity=".88"/>
+      <stop offset=".68" stop-color="#7b3cff" stop-opacity=".76"/>
+      <stop offset="1" stop-color="#050712" stop-opacity=".08"/>
+    </radialGradient>
+    <linearGradient id="boss-death-2-body" x1="20" y1="12" x2="78" y2="86">
+      <stop offset="0" stop-color="#ffe7b4"/>
+      <stop offset=".34" stop-color="#ff5f9e"/>
+      <stop offset=".62" stop-color="#7b3cff"/>
+      <stop offset="1" stop-color="#12091c"/>
+    </linearGradient>
+    <linearGradient id="boss-death-2-mask" x1="29" y1="18" x2="67" y2="72">
+      <stop offset="0" stop-color="#fff4cf"/>
+      <stop offset=".5" stop-color="#ffb84d"/>
+      <stop offset="1" stop-color="#4b0f38"/>
+    </linearGradient>
+    <filter id="boss-death-2-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <g opacity="0.862" transform="translate(0 0.444) scale(1.053) translate(-2.56 -2.773)">
+    <ellipse cx="48" cy="82" rx="30" ry="7" fill="#050a0f" opacity=".3"/>
+    <ellipse cx="48" cy="49" rx="39" ry="40" fill="url(#boss-death-2-aura)" opacity=".42" filter="url(#boss-death-2-soft)"/>
+    <circle cx="48" cy="48" r="34" fill="none" stroke="#d45cff" stroke-width="2" stroke-dasharray="9 7" opacity="0.24"/>
+    
+    <path d="M24.223 40.645 l-6.687 -1.478 l3.687 -3.377 Z" fill="#d45cff" opacity="0.5"/><path d="M30.869 29.64 l-4.776 -3.656 l4.878 -1.099 Z" fill="#ffd166" opacity="0.5"/><path d="M42.205 23.338 l-1.601 -4.867 l4.779 1.47 Z" fill="#d45cff" opacity="0.5"/><path d="M55.288 23.506 l1.996 -4.792 l3.417 3.65 Z" fill="#ffd166" opacity="0.5"/><path d="M66.656 30.211 l5.066 -3.45 l1.152 4.866 Z" fill="#d45cff" opacity="0.5"/><path d="M73.245 41.78 l6.797 -1.196 l-1.418 4.795 Z" fill="#ffd166" opacity="0.5"/><path d="M73.213 55.207 l6.73 1.374 l-3.613 3.456 Z" fill="#d45cff" opacity="0.5"/><path d="M66.454 66.941 l4.885 3.581 l-4.853 1.204 Z" fill="#ffd166" opacity="0.5"/><path d="M54.659 73.822 l1.748 4.842 l-4.81 -1.366 Z" fill="#d45cff" opacity="0.5"/><path d="M40.89 73.932 l-1.851 4.822 l-3.495 -3.576 Z" fill="#ffd166" opacity="0.5"/><path d="M28.787 67.128 l-4.961 3.528 l-1.256 -4.84 Z" fill="#d45cff" opacity="0.5"/><path d="M21.608 55.111 l-6.759 1.301 l1.314 -4.824 Z" fill="#ffd166" opacity="0.5"/><path d="M21.348 41.001 l-6.77 -1.27 l3.538 -3.533 Z" fill="#d45cff" opacity="0.5"/><path d="M28.19 28.527 l-4.992 -3.505 l4.826 -1.308 Z" fill="#ffd166" opacity="0.5"/>
+    <path d="M32 28 C20 15 18 4 26 3 C33 8 38 17 39 27" fill="#180915" stroke="#ffd166" stroke-width="1.8" transform="scale(1 1) translate(0 0)"/><path d="M64 28 C76 15 78 4 70 3 C63 8 58 17 57 27" fill="#180915" stroke="#ffd166" stroke-width="1.8" transform="scale(1 1) translate(0 0)"/>
+    <path d="M25 36 C25 23 34 15 48 14 C62 15 71 23 71 36 C75 48 70 67 58 77 C53 82 43 82 38 77 C26 67 21 48 25 36Z" fill="url(#boss-death-2-body)" stroke="#ffe7b4" stroke-opacity=".54" stroke-width="1.8"/>
+    <path d="M31 34 C34 21 42 18 48 18 C54 18 62 21 65 34 C65 48 59 61 48 66 C37 61 31 48 31 34Z" fill="url(#boss-death-2-mask)" stroke="#fff2b3" stroke-width="1.6"/>
+    <path d="M37 37 C41 34 44 35 46 39" fill="none" stroke="#160714" stroke-width="4" stroke-linecap="round"/>
+    <path d="M59 37 C55 34 52 35 50 39" fill="none" stroke="#160714" stroke-width="4" stroke-linecap="round"/>
+    <path d="M39 54.067 C44 60.667 52 60.667 57 54.067" fill="none" stroke="#160714" stroke-width="4" stroke-linecap="round"/>
+    <path d="M48 22 L45 34 L50 44 L45 55 L50 66" fill="none" stroke="#fff2b3" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+    <path d="M23 60 C10 61 8 76 22 80M73 60 C86 61 88 76 74 80" fill="none" stroke="#ffb84d" stroke-width="4" stroke-linecap="round" opacity=".52"/>
+    
+    <g id="boss-death-2-sparks"><circle cx="72.44" cy="82.075" r="2" fill="#ffd166" opacity="0.54"/><circle cx="57.045" cy="81.07" r="1.1" fill="#ffd166" opacity="0.65"/><circle cx="45.518" cy="74.639" r="1.55" fill="#ffd166" opacity="0.32"/><circle cx="39.4" cy="65.333" r="2" fill="#ffd166" opacity="0.43"/><circle cx="15.044" cy="79.805" r="1.1" fill="#ffd166" opacity="0.54"/><circle cx="12.616" cy="63.401" r="1.55" fill="#ffd166" opacity="0.65"/><circle cx="16.614" cy="49.674" r="2" fill="#ffd166" opacity="0.32"/><circle cx="24.832" cy="40.735" r="1.1" fill="#ffd166" opacity="0.43"/><circle cx="6.904" cy="18.084" r="1.55" fill="#ffd166" opacity="0.54"/><circle cx="23.56" cy="11.925" r="2" fill="#ffd166" opacity="0.65"/><circle cx="38.955" cy="12.93" r="1.1" fill="#ffd166" opacity="0.32"/><circle cx="50.482" cy="19.361" r="1.55" fill="#ffd166" opacity="0.43"/><circle cx="56.6" cy="28.667" r="2" fill="#ffd166" opacity="0.54"/><circle cx="80.956" cy="14.195" r="1.1" fill="#ffd166" opacity="0.65"/><circle cx="83.384" cy="30.599" r="1.55" fill="#ffd166" opacity="0.32"/><circle cx="79.386" cy="44.326" r="2" fill="#ffd166" opacity="0.43"/><circle cx="71.168" cy="53.265" r="1.1" fill="#ffd166" opacity="0.54"/><circle cx="89.096" cy="75.916" r="1.55" fill="#ffd166" opacity="0.65"/></g>
+  </g>
+</svg>

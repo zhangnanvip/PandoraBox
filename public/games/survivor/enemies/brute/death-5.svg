@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="brute-death-5">
+  <defs>
+    <radialGradient id="brute-death-5-aura" cx="50%" cy="46%" r="60%">
+      <stop offset="0" stop-color="#fff7e4" stop-opacity=".92"/>
+      <stop offset=".48" stop-color="#d9e0d6" stop-opacity=".78"/>
+      <stop offset="1" stop-color="#08131d" stop-opacity=".06"/>
+    </radialGradient>
+    <linearGradient id="brute-death-5-bone" x1="22" y1="14" x2="74" y2="84">
+      <stop offset="0" stop-color="#fff6db"/>
+      <stop offset=".45" stop-color="#d9e0d6"/>
+      <stop offset="1" stop-color="#2f3542"/>
+    </linearGradient>
+    <linearGradient id="brute-death-5-rib" x1="28" y1="28" x2="70" y2="76">
+      <stop offset="0" stop-color="#f8fbff" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#7b837e" stop-opacity=".88"/>
+    </linearGradient>
+    <filter id="brute-death-5-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+  </defs>
+  <g opacity="0.38" transform="translate(0 -6) rotate(0 48 58)">
+    <ellipse cx="48" cy="82" rx="27" ry="7" fill="#050a0f" opacity=".31"/>
+    <ellipse cx="48" cy="50" rx="32" ry="36" fill="url(#brute-death-5-aura)" opacity=".28" filter="url(#brute-death-5-soft)"/>
+    <path d="M55.103 28.075 l1.776 -3.821 l3.636 2.083 Z" fill="#fff2cf" opacity="0.68"/><path d="M69.796 31.87 l4.509 -2.639 l2.229 4.152 Z" fill="#d9e0d6" opacity="0.68"/><path d="M68.696 47.44 l5.913 -0.678 l0.165 4.996 Z" fill="#fff2cf" opacity="0.68"/><path d="M72.149 60.635 l5.573 1.482 l-1.949 4.367 Z" fill="#d9e0d6" opacity="0.68"/><path d="M58.766 65.425 l3.589 3.206 l-3.487 2.449 Z" fill="#fff2cf" opacity="0.68"/><path d="M50.094 73.905 l0.546 3.983 l-3.997 -0.19 Z" fill="#d9e0d6" opacity="0.68"/><path d="M35.598 76.104 l-2.658 3.586 l-3.328 -2.774 Z" fill="#fff2cf" opacity="0.68"/><path d="M31.076 61.657 l-5.077 2.131 l-1.677 -4.539 Z" fill="#d9e0d6" opacity="0.68"/><path d="M23.002 51.299 l-6 0.048 l0.468 -4.966 Z" fill="#fff2cf" opacity="0.68"/><path d="M33.402 42.288 l-5.152 -2.05 l2.475 -3.928 Z" fill="#d9e0d6" opacity="0.68"/><path d="M37.787 31.514 l-2.785 -3.543 l3.753 -1.731 Z" fill="#fff2cf" opacity="0.68"/><path d="M49.815 24.061 l0.403 -3.991 l3.923 0.976 Z" fill="#d9e0d6" opacity="0.68"/>
+    <path d="M29 33 C30 19 40 12 48 12 C56 12 66 19 67 33 C75 43 73 67 61 78 C53 84 43 84 35 78 C23 67 21 43 29 33Z" fill="#141820" opacity=".96"/>
+    <path d="M48 12 C61 16 69 31 66 47 C65 64 57 78 48 82 C39 78 31 64 30 47 C27 31 35 16 48 12Z" fill="url(#brute-death-5-bone)" stroke="#fff2cf" stroke-opacity=".5" stroke-width="1.8"/>
+    <path d="M36 34 C39 27 44 24 48 24 C52 24 57 27 60 34 C59 42 55 49 48 52 C41 49 37 42 36 34Z" fill="#f5e7c8" stroke="#4a2d2d" stroke-width="1.4"/>
+    <circle cx="42" cy="36" r="3.5" fill="#11131a"/>
+    <circle cx="54" cy="36" r="3.5" fill="#11131a"/>
+    <path d="M42 49 H54" stroke="#11131a" stroke-width="3" stroke-linecap="round" opacity=".72"/>
+    <path d="M33 56 C39 51 44 50 48 50 C52 50 57 51 63 56" fill="none" stroke="url(#brute-death-5-rib)" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M34 63 C41 58 55 58 62 63" fill="none" stroke="url(#brute-death-5-rib)" stroke-width="3" stroke-linecap="round" opacity=".86"/>
+    <path d="M37 70 C43 66 53 66 59 70" fill="none" stroke="#fff2cf" stroke-width="2.6" stroke-linecap="round" opacity=".72"/>
+    <path d="M28 56 C17 60 18 77 33 79M68 56 C79 60 78 77 63 79" fill="none" stroke="#d9e0d6" stroke-width="5" stroke-linecap="round" opacity=".72"/>
+    <path d="M48 22 L32 39 L53.6 52 L40.6 72" fill="none" stroke="#4a2d2d" stroke-opacity="0.83" stroke-width="3.1" stroke-linecap="round"/>
+    <path d="M58 29 L76 43 L56.8 61" fill="none" stroke="#fff2cf" stroke-opacity="0.66" stroke-width="2" stroke-linecap="round"/>
+    
+  </g>
+</svg>

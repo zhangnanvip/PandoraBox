@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="charger-move-3">
+  <defs>
+    <radialGradient id="charger-move-3-glow" cx="50%" cy="42%" r="60%">
+      <stop offset="0" stop-color="#f8fbff" stop-opacity=".96"/>
+      <stop offset=".42" stop-color="#ff4d8d" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#08131d" stop-opacity=".05"/>
+    </radialGradient>
+    <linearGradient id="charger-move-3-shade" x1="24" y1="18" x2="72" y2="82">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".9"/>
+      <stop offset=".42" stop-color="#ff4d8d" stop-opacity=".96"/>
+      <stop offset="1" stop-color="#07131d" stop-opacity=".88"/>
+    </linearGradient>
+    <filter id="charger-move-3-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+  </defs>
+  <g opacity="1" transform="translate(0 0.6410698203507447) rotate(3.377315902755753 48 50) scale(1 1) translate(0 0)">
+    <ellipse cx="48" cy="78" rx="20" ry="6" fill="#050a0f" opacity=".27"/>
+    
+    <path d="M48 12 72 58 56 52 49 84 42 52 24 58Z" fill="url(#charger-move-3-shade)" stroke="#ffd4e6" stroke-opacity=".46" stroke-width="1.5"/>
+    <path d="M48 15 55 42 48 61 41 42Z" fill="#f8fbff" opacity=".86"/>
+    <path d="M33 43 20 36M63 43 76 36" stroke="#ffb4cf" stroke-width="3" stroke-linecap="round" opacity=".62"/>
+    <circle cx="42" cy="38" r="2.7" fill="#07131d"/>
+    <circle cx="54" cy="38" r="2.7" fill="#07131d"/>
+    
+    
+  </g>
+</svg>

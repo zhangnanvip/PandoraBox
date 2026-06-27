@@ -40,6 +40,7 @@ type EnemyConfig = {
     silhouette: string;
     deathEffect: string;
     telegraph?: string;
+    frameSet: EnemyFrameSetConfig;
   };
   damageSource: {
     type: "contact" | "shot" | "zone" | "blast";
@@ -96,14 +97,47 @@ type EnemyVisualConfig = {
   deathText: string;
   deathColor: string;
   spawnPatternBadges?: Record<string, string>;
+  motionProfile: {
+    rate: number;
+    bob: number;
+    sway: number;
+    squash: number;
+    lean: number;
+    jitter?: number;
+    stomp?: number;
+    alphaPulse?: number;
+  };
+  frameSet: EnemyFrameSetConfig;
+};
+
+type EnemyFrameSetConfig = {
+  asset: string;
+  anchor: { x: number; y: number };
+  frames?: Partial<Record<"idle" | "move" | "attack" | "hit" | "death" | "phase", string[]>>;
+  states: {
+    idle: { frames: number; fps: number };
+    move: { frames: number; fps: number };
+    hit: { frames: number; fps: number };
+    death: { frames: number; fps: number };
+    attack?: { frames: number; fps: number };
+    phase?: { frames: number; fps: number };
+  };
 };
 ```
 
 当前验证结果：
 
 - 同类怪物可以共用静态 sprite，但必须叠加动态识别层。
+- 不同百鬼必须使用不同运动 profile：轻怪靠高频，重怪靠低频，冲锋怪靠前倾，精英靠呼吸光圈。
+- 受击需要短暂 squash / stretch，不能只闪白。
+- 百鬼帧态先统一为 `idle / move / hit / death`，远程、治疗、自爆、冲锋怪补 `attack`，Boss 额外保留 `phase` 扩展位。
+- 当前 PandoraBox Web 原型已接入 344 张百鬼 SVG 帧资源：普通怪覆盖 `move / hit / death`，高风险怪补 `attack`，通用鬼王和四类专属鬼王补 `phase`；这些路径已加入 survivor manifest，可作为离线缓存和 Cocos 图集拆分的过渡资产。
+- Boss 帧资源按 `boss-{bossKind}` 优先选择，找不到专属资源时回退到通用 `boss`，正式项目可以沿用这个规则做 Boss 分包和渐进替换。
+- 主角帧资源按 `heroes/{heroId}` 管理，当前沈灯 `ranger` 已接入 `idle / move / hit / overdrive`，正式项目建议拆成 `HeroConfig` 与 `HeroFrameSetConfig`，和敌人、Boss 资源使用同样的 manifest/分包规则。
 - 危险行为的预警线/圈优先级高于装饰动态。
 - 死亡反馈不只显示分数，高风险怪和特殊怪要显示死亡短语。
+- 死亡时保留 0.4 到 0.8 秒残影，播放 `death` 帧，不直接从敌人数组消失。
+- `frames` 是显式资源映射，没有配置路径时必须回退到程序占位绘制，避免移动端反复请求不存在的图片。
 - 护卫、裂隙、背刺等刷怪阵型需要额外局内标记，帮助玩家理解“这批怪为什么这么进场”。
 
 ## 4. DamageSource 建议
@@ -135,6 +169,7 @@ type CodexEntry = {
   weakness: string;
   recommendedSkills: string[];
   firstSeenChapter: string;
+  origin: string;
   drops: string[];
 };
 ```
@@ -151,6 +186,7 @@ type CodexEntry = {
   "weakness": "减速",
   "recommendedSkills": ["青灯寒咒", "护身铜轮"],
   "firstSeenChapter": "雨夜戏台",
+  "origin": "夜门裂道",
   "drops": ["魂火", "铜钱", "夜叉残角"]
 }
 ```

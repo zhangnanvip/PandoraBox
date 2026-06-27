@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="boss-titan-death-0 尸山鬼王">
+  <defs>
+    <radialGradient id="boss-titan-death-0-aura" cx="50%" cy="42%" r="64%">
+      <stop offset="0" stop-color="#ffe0c7" stop-opacity=".98"/>
+      <stop offset=".38" stop-color="#ff4d5e" stop-opacity=".86"/>
+      <stop offset=".7" stop-color="#ffb84d" stop-opacity=".66"/>
+      <stop offset="1" stop-color="#050712" stop-opacity=".08"/>
+    </radialGradient>
+    <linearGradient id="boss-titan-death-0-body" x1="19" y1="10" x2="78" y2="86">
+      <stop offset="0" stop-color="#ffe0c7"/>
+      <stop offset=".38" stop-color="#ff4d5e"/>
+      <stop offset=".68" stop-color="#ffb84d"/>
+      <stop offset="1" stop-color="#1b0910"/>
+    </linearGradient>
+    <linearGradient id="boss-titan-death-0-mask" x1="30" y1="19" x2="67" y2="72">
+      <stop offset="0" stop-color="#ffe0c7"/>
+      <stop offset=".56" stop-color="#ffb84d"/>
+      <stop offset="1" stop-color="#1b0910"/>
+    </linearGradient>
+    <filter id="boss-titan-death-0-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <g opacity="1" transform="translate(0 0) scale(1) translate(0 0)">
+    <ellipse cx="48" cy="83" rx="31" ry="7" fill="#050a0f" opacity=".3"/>
+    <ellipse cx="48" cy="49" rx="40" ry="41" fill="url(#boss-titan-death-0-aura)" opacity=".42" filter="url(#boss-titan-death-0-soft)"/>
+    
+    <path d="M28 49 l-7 0 l2.524 -4.316 Z" fill="#ff4d5e" opacity="0.28"/><path d="M30.079 40.121 l-6.272 -2.22 l4.178 -2.747 Z" fill="#ffb84d" opacity="0.28"/><path d="M35.884 33.088 l-4.241 -3.978 l4.963 -0.606 Z" fill="#ff4d5e" opacity="0.28"/><path d="M44.207 29.363 l-1.327 -4.909 l4.716 1.66 Z" fill="#ffb84d" opacity="0.28"/><path d="M53.319 29.72 l1.862 -4.82 l3.489 3.581 Z" fill="#ff4d5e" opacity="0.28"/><path d="M61.326 34.086 l4.664 -3.729 l1.537 4.758 Z" fill="#ffb84d" opacity="0.28"/><path d="M66.561 41.552 l6.497 -1.862 l-0.735 4.946 Z" fill="#ff4d5e" opacity="0.28"/><path d="M67.939 50.567 l6.978 0.392 l-2.855 4.105 Z" fill="#ffb84d" opacity="0.28"/><path d="M65.171 59.255 l6.01 2.564 l-4.38 2.411 Z" fill="#ff4d5e" opacity="0.28"/><path d="M58.833 65.812 l3.791 4.203 l-4.995 0.216 Z" fill="#ffb84d" opacity="0.28"/><path d="M50.243 68.874 l0.785 4.968 l-4.572 -2.024 Z" fill="#ff4d5e" opacity="0.28"/><path d="M41.187 67.804 l-2.385 4.701 l-3.198 -3.844 Z" fill="#ffb84d" opacity="0.28"/><path d="M33.547 62.825 l-5.058 3.456 l-1.159 -4.864 Z" fill="#ff4d5e" opacity="0.28"/><path d="M28.912 54.971 l-6.681 1.493 l1.12 -4.873 Z" fill="#ffb84d" opacity="0.28"/><path d="M28.245 45.877 l-6.914 -0.781 l3.167 -3.869 Z" fill="#ff4d5e" opacity="0.28"/><path d="M31.685 37.431 l-5.71 -2.892 l4.556 -2.061 Z" fill="#ffb84d" opacity="0.28"/>
+    
+    <path d="M30 72 C24 55 25 38 36 27 C41 34 45 42 48 55 C51 42 55 34 60 27 C71 38 72 55 66 72" fill="#1b0910" opacity=".58"/>
+    <path d="M25 34 C16 24 14 11 23 8 C31 15 35 23 37 34" fill="#2b0d14" stroke="#ffe0c7" stroke-opacity=".36" stroke-width="1.8"/>
+    <path d="M71 34 C80 24 82 11 73 8 C65 15 61 23 59 34" fill="#2b0d14" stroke="#ffe0c7" stroke-opacity=".36" stroke-width="1.8"/>
+    <path d="M28 70 C34 63 40 63 46 70M50 70 C56 63 62 63 68 70" fill="none" stroke="#ffe0c7" stroke-width="3.4" stroke-linecap="round" opacity=".68"/>
+    <path d="M25 36 C25 23 34 14 48 13 C62 14 71 23 71 36 C76 49 70 68 58 78 C53 83 43 83 38 78 C26 68 20 49 25 36Z" fill="url(#boss-titan-death-0-body)" stroke="#ffe0c7" stroke-opacity=".54" stroke-width="1.8"/>
+    <path d="M31 34 C34 21 42 18 48 18 C54 18 62 21 65 34 C65 48 59 61 48 66 C37 61 31 48 31 34Z" fill="url(#boss-titan-death-0-mask)" stroke="#ffe0c7" stroke-width="1.6"/>
+    <path d="M37 37 C41 34 44 35 46 39" fill="none" stroke="#1b0910" stroke-width="4" stroke-linecap="round"/>
+    <path d="M59 37 C55 34 52 35 50 39" fill="none" stroke="#1b0910" stroke-width="4" stroke-linecap="round"/>
+    <path d="M39 53 C44 58 52 58 57 53" fill="none" stroke="#1b0910" stroke-width="4" stroke-linecap="round"/>
+    <path d="M48 21 L42.32 35 L51.84 48 L44.16 66" fill="none" stroke="#ffe0c7" stroke-width="2.388" stroke-linecap="round" opacity="0.56"/>
+    <path d="M23 61 C10 62 8 76 22 81M73 61 C86 62 88 76 74 81" fill="none" stroke="#ffb84d" stroke-width="4" stroke-linecap="round" opacity=".52"/>
+    <g id="boss-titan-death-0-sparks"><circle cx="27.75" cy="48" r="1.1" fill="#ffb84d" opacity="0.25"/><circle cx="12.707" cy="35.155" r="1.48" fill="#ff4d5e" opacity="0.33"/><circle cx="32.488" cy="34.984" r="1.86" fill="#f8fbff" opacity="0.41"/><circle cx="29.221" cy="15.474" r="2.24" fill="#ffb84d" opacity="0.49"/><circle cx="44.484" cy="28.058" r="1.1" fill="#ff4d5e" opacity="0.57"/><circle cx="54.522" cy="11.013" r="1.48" fill="#f8fbff" opacity="0.25"/><circle cx="58.125" cy="30.463" r="1.86" fill="#ffb84d" opacity="0.33"/><circle cx="76.771" cy="23.858" r="2.24" fill="#ff4d5e" opacity="0.41"/><circle cx="67.029" cy="41.074" r="1.1" fill="#f8fbff" opacity="0.49"/><circle cx="85.558" cy="48" r="1.48" fill="#ffb84d" opacity="0.57"/><circle cx="67.029" cy="54.926" r="1.86" fill="#ff4d5e" opacity="0.25"/><circle cx="76.771" cy="72.142" r="2.24" fill="#f8fbff" opacity="0.33"/><circle cx="58.125" cy="65.537" r="1.1" fill="#ffb84d" opacity="0.41"/><circle cx="54.522" cy="84.987" r="1.48" fill="#ff4d5e" opacity="0.49"/><circle cx="44.484" cy="67.942" r="1.86" fill="#f8fbff" opacity="0.57"/><circle cx="29.221" cy="80.526" r="2.24" fill="#ffb84d" opacity="0.25"/><circle cx="32.488" cy="61.016" r="1.1" fill="#ff4d5e" opacity="0.33"/><circle cx="12.707" cy="60.845" r="1.48" fill="#f8fbff" opacity="0.41"/></g>
+  </g>
+</svg>

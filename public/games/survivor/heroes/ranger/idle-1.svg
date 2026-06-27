@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="ranger-idle-1 沈灯">
+  <defs>
+    <radialGradient id="ranger-idle-1-aura" cx="50%" cy="42%" r="62%">
+      <stop offset="0" stop-color="#fff8dc" stop-opacity=".96"/>
+      <stop offset=".42" stop-color="#7bd4ff" stop-opacity=".82"/>
+      <stop offset=".78" stop-color="#ffd166" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#050712" stop-opacity=".06"/>
+    </radialGradient>
+    <linearGradient id="ranger-idle-1-coat" x1="26" y1="14" x2="70" y2="84">
+      <stop offset="0" stop-color="#f8fbff"/>
+      <stop offset=".42" stop-color="#7bd4ff"/>
+      <stop offset="1" stop-color="#07131d"/>
+    </linearGradient>
+    <linearGradient id="ranger-idle-1-blade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff7c7"/>
+      <stop offset=".55" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#ff6b2c"/>
+    </linearGradient>
+    <filter id="ranger-idle-1-soft" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="2.4"/>
+    </filter>
+  </defs>
+  <g transform="translate(0 0.953) rotate(0 48 54) scale(1) translate(0 0)">
+    <ellipse cx="48" cy="80" rx="25" ry="7" fill="#050a0f" opacity=".28"/>
+    <ellipse cx="48" cy="48" rx="34" ry="36" fill="url(#ranger-idle-1-aura)" opacity="0.28" filter="url(#ranger-idle-1-soft)"/>
+    
+    <rect x="19.304" y="29.424" width="5" height="8" rx="1" fill="#7bd4ff" opacity="0.38" transform="rotate(-57.676 21.804 33.424)"/><rect x="58.566" y="15.697" width="5" height="8" rx="1" fill="#7bd4ff" opacity="0.48" transform="rotate(23.324 61.066 19.697)"/><rect x="79.412" y="54.659" width="5" height="8" rx="1" fill="#7bd4ff" opacity="0.58" transform="rotate(104.324 81.912 58.659)"/><rect x="42.809" y="74.875" width="5" height="8" rx="1" fill="#7bd4ff" opacity="0.28" transform="rotate(185.324 45.309 78.875)"/><rect x="14.564" y="47.988" width="5" height="8" rx="1" fill="#7bd4ff" opacity="0.38" transform="rotate(266.324 17.064 51.988)"/>
+    
+    <path d="M31 35 C32 22 40 15 48 14 C56 15 64 22 65 35 C70 47 66 67 56 78 C51 82 45 82 40 78 C30 67 26 47 31 35Z" fill="#061018" opacity=".95"/>
+    <path d="M48 16 C60 22 66 38 62 55 C59 69 53 78 48 82 C43 78 37 69 34 55 C30 38 36 22 48 16Z" fill="url(#ranger-idle-1-coat)" stroke="#f8fbff" stroke-opacity=".48" stroke-width="1.7"/>
+    <path d="M40 26 C43 20 53 20 56 26 C58 35 55 45 48 49 C41 45 38 35 40 26Z" fill="#fff1d0" stroke="#103547" stroke-width="1.4"/>
+    <circle cx="44" cy="33" r="1.8" fill="#07131d"/>
+    <circle cx="52" cy="33" r="1.8" fill="#07131d"/>
+    <path d="M42 43 C45 46 51 46 54 43" fill="none" stroke="#103547" stroke-width="1.6" stroke-linecap="round" opacity=".65"/>
+    <path d="M34 54 C25 58 23 70 34 76M62 54 C71 58 73 70 62 76" fill="none" stroke="#7bd4ff" stroke-width="3" stroke-linecap="round" opacity=".62"/>
+    <g transform="translate(-2 0) rotate(-28 29 54)">
+      <path d="M25 51 L9 31" stroke="url(#ranger-idle-1-blade)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M12 33 L8 23 L18 29" fill="#fff7c7" opacity=".78"/>
+    </g>
+    <g transform="translate(2 0) rotate(28 67 54)">
+      <path d="M71 51 L87 31" stroke="url(#ranger-idle-1-blade)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M84 33 L88 23 L78 29" fill="#fff7c7" opacity=".78"/>
+    </g>
+    <path d="M48 20 V64M39 53 H57" stroke="#ffd166" stroke-width="2.2" stroke-linecap="round" opacity=".42"/>
+  </g>
+</svg>
