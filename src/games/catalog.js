@@ -83,7 +83,12 @@ const GAME_ENTRIES = {
   "mahjong-solitaire": "./src/games/mahjong-solitaire/game.js",
   unblock: "./src/games/unblock/game.js",
   "hangman-idiom": "./src/games/hangman-idiom/game.js",
-  "video-poker": "./src/games/video-poker/game.js"
+  "video-poker": "./src/games/video-poker/game.js",
+  pinball: "./src/games/pinball/game.js",
+  "air-hockey": "./src/games/air-hockey/game.js",
+  "color-switch": "./src/games/color-switch/game.js",
+  kenken: "./src/games/kenken/game.js",
+  tents: "./src/games/tents/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -221,7 +226,12 @@ const MARKET_HEAT = {
   "mahjong-solitaire": { score: 80, label: "上海麻将", signal: "麻将连连消是层叠配对常青解谜，耐玩。" },
   unblock: { score: 78, label: "华容车阵", signal: "华容车阵关卡海量、滑块解谜全球爆款。" },
   "hangman-idiom": { score: 67, label: "成语猜字", signal: "成语补字寓教于乐，词库可扩。" },
-  "video-poker": { score: 71, label: "视频扑克", signal: "杰克高对扑克，留牌博赔率单人耐玩。" }
+  "video-poker": { score: 71, label: "视频扑克", signal: "杰克高对扑克，留牌博赔率单人耐玩。" },
+  pinball: { score: 72, label: "弹珠台", signal: "弹珠台双挡板撞柱刷分，街机经典上头。" },
+  "air-hockey": { score: 70, label: "空气球", signal: "空气曲棍人机对攻，节奏快即时反应。" },
+  "color-switch": { score: 73, label: "换色", signal: "换色穿环爆款超休闲，一指上瘾。" },
+  kenken: { score: 63, label: "数谜", signal: "KenKen 拉丁方+运算笼，数独进阶逻辑。" },
+  tents: { score: 60, label: "帐篷", signal: "帐篷与树逻辑布点，行列计数解谜。" }
 };
 
 function gameVisualStyle(key) {
@@ -1728,6 +1738,26 @@ const registrations = [
   defineLocalGame(
     { id: "video-poker", title: "视频扑克", subtitle: "留牌换牌，对子起赔", tag: "视频扑克", category: "number", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("video-poker", "number", { sessionSave: true }), ...gameVisualStyle("classicNumber"), accent: "lotus", icon: "./public/games/extra/icons/video-poker.svg", assets: ["./public/games/extra/icons/video-poker.svg"], rules: ["发五张, 点牌保留再换牌。", "J 对子起赔, 最高皇家同花顺。", "初始 1000 筹码, 可调注。", "筹码用尽结算身家。"] },
     () => import("./video-poker/game.js").then((m) => m.mountVideoPoker)
+  ),
+  defineLocalGame(
+    { id: "pinball", title: "弹珠台", subtitle: "双挡板撞柱刷分", tag: "弹珠台", category: "arcade", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("pinball", "arcade"), ...gameVisualStyle("classicArcade"), accent: "cinnabar", icon: "./public/games/extra/icons/pinball.svg", assets: ["./public/games/extra/icons/pinball.svg"], rules: ["点击左右半屏控制挡板。", "撞击柱子加分, 别让球漏底。", "三球用尽结算。", "桌面方向键控制。"] },
+    () => import("./pinball/game.js").then((m) => m.mountPinball)
+  ),
+  defineLocalGame(
+    { id: "air-hockey", title: "空气球", subtitle: "曲棍对攻先到 7 分", tag: "空气球", category: "arcade", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("air-hockey", "arcade"), ...gameVisualStyle("classicArcade"), accent: "sky", icon: "./public/games/extra/icons/air-hockey.svg", assets: ["./public/games/extra/icons/air-hockey.svg"], rules: ["拖动球拍撞击冰球。", "打进对方球门得分, 先到 7 分。", "难度决定 AI 反应。", "随时重开。"] },
+    () => import("./air-hockey/game.js").then((m) => m.mountAirHockey)
+  ),
+  defineLocalGame(
+    { id: "color-switch", title: "换色", subtitle: "同色穿环, 撞墙即败", tag: "换色", category: "arcade", secondaryCategories: ["quick"], complexity: "简单", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard", "devil"], progressType: "score", ...gamePluginMeta("color-switch", "arcade"), ...gameVisualStyle("classicArcade"), accent: "lotus", icon: "./public/games/extra/icons/color-switch.svg", assets: ["./public/games/extra/icons/color-switch.svg"], rules: ["点击让小球上跳。", "只能穿过与球同色的扇区。", "换色点会改变球的颜色。", "撞到异色即结束。"] },
+    () => import("./color-switch/game.js").then((m) => m.mountColorSwitch)
+  ),
+  defineLocalGame(
+    { id: "kenken", title: "数谜", subtitle: "拉丁方加运算笼", tag: "数谜", category: "number", secondaryCategories: ["puzzle"], complexity: "困难", modeSupport: ["solo"], difficultySupport: ["easy", "medium", "hard"], progressType: "score", ...gamePluginMeta("kenken", "number", { sessionSave: true }), ...gameVisualStyle("classicNumber"), accent: "ink", icon: "./public/games/extra/icons/kenken.svg", assets: ["./public/games/extra/icons/kenken.svg"], rules: ["每行每列数字不重复。", "笼内按目标数与运算成立。", "全部填对过关。", "难度决定棋盘大小。"] },
+    () => import("./kenken/game.js").then((m) => m.mountKenken)
+  ),
+  defineLocalGame(
+    { id: "tents", title: "帐篷", subtitle: "每棵树配一帐篷", tag: "帐篷", category: "puzzle", secondaryCategories: ["number", "quick"], complexity: "中等", modeSupport: ["solo"], progressType: "score", ...gamePluginMeta("tents", "puzzle", { sessionSave: true }), ...gameVisualStyle("classicPuzzle"), accent: "jade", icon: "./public/games/extra/icons/tents.svg", assets: ["./public/games/extra/icons/tents.svg"], rules: ["每棵树旁放一顶相邻帐篷。", "帐篷彼此不相邻含斜角。", "行列数字为该行列帐篷数。", "可换题、重开。"] },
+    () => import("./tents/game.js").then((m) => m.mountTents)
   )
 ];
 
