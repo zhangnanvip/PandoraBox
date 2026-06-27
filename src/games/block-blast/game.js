@@ -538,9 +538,7 @@ export function mountBlockBlast(root, context) {
           <p class="game-note">${DIFFICULTY[difficulty].label} · ${progressText(state, difficulty)}</p>
         </div>
         <div class="mini-stats">
-          <span>${GAME_MODES[state.mode].label}</span>
           ${state.maxLevel > 1 ? `<span>关卡 ${state.level}/${state.maxLevel}</span>` : ""}
-          <span>步 ${state.moves}</span>
           <span>线 ${state.lines}/${config.targetLines}</span>
           <span>分 ${state.score + state.stageScore}</span>
           <span>连 ${state.bestCombo}</span>
