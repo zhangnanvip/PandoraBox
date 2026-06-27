@@ -12,7 +12,7 @@
 ## 关键路径
 
 - `design/v2-evolution-plan.md` — v2 演进总计划（B/C 档子项进度）
-- `src/games/catalog.js` — 50 款本地游戏注册 + `MARKET_HEAT` 字典（新增 26 款图标在 `public/games/extra/icons/`）
+- `src/games/catalog.js` — 80 款本地游戏注册 + `MARKET_HEAT` 字典（新增 56 款图标在 `public/games/extra/icons/`）
 - `src/main.js` — 装配 + 路由 + 状态 + 事件分发
 - `src/styles.css` — 全站样式，末尾按 B 档段落追加新规则
 - `src/styles/tokens.css` + `src/styles/themes/*.css` — 设计 token 与主题
