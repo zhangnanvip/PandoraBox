@@ -286,11 +286,34 @@ type SpawnWaveConfig = {
   enemyPool: WeightedEnemy[];
   interval: number;
   count: number;
-  pattern: "circle" | "front" | "ambush" | "line" | "burst" | "boss-escort";
+  pattern: SpawnPatternId;
   eliteChance?: number;
   mutationPool?: string[];
 };
+
+type SpawnPatternId =
+  | "scatter"
+  | "surround"
+  | "frontline"
+  | "flank"
+  | "backstab"
+  | "riftRing"
+  | "bossEscort";
 ```
+
+PandoraBox 原型已接入第一批阵型导演：
+
+| 阵型 | 用途 |
+| --- | --- |
+| 游散入场 | 初段和整备关默认节奏，给玩家成型窗口 |
+| 百鬼合围 | 小怪潮从四周压缩空间 |
+| 正面压线 | 重甲、远程和围城事件形成推进线 |
+| 双翼夹击 | 中后段从左右两侧切入，要求横向走位 |
+| 背刺伏击 | 伏击关和后段从玩家移动反方向追击 |
+| 裂隙环生 | 围绕裂隙或夜门生成增援 |
+| 鬼王护卫 | Boss 战按 Boss 召唤池生成护卫 |
+
+阵型权重同样由 `Chapter x StageProfile x StagePhase x Event x Modifier` 叠乘。
 
 波次设计原则：
 

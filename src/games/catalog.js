@@ -49,7 +49,13 @@ const GAME_ENTRIES = {
   nonogram: "./src/games/nonogram/game.js",
   "dots-and-boxes": "./src/games/dots-and-boxes/game.js",
   "snakes-ladders": "./src/games/snakes-ladders/game.js",
-  pong: "./src/games/pong/game.js"
+  pong: "./src/games/pong/game.js",
+  flappy: "./src/games/flappy/game.js",
+  "jump-tap": "./src/games/jump-tap/game.js",
+  "24point": "./src/games/24point/game.js",
+  pipes: "./src/games/pipes/game.js",
+  "flood-it": "./src/games/flood-it/game.js",
+  simon: "./src/games/simon/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -110,7 +116,13 @@ const MARKET_HEAT = {
   nonogram: { score: 76, label: "数织绘图", signal: "数织靠逻辑推理与图案揭示，关卡可大量生成。" },
   "dots-and-boxes": { score: 70, label: "圈地对弈", signal: "点格棋上手快、策略链条深，适合人机或双人。" },
   "snakes-ladders": { score: 67, label: "骰子竞速", signal: "蛇梯棋是合家欢运气竞速，适合双人快局。" },
-  pong: { score: 72, label: "弹球对战", signal: "乒乓街机鼻祖，单局短、节奏快、难度可调。" }
+  pong: { score: 72, label: "弹球对战", signal: "乒乓街机鼻祖，单局短、节奏快、难度可调。" },
+  flappy: { score: 85, label: "像素飞鸟", signal: "极简点触飞行刷分，难上手强复玩，传播性高。" },
+  "jump-tap": { score: 79, label: "蓄力跳跃", signal: "蓄力跳台是抖音爆款节奏，一根手指即可挑战。" },
+  "24point": { score: 65, label: "心算挑战", signal: "24 点是经典心算速算，益智又教育。" },
+  pipes: { score: 68, label: "管道连通", signal: "水管旋转连通是常青逻辑解谜，关卡可生成。" },
+  "flood-it": { score: 67, label: "同色蔓延", signal: "Flood-It 步数最优解谜，色彩明快碎片化。" },
+  simon: { score: 64, label: "记忆序列", signal: "西蒙记忆灯是反应记忆经典，越长越紧张。" }
 };
 
 function gameVisualStyle(key) {
@@ -1174,6 +1186,162 @@ const registrations = [
       ]
     },
     () => import("./pong/game.js").then((module) => module.mountPong)
+  ),
+  defineLocalGame(
+    {
+      id: "flappy",
+      title: "像素鸟",
+      subtitle: "点触飞行，穿越管道",
+      tag: "像素飞鸟",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("flappy", "arcade"),
+      ...gameVisualStyle("classicArcade"),
+      accent: "sky",
+      icon: "./public/games/extra/icons/flappy.svg",
+      assets: ["./public/games/extra/icons/flappy.svg"],
+      rules: [
+        "点击或空格让小鸟上扬，松开下落。",
+        "穿过一根管道得 1 分，撞到即结束。",
+        "难度影响管道间隙与速度。",
+        "随时重开冲击最高分。"
+      ]
+    },
+    () => import("./flappy/game.js").then((module) => module.mountFlappy)
+  ),
+  defineLocalGame(
+    {
+      id: "jump-tap",
+      title: "跳一跳",
+      subtitle: "蓄力起跳，稳落下一台",
+      tag: "蓄力跳跃",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("jump-tap", "arcade"),
+      ...gameVisualStyle("classicArcade"),
+      accent: "lotus",
+      icon: "./public/games/extra/icons/jump-tap.svg",
+      assets: ["./public/games/extra/icons/jump-tap.svg"],
+      rules: [
+        "按住蓄力，松手起跳，落在下一平台得分。",
+        "正中平台中心有额外奖励分。",
+        "落空即结束，难度影响平台间距波动。",
+        "移动端按住屏幕，桌面端按住空格。"
+      ]
+    },
+    () => import("./jump-tap/game.js").then((module) => module.mountJumpTap)
+  ),
+  defineLocalGame(
+    {
+      id: "24point",
+      title: "24点",
+      subtitle: "四数算出 24",
+      tag: "心算挑战",
+      category: "number",
+      secondaryCategories: ["quick", "puzzle"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("24point", "number"),
+      ...gameVisualStyle("classicNumber"),
+      accent: "cinnabar",
+      icon: "./public/games/extra/icons/24point.svg",
+      assets: ["./public/games/extra/icons/24point.svg"],
+      rules: [
+        "用加减乘除把四个数算成 24。",
+        "点数字、点运算符、再点数字合并，化到一个 24 过关。",
+        "每副牌保证有解，可提示、撤销、换局。",
+        "连过多局结算用时与正确数。"
+      ]
+    },
+    () => import("./24point/game.js").then((module) => module.mount24Point)
+  ),
+  defineLocalGame(
+    {
+      id: "pipes",
+      title: "水管工",
+      subtitle: "旋转管道，接通水流",
+      tag: "管道连通",
+      category: "puzzle",
+      secondaryCategories: ["quick", "strategy"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("pipes", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "sky",
+      icon: "./public/games/extra/icons/pipes.svg",
+      assets: ["./public/games/extra/icons/pipes.svg"],
+      rules: [
+        "点击管道格旋转 90 度。",
+        "把水从源头接到终点即过关。",
+        "难度决定 4x4 到 7x7 的网格大小。",
+        "步数越少结算分越高，支持续玩。"
+      ]
+    },
+    () => import("./pipes/game.js").then((module) => module.mountPipes)
+  ),
+  defineLocalGame(
+    {
+      id: "flood-it",
+      title: "同色消融",
+      subtitle: "选色蔓延，染满全盘",
+      tag: "同色蔓延",
+      category: "puzzle",
+      secondaryCategories: ["number", "quick"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("flood-it", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "jade",
+      icon: "./public/games/extra/icons/flood-it.svg",
+      assets: ["./public/games/extra/icons/flood-it.svg"],
+      rules: [
+        "从左上角开始，选一种颜色染色相连区域。",
+        "在步数上限内把整盘染成一色即胜。",
+        "难度决定棋盘、颜色数与步数限制。",
+        "剩余步数越多结算分越高。"
+      ]
+    },
+    () => import("./flood-it/game.js").then((module) => module.mountFloodIt)
+  ),
+  defineLocalGame(
+    {
+      id: "simon",
+      title: "记忆序列",
+      subtitle: "记住灯光，依序重现",
+      tag: "记忆序列",
+      category: "quick",
+      secondaryCategories: ["arcade"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("simon", "arcade"),
+      ...gameVisualStyle("classicArcade"),
+      accent: "lotus",
+      icon: "./public/games/extra/icons/simon.svg",
+      assets: ["./public/games/extra/icons/simon.svg"],
+      rules: [
+        "四个灯块按序亮起，记住后依次点回。",
+        "每轮序列加长，复现成功才继续。",
+        "出错即结束，最长序列即得分。",
+        "难度影响亮灯速度。"
+      ]
+    },
+    () => import("./simon/game.js").then((module) => module.mountSimon)
   )
 ];
 
