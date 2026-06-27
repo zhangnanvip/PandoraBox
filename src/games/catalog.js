@@ -55,7 +55,15 @@ const GAME_ENTRIES = {
   "24point": "./src/games/24point/game.js",
   pipes: "./src/games/pipes/game.js",
   "flood-it": "./src/games/flood-it/game.js",
-  simon: "./src/games/simon/game.js"
+  simon: "./src/games/simon/game.js",
+  nim: "./src/games/nim/game.js",
+  whack: "./src/games/whack/game.js",
+  bubble: "./src/games/bubble/game.js",
+  maze: "./src/games/maze/game.js",
+  "lights-out": "./src/games/lights-out/game.js",
+  reaction: "./src/games/reaction/game.js",
+  doodle: "./src/games/doodle/game.js",
+  catcher: "./src/games/catcher/game.js"
 };
 
 const CAPABILITY_PRESETS = {
@@ -122,7 +130,15 @@ const MARKET_HEAT = {
   "24point": { score: 65, label: "心算挑战", signal: "24 点是经典心算速算，益智又教育。" },
   pipes: { score: 68, label: "管道连通", signal: "水管旋转连通是常青逻辑解谜，关卡可生成。" },
   "flood-it": { score: 67, label: "同色蔓延", signal: "Flood-It 步数最优解谜，色彩明快碎片化。" },
-  simon: { score: 64, label: "记忆序列", signal: "西蒙记忆灯是反应记忆经典，越长越紧张。" }
+  simon: { score: 64, label: "记忆序列", signal: "西蒙记忆灯是反应记忆经典，越长越紧张。" },
+  nim: { score: 60, label: "取石博弈", signal: "取石子是博弈论入门，AI 可达必胜策略。" },
+  whack: { score: 74, label: "打地鼠", signal: "打地鼠是全年龄反应街机，限时刷分上头。" },
+  bubble: { score: 78, label: "泡泡消除", signal: "泡泡龙是常青瞄准消除，颜色聚类爽快。" },
+  maze: { score: 63, label: "迷宫探路", signal: "随机迷宫闯关，越大越难，路径规划解压。" },
+  "lights-out": { score: 61, label: "关灯解谜", signal: "关灯是异或逻辑解谜，最少步通关耐玩。" },
+  reaction: { score: 62, label: "反应测试", signal: "反应靶测手速，单局极短适合碎片对比。" },
+  doodle: { score: 76, label: "弹跳爬升", signal: "弹跳无尽爬升刷高分，倾斜操作经典休闲。" },
+  catcher: { score: 65, label: "接物刷分", signal: "接好物躲炸弹，节奏渐快，老少皆宜。" }
 };
 
 function gameVisualStyle(key) {
@@ -1342,6 +1358,213 @@ const registrations = [
       ]
     },
     () => import("./simon/game.js").then((module) => module.mountSimon)
+  ),
+  defineLocalGame(
+    {
+      id: "nim",
+      title: "取石子",
+      subtitle: "轮流取石，拿到最后输",
+      tag: "取石博弈",
+      category: "classic",
+      secondaryCategories: ["quick", "strategy"],
+      complexity: "简单",
+      difficultySupport: ["easy", "medium", "hard"],
+      progressType: "match",
+      ...gamePluginMeta("nim", "board", { sessionSave: true }),
+      ...gameVisualStyle("guofengBoard"),
+      accent: "ink",
+      icon: "./public/games/extra/icons/nim.svg",
+      assets: ["./public/games/extra/icons/nim.svg"],
+      rules: [
+        "每次从任意一行取走若干石子。",
+        "拿走最后一颗的一方判负。",
+        "困难 AI 走 XOR 必胜策略，先思考再落手。",
+        "支持人机或本地双人，可重开。"
+      ]
+    },
+    () => import("./nim/game.js").then((module) => module.mountNim)
+  ),
+  defineLocalGame(
+    {
+      id: "whack",
+      title: "打地鼠",
+      subtitle: "限时敲鼠，躲开炸弹",
+      tag: "打地鼠",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("whack", "arcade"),
+      ...gameVisualStyle("classicArcade"),
+      accent: "cinnabar",
+      icon: "./public/games/extra/icons/whack.svg",
+      assets: ["./public/games/extra/icons/whack.svg"],
+      rules: [
+        "地鼠随机冒头，快点它得分。",
+        "误敲炸弹会扣分，60 秒内冲高分。",
+        "难度影响冒头速度与炸弹比例。",
+        "结束按分数结算，可重开。"
+      ]
+    },
+    () => import("./whack/game.js").then((module) => module.mountWhack)
+  ),
+  defineLocalGame(
+    {
+      id: "bubble",
+      title: "泡泡龙",
+      subtitle: "瞄准发射，三连消除",
+      tag: "泡泡消除",
+      category: "arcade",
+      secondaryCategories: ["puzzle", "quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("bubble", "arcade"),
+      ...gameVisualStyle("classicArcade"),
+      accent: "sky",
+      icon: "./public/games/extra/icons/bubble.svg",
+      assets: ["./public/games/extra/icons/bubble.svg"],
+      rules: [
+        "瞄准角度发射泡泡，三个同色相连即消除。",
+        "悬空泡泡会掉落额外加分。",
+        "泡泡逐排下压，触底即失败。",
+        "难度影响颜色数与下压速度。"
+      ]
+    },
+    () => import("./bubble/game.js").then((module) => module.mountBubble)
+  ),
+  defineLocalGame(
+    {
+      id: "maze",
+      title: "迷宫",
+      subtitle: "穿墙寻路，抵达出口",
+      tag: "迷宫探路",
+      category: "puzzle",
+      secondaryCategories: ["quick", "race"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("maze", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "jade",
+      icon: "./public/games/extra/icons/maze.svg",
+      assets: ["./public/games/extra/icons/maze.svg"],
+      rules: [
+        "从起点走到红旗出口。",
+        "通关后迷宫逐级变大。",
+        "移动端方向键或滑动，桌面端方向键/WASD。",
+        "步数与用时影响结算，支持续玩。"
+      ]
+    },
+    () => import("./maze/game.js").then((module) => module.mountMaze)
+  ),
+  defineLocalGame(
+    {
+      id: "lights-out",
+      title: "关灯",
+      subtitle: "切换灯阵，全部熄灭",
+      tag: "关灯解谜",
+      category: "puzzle",
+      secondaryCategories: ["number", "quick"],
+      complexity: "中等",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("lights-out", "puzzle", { sessionSave: true }),
+      ...gameVisualStyle("classicPuzzle"),
+      accent: "sky",
+      icon: "./public/games/extra/icons/lights-out.svg",
+      assets: ["./public/games/extra/icons/lights-out.svg"],
+      rules: [
+        "点一盏灯会同时翻转它和上下左右。",
+        "把所有灯熄灭即过关。",
+        "难度决定 4x4 到 6x6 的灯阵。",
+        "步数越少结算分越高。"
+      ]
+    },
+    () => import("./lights-out/game.js").then((module) => module.mountLightsOut)
+  ),
+  defineLocalGame(
+    {
+      id: "reaction",
+      title: "反应靶",
+      subtitle: "出现就点，比拼手速",
+      tag: "反应测试",
+      category: "quick",
+      secondaryCategories: ["arcade"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("reaction", "arcade"),
+      ...gameVisualStyle("classicArcade"),
+      accent: "cinnabar",
+      icon: "./public/games/extra/icons/reaction.svg",
+      assets: ["./public/games/extra/icons/reaction.svg"],
+      rules: [
+        "靶子随机出现，越快点中越高分。",
+        "靶子逐渐变小，误点与超时会扣时。",
+        "30 个回合后结算平均反应。",
+        "难度影响靶子大小与时限。"
+      ]
+    },
+    () => import("./reaction/game.js").then((module) => module.mountReaction)
+  ),
+  defineLocalGame(
+    {
+      id: "doodle",
+      title: "弹跳",
+      subtitle: "踩台爬升，越跳越高",
+      tag: "弹跳爬升",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("doodle", "arcade", { sessionSave: true }),
+      ...gameVisualStyle("classicArcade"),
+      accent: "jade",
+      icon: "./public/games/extra/icons/doodle.svg",
+      assets: ["./public/games/extra/icons/doodle.svg"],
+      rules: [
+        "自动弹跳，左右倾斜踩稳平台。",
+        "越往上爬分数越高。",
+        "活动与破碎平台增加变数，掉出底部即结束。",
+        "移动端拖动或点屏两侧，桌面端方向键。"
+      ]
+    },
+    () => import("./doodle/game.js").then((module) => module.mountDoodle)
+  ),
+  defineLocalGame(
+    {
+      id: "catcher",
+      title: "接福",
+      subtitle: "接好物，躲炸弹",
+      tag: "接物刷分",
+      category: "arcade",
+      secondaryCategories: ["quick"],
+      complexity: "简单",
+      modeSupport: ["solo"],
+      difficultySupport: ["easy", "medium", "hard", "devil"],
+      progressType: "score",
+      ...gamePluginMeta("catcher", "arcade"),
+      ...gameVisualStyle("classicArcade"),
+      accent: "lotus",
+      icon: "./public/games/extra/icons/catcher.svg",
+      assets: ["./public/games/extra/icons/catcher.svg"],
+      rules: [
+        "移动篮子接住下落的好物得分。",
+        "炸弹要躲开，碰到扣一条命。",
+        "三条命用尽结算，速度逐渐加快。",
+        "难度影响下落速度与炸弹比例。"
+      ]
+    },
+    () => import("./catcher/game.js").then((module) => module.mountCatcher)
   )
 ];
 

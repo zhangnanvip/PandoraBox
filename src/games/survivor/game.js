@@ -337,6 +337,20 @@ const COUNTER_SKILL_IDS = {
   laser: ["speed", "frost"]
 };
 
+const ENEMY_VISUALS = {
+  crawler: { mark: "魂", death: "魂散", deathColor: "#ff7a7a", particles: 14 },
+  bat: { mark: "灯", death: "灯灭", deathColor: "#7bd4ff", particles: 16 },
+  swarmer: { mark: "纸", death: "纸碎", deathColor: "#a6ffcb", particles: 18 },
+  brute: { mark: "骨", death: "骨裂", deathColor: "#ffb84d", particles: 13 },
+  spitter: { mark: "毒", death: "毒散", deathColor: "#8ce8bd", particles: 17 },
+  bomber: { mark: "伞", death: "伞爆", deathColor: "#ff6b2c", particles: 20 },
+  charger: { mark: "叉", death: "刃断", deathColor: "#ff4d8d", particles: 16 },
+  shield: { mark: "盾", death: "甲碎", deathColor: "#f8fbff", particles: 16 },
+  warden: { mark: "愈", death: "针断", deathColor: "#ffd166", particles: 18 },
+  sniper: { mark: "伶", death: "弦断", deathColor: "#9fb7ff", particles: 15 },
+  elite: { mark: "面", death: "画皮裂", deathColor: "#d45cff", particles: 22 }
+};
+
 const WAVE_EVENT_SKILL_IDS = {
   rush: ["frost", "orbit", "speed"],
   horde: ["aura", "mine", "orbit"],
@@ -1496,6 +1510,10 @@ function enemySpec(type) {
   return ENEMIES[type] || ENEMIES.crawler;
 }
 
+function enemyVisual(type) {
+  return ENEMY_VISUALS[type] || ENEMY_VISUALS.crawler;
+}
+
 function enemyTitle(enemyOrType) {
   if (!enemyOrType) return "百鬼";
   if (typeof enemyOrType === "string") return enemySpec(enemyOrType).title || "百鬼";
@@ -1758,7 +1776,7 @@ function sourceSkillId(source) {
 }
 
 function bossWeaknessText(enemyOrSpec) {
-  const spec = enemyOrSpec?.id ? enemyOrSpec : bossSpec(enemyOrSpec);
+  const spec = Array.isArray(enemyOrSpec?.weaknessSkills) ? enemyOrSpec : bossSpec(enemyOrSpec);
   return (spec.weaknessSkills || ["focus"])
     .map((id) => UPGRADE_BY_ID.get(id)?.title || id)
     .join(" / ");
@@ -2289,6 +2307,46 @@ function weaponHitEffect(state, enemy, source) {
   });
 }
 
+function enemyDeathFeedback(state, enemy, source = "hit") {
+  const visual = enemyVisual(enemy.type);
+  const affix = affixSpec(enemy.affix);
+  const mutation = mutationSpec(enemy.mutation);
+  const primary = enemy.boss ? bossSpec(enemy).color : mutation?.color || affix?.color || visual.deathColor || enemy.color;
+  const secondary = enemy.boss ? RARITIES.evolve.color
+    : enemy.type === "swarmer" ? classicArcade.white
+      : enemy.type === "shield" ? classicArcade.cyan
+        : enemy.type === "warden" ? "#ffd166"
+          : classicArcade.yellow;
+  const count = enemy.boss ? 42 : (visual.particles || 14) + (enemy.empowered ? 8 : 0) + (enemy.mutation ? 4 : 0);
+  addBurst(state.effects, enemy.x, enemy.y, {
+    count,
+    color: primary,
+    secondary,
+    radius: enemy.boss ? 34 : enemy.radius + (enemy.empowered ? 14 : 9),
+    speed: enemy.boss ? 104 : enemy.type === "swarmer" || enemy.type === "bat" ? 96 : 76,
+    life: enemy.type === "shield" || enemy.type === "brute" ? 0.5 : 0.38,
+    ringLife: enemy.boss || enemy.empowered ? 0.34 : 0.24,
+    size: enemy.boss ? 3.8 : enemy.type === "swarmer" ? 2 : 2.6
+  });
+
+  if (enemy.type === "spitter" || enemy.mutation === "venom") {
+    addBurst(state.effects, enemy.x, enemy.y, { count: 10, color: "#8ce8bd", secondary: "#143b2e", radius: 20, speed: 48, life: 0.46, size: 2 });
+  }
+  if (enemy.type === "shield") {
+    addFloatingText(state.effects, enemy.x, enemy.y - 22, "破甲", { color: classicArcade.cyan, size: 11, life: 0.62 });
+  }
+  if (enemy.type === "warden") {
+    addFloatingText(state.effects, enemy.x, enemy.y - 24, "断针", { color: "#ffd166", size: 11, life: 0.62 });
+  }
+  if (enemy.spawnPattern === "bossEscort") {
+    addFloatingText(state.effects, enemy.x, enemy.y - 28, "护卫破", { color: RARITIES.evolve.color, size: 11, life: 0.68 });
+  }
+
+  const showDeathName = enemy.boss || enemy.empowered || enemy.mutation || enemy.type !== "crawler" || source === "bomb";
+  const killLabel = showDeathName ? `${enemy.boss ? "鬼王破灭" : visual.death} +${enemy.score}` : `+${enemy.score}`;
+  addFloatingText(state.effects, enemy.x, enemy.y - 12, killLabel, { color: primary || enemy.color || classicArcade.yellow });
+}
+
 function damageEnemy(state, enemy, amount, source = "hit") {
   if (enemy.dead) return false;
   const affix = affixSpec(enemy.affix);
@@ -2350,9 +2408,7 @@ function damageEnemy(state, enemy, amount, source = "hit") {
       }, false));
     }
   }
-  addBurst(state.effects, enemy.x, enemy.y, { count: enemy.boss ? 34 : 14, color: enemy.color, secondary: classicArcade.yellow, radius: enemy.boss ? 26 : 10 });
-  const killLabel = enemy.boss || enemy.empowered || enemy.mutation ? `${enemyTitle(enemy)} +${enemy.score}` : `+${enemy.score}`;
-  addFloatingText(state.effects, enemy.x, enemy.y - 12, killLabel, { color: affix?.color || enemy.color || classicArcade.yellow });
+  enemyDeathFeedback(state, enemy, source);
   if (source === "plague" && !enemy.boss) {
     for (const nearby of state.enemies) {
       if (nearby === enemy || nearby.dead || distance(enemy, nearby) > 58) continue;
@@ -4723,6 +4779,155 @@ function drawEnemyTelegraph(ctx, state, enemy, p) {
   }
 }
 
+function drawEnemyDynamicMarks(ctx, state, enemy, scale) {
+  if (enemy.boss) return;
+  const r = enemy.radius;
+  const t = state.time + enemy.phase;
+  const pulse = Math.sin(t * 5);
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  if (enemy.type === "crawler") {
+    ctx.strokeStyle = "rgba(255,122,122,.42)";
+    ctx.lineWidth = 1.4 * scale;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(side * r * 0.3, r * 0.1);
+      ctx.quadraticCurveTo(side * r * 0.75, r * (0.55 + pulse * 0.06), side * r * 1.08, r * 0.88);
+      ctx.stroke();
+    }
+  } else if (enemy.type === "bat") {
+    const flap = 0.78 + Math.sin(t * 9) * 0.22;
+    ctx.strokeStyle = "rgba(123,212,255,.72)";
+    ctx.lineWidth = 2 * scale;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(side * r * 0.4, -r * 0.2);
+      ctx.quadraticCurveTo(side * r * 1.55, -r * flap, side * r * 2.35, -r * 0.35);
+      ctx.quadraticCurveTo(side * r * 1.6, r * 0.35, side * r * 0.62, r * 0.25);
+      ctx.stroke();
+    }
+  } else if (enemy.type === "swarmer") {
+    ctx.strokeStyle = "rgba(248,251,255,.78)";
+    ctx.lineWidth = 1.5 * scale;
+    for (let i = 0; i < 3; i += 1) {
+      const y = -r * 0.55 + i * r * 0.48 + Math.sin(t * 6 + i) * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-r * 1.35, y);
+      ctx.lineTo(-r * 0.65, y + 4);
+      ctx.moveTo(r * 0.65, y + 3);
+      ctx.lineTo(r * 1.35, y - 2);
+      ctx.stroke();
+    }
+  } else if (enemy.type === "brute") {
+    ctx.strokeStyle = "rgba(255,225,168,.54)";
+    ctx.lineWidth = 2 * scale;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.45, -r * 0.72);
+    ctx.lineTo(-r * 0.15, -r * 0.18);
+    ctx.lineTo(-r * 0.42, r * 0.34);
+    ctx.moveTo(r * 0.42, -r * 0.62);
+    ctx.lineTo(r * 0.12, -r * 0.05);
+    ctx.lineTo(r * 0.44, r * 0.42);
+    ctx.stroke();
+  } else if (enemy.type === "spitter") {
+    ctx.fillStyle = "rgba(140,232,189,.68)";
+    for (let i = 0; i < 3; i += 1) {
+      const a = t * 1.4 + i * Math.PI * 2 / 3;
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * r * 0.95, Math.sin(a) * r * 0.55 - r * 0.2, 2.4 + i, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (enemy.type === "bomber") {
+    ctx.strokeStyle = enemy.fuse > 0 ? "rgba(255,209,102,.95)" : "rgba(255,184,77,.6)";
+    ctx.lineWidth = 1.8 * scale;
+    for (let i = 0; i < 6; i += 1) {
+      const a = -Math.PI / 2 + i * Math.PI / 5;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a) * r * 1.28, Math.sin(a) * r * 1.28);
+      ctx.stroke();
+    }
+  } else if (enemy.type === "charger") {
+    ctx.fillStyle = "rgba(255,77,141,.24)";
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.75);
+    ctx.lineTo(r * 0.52, -r * 0.45);
+    ctx.lineTo(0, -r * 0.72);
+    ctx.lineTo(-r * 0.52, -r * 0.45);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(248,251,255,.72)";
+    ctx.lineWidth = 2 * scale;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.55);
+    ctx.lineTo(0, r * 0.65);
+    ctx.stroke();
+  } else if (enemy.type === "shield") {
+    ctx.strokeStyle = "rgba(123,212,255,.72)";
+    ctx.lineWidth = 3 * scale;
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.03, r * (1.45 + pulse * 0.03), -Math.PI * 0.78, Math.PI * 0.78);
+    ctx.stroke();
+  } else if (enemy.type === "warden") {
+    ctx.strokeStyle = enemy.healPulse > 0 ? "rgba(255,209,102,.95)" : "rgba(255,209,102,.58)";
+    ctx.lineWidth = 2.4 * scale;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.18);
+    ctx.lineTo(0, r * 0.92);
+    ctx.moveTo(-r * 0.72, -r * 0.18);
+    ctx.lineTo(r * 0.72, -r * 0.18);
+    ctx.stroke();
+  } else if (enemy.type === "sniper") {
+    ctx.strokeStyle = "rgba(159,183,255,.82)";
+    ctx.lineWidth = 2 * scale;
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.45, r * 0.66, 0, Math.PI * 2);
+    ctx.moveTo(-r * 0.92, -r * 0.45);
+    ctx.lineTo(r * 0.92, -r * 0.45);
+    ctx.moveTo(0, -r * 1.28);
+    ctx.lineTo(0, r * 0.35);
+    ctx.stroke();
+  } else if (enemy.type === "elite") {
+    ctx.strokeStyle = "rgba(212,92,255,.72)";
+    ctx.lineWidth = 2.2 * scale;
+    ctx.setLineDash([6, 5]);
+    ctx.beginPath();
+    ctx.arc(0, 0, r * (1.42 + pulse * 0.04), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  if (enemy.spawnPattern === "bossEscort") {
+    ctx.strokeStyle = "rgba(255,209,102,.72)";
+    ctx.lineWidth = 2 * scale;
+    ctx.beginPath();
+    ctx.arc(0, 0, r + 9 + Math.sin(state.time * 8) * 1.5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,209,102,.95)";
+    ctx.font = `900 ${Math.max(8, r * 0.44)}px system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText("护", 0, -r - 12);
+  } else if (enemy.spawnPattern === "riftRing") {
+    ctx.strokeStyle = "rgba(212,92,255,.68)";
+    ctx.lineWidth = 2 * scale;
+    ctx.beginPath();
+    ctx.arc(0, 0, r + 7, state.time * 2, state.time * 2 + Math.PI * 1.45);
+    ctx.stroke();
+  } else if (enemy.spawnPattern === "backstab") {
+    ctx.fillStyle = "rgba(255,77,94,.72)";
+    ctx.beginPath();
+    ctx.moveTo(0, -r - 14);
+    ctx.lineTo(5, -r - 4);
+    ctx.lineTo(-5, -r - 4);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
 function drawEnemyBody(ctx, enemy, scale) {
   if (drawEnemySprite(ctx, enemy, scale)) return;
   if (enemy.boss) {
@@ -4972,6 +5177,7 @@ function drawEnemy(ctx, state, enemy) {
   ctx.ellipse(0, enemy.radius * 0.55, enemy.radius * 0.95, enemy.radius * 0.28, 0, 0, Math.PI * 2);
   ctx.fill();
   drawEnemyBody(ctx, enemy, scale);
+  drawEnemyDynamicMarks(ctx, state, enemy, scale);
   if (enemy.family && enemy.radius >= 7) {
     ctx.fillStyle = enemy.boss ? "rgba(255,209,102,.92)" : "rgba(10,18,20,.72)";
     ctx.font = `900 ${Math.max(7, enemy.radius * 0.58)}px system-ui, sans-serif`;
