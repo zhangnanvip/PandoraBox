@@ -1082,7 +1082,7 @@ function levelTuning(level) {
     duration: Math.round((84 + Math.min(64, level * 2.6)) * (profile.duration || 1)),
     spawnEvery: Math.max(0.18, (0.58 - level * 0.01 - chapter * 0.035) * (profile.spawn || 1)),
     spawnBurst: 1 + Math.floor((level + 2) / 6) + (chapter >= 2 ? 1 : 0) + (profile.burstBonus || 0),
-    maxEnemies: Math.min(120, 48 + level * 2 + chapter * 8),
+    maxEnemies: Math.min(66, 40 + level * 1.5 + chapter * 5),
     hpScale: 1.12 + level * 0.16 + chapter * 0.3,
     damageScale: 1.05 + level * 0.035 + chapter * 0.09,
     speedScale: 1.02 + level * 0.014,
@@ -2530,7 +2530,7 @@ function enemyDeathFeedback(state, enemy, source = "hit") {
       : enemy.type === "shield" ? classicArcade.cyan
         : enemy.type === "warden" ? "#ffd166"
           : classicArcade.yellow;
-  const count = enemy.boss ? 24 : Math.round(((visual.particles || 14) + (enemy.empowered ? 8 : 0) + (enemy.mutation ? 4 : 0)) * 0.55);
+  const count = enemy.boss ? 20 : Math.round(((visual.particles || 14) + (enemy.empowered ? 8 : 0) + (enemy.mutation ? 4 : 0)) * 0.42);
   addEnemyDeathEcho(state, enemy);
   addBurst(state.effects, enemy.x, enemy.y, {
     count,
@@ -3941,8 +3941,8 @@ function update(state, dt, context) {
   updateDeathEchoes(state, dt);
   updateEffects(state.effects, dt);
   if (state.effects.length > 220) state.effects.splice(0, state.effects.length - 220);
-  if (state.pickups.length > 160) state.pickups.splice(0, state.pickups.length - 160);
-  if (state.projectiles.length > 180) state.projectiles.splice(0, state.projectiles.length - 180);
+  if (state.pickups.length > 120) state.pickups.splice(0, state.pickups.length - 120);
+  if (state.projectiles.length > 90) state.projectiles.splice(0, state.projectiles.length - 90);
   updateFeedback(state, dt, [state.enemies]);
   state.shake = Math.max(0, state.shake - dt * 18);
   if (state.player.hp <= 0) finish(state, false, context);
@@ -6030,7 +6030,6 @@ export function mountSurvivor(root, context) {
     playerLevelNode.textContent = `Lv.${state.player.level}`;
     killsNode.textContent = `击破 ${state.kills}`;
     scoreNode.textContent = `分 ${state.score}`;
-    if (threatNode) threatNode.textContent = threatLabel(state);
     if (progressNode) progressNode.textContent = `来源 ${progressBreakdownText(state, 2)}`;
     renderCamp();
   }
@@ -6091,7 +6090,6 @@ export function mountSurvivor(root, context) {
           <span data-survivor-player-level>Lv.${state.player.level}</span>
           <span data-survivor-kills>击破 ${state.kills}</span>
           <span data-survivor-score>分 ${state.score}</span>
-          <span data-survivor-threat>${threatLabel(state)}</span>
           <span data-survivor-progress>来源 ${progressBreakdownText(state, 2)}</span>
         </div>
         <div class="survivor-camp" data-survivor-camp></div>

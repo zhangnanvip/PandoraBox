@@ -165,7 +165,7 @@ const MARKET_HEAT = {
   "block-blast": { score: 98, label: "方块爆款", signal: "Block Puzzle 是当前下载热度和长线复玩都很强的混合休闲品类。" },
   "tile-match": { score: 97, label: "Tile热门", signal: "三张入槽消除和麻将纸牌是当前移动端热门且耐玩的解谜方向。" },
   match3: { score: 96, label: "三消长线", signal: "关卡制三消仍是移动端长线留存的核心品类。" },
-  survivor: { score: 95, label: "百鬼夜行", signal: "东方志怪割草依靠匣术构筑、百鬼怪潮、章节鬼王和局外成长形成强复玩。" },
+  survivor: { score: 99, label: "百鬼夜行", signal: "东方志怪割草依靠匣术构筑、百鬼怪潮、章节鬼王和局外成长形成强复玩。" },
   "mahjong-connect": { score: 94, label: "麻将消除", signal: "麻将、Tile 与连连看适合中老年和碎片时间用户。" },
   "sort-master": { score: 93, label: "排序耐玩", signal: "颜色、螺丝、水管和停车排序是移动端长线热度很高的触控解谜方向。" },
   "merge-workshop": { score: 92, label: "合成长线", signal: "Merge 类靠订单、生成器和资源循环形成长期目标，适合离线轻经营。" },

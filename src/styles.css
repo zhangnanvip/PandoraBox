@@ -6459,7 +6459,33 @@ input[type="range"] {
  * ──────────────────────────────────────────────────────────── */
 
 .modal-panel.modal--sheet {
-  /* 沿用 .modal-panel 默认（width:520 / max-height:76svh） */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 内部 start-sheet 自己滚, 按钮固定底部 */
+}
+.modal--sheet .modal-head { flex: 0 0 auto; }
+.modal--sheet .start-sheet {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  -webkit-overflow-scrolling: touch;
+}
+/* 开局动作区: 继续/重开/开始 固定在面板底部, 中部内容滚动 */
+.start-sheet .resume-card,
+.start-sheet > .wide-button {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: 0 -2px -2px;
+  padding-top: var(--space-3, 12px);
+  background: linear-gradient(180deg, rgba(255, 250, 240, 0), rgba(255, 250, 240, 0.96) 28%);
+}
+:root[data-skin="ink-dark"] .start-sheet .resume-card,
+:root[data-skin="ink-dark"] .start-sheet > .wide-button {
+  background: linear-gradient(180deg, rgba(22, 28, 37, 0), rgba(22, 28, 37, 0.96) 28%);
 }
 
 .modal-panel.modal--dialog {
