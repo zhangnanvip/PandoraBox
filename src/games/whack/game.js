@@ -101,9 +101,11 @@ export function mountWhack(root, context) {
       state.score += MOLE_POINTS;
       state.hits += 1;
       context.playSound?.("hit");
+      try { navigator.vibrate?.(12); } catch {}
     } else if (cell === "bomb") {
       state.score = Math.max(0, state.score - BOMB_PENALTY);
       context.playSound?.("error");
+      try { navigator.vibrate?.([30, 20, 30]); } catch {}
     } else {
       return;
     }

@@ -100,6 +100,7 @@ function lockPiece(state, context) {
     state.lines += cleared;
     state.level = clamp(1 + Math.floor(state.lines / 10), 1, 20);
     context.playSound?.("score");
+    try { navigator.vibrate?.(cleared >= 4 ? 60 : cleared * 12); } catch {}
   }
   // 顶出：栈顶触及最上两行即结束（spawn 区被占）
   if (state.grid[0].some((c) => c) || state.grid[1].some((c) => c)) {

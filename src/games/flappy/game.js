@@ -25,7 +25,7 @@ function initialState(config) {
   return {
     birdY: H / 2,
     vy: 0,
-    pipes: [{ x: W + 40, gapY: H / 2 }],
+    pipes: [{ x: W + 120, gapY: H / 2 }],
     distance: 0,
     score: 0,
     started: false,
