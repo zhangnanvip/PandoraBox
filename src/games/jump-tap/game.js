@@ -73,6 +73,12 @@ export function mountJumpTap(root, context) {
 
   const canvas = root.querySelector("[data-cv]");
   const ctx = canvas.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = `${W}px`;
+  canvas.style.height = `${H}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const statusEl = root.querySelector("[data-status]");
   const scoreEl = root.querySelector("[data-score]");
 

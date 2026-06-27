@@ -139,6 +139,12 @@ export function mountCatcher(root, context) {
 
   const canvas = root.querySelector("canvas");
   const ctx = canvas.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const scoreEl = root.querySelector("[data-score]");
   const livesEl = root.querySelector("[data-lives]");
   const statusEl = root.querySelector("[data-status]");

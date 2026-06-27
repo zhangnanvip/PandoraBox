@@ -113,6 +113,12 @@ export function mountDoodle(root, context) {
 
   const board = root.querySelector("[data-board]");
   const ctx = board.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  board.width = W * dpr;
+  board.height = H * dpr;
+  board.style.width = W + "px";
+  board.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const elStatus = root.querySelector("[data-status]");
   const elScore = root.querySelector("[data-score]");
 

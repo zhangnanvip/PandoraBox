@@ -161,7 +161,7 @@ export function mountFlappy(root, context) {
     <section class="arcade-shell">
       <div class="arcade-stage" style="display:flex;justify-content:center;">
         <canvas width="${W}" height="${H}" aria-label="像素鸟"
-          style="width:100%;max-width:300px;height:auto;aspect-ratio:${W}/${H};border-radius:14px;touch-action:none;cursor:pointer;"></canvas>
+          style="max-width:100%;border-radius:14px;touch-action:none;cursor:pointer;"></canvas>
       </div>
       <div style="display:flex;justify-content:center;margin-top:12px;">
         <button type="button" class="primary-button" data-restart>重开</button>
@@ -171,6 +171,12 @@ export function mountFlappy(root, context) {
 
   const canvas = root.querySelector("canvas");
   const ctx = canvas.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = `${W}px`;
+  canvas.style.height = `${H}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const status = root.querySelector("[data-status]");
   const scoreEl = root.querySelector("[data-score]");
   const bestEl = root.querySelector("[data-best]");

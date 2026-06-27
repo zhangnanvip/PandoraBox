@@ -162,6 +162,16 @@ export function mountTetris(root, context) {
   const nextCv = root.querySelector("[data-next]");
   const ctx = board.getContext("2d");
   const nctx = nextCv.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  function setupCanvas(cv, c, w, h) {
+    cv.width = w * dpr;
+    cv.height = h * dpr;
+    cv.style.width = `${w}px`;
+    cv.style.height = `${h}px`;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  setupCanvas(board, ctx, W, H);
+  setupCanvas(nextCv, nctx, NEXT_BOX, NEXT_BOX);
   const elStatus = root.querySelector("[data-status]");
   const elScore = root.querySelector("[data-score]");
   const elLines = root.querySelector("[data-lines]");

@@ -171,6 +171,12 @@ export function mountBubble(root, context) {
 
   const cv = root.querySelector("[data-board]");
   const ctx = cv.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  cv.width = W * dpr;
+  cv.height = H * dpr;
+  cv.style.width = W + "px";
+  cv.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const elStatus = root.querySelector("[data-status]");
   const elScore = root.querySelector("[data-score]");
   const elShots = root.querySelector("[data-shots]");

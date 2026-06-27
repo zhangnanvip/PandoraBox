@@ -157,12 +157,18 @@ export function mountPong(root, context) {
       </div>
     </section>
     <section class="board-wrap" style="display:flex;flex-direction:column;gap:12px;align-items:center;padding:8px">
-      <canvas width="${W}" height="${H}" style="width:100%;max-width:320px;border-radius:14px;touch-action:none;background:#0b1224" aria-label="弹球对战"></canvas>
+      <canvas width="${W}" height="${H}" style="max-width:100%;border-radius:14px;touch-action:none;background:#0b1224" aria-label="弹球对战"></canvas>
       <div style="display:flex;gap:10px"><button class="danger-button" data-action="restart">重开</button></div>
     </section>
   `;
   const canvas = root.querySelector("canvas");
   const ctx = canvas.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = `${W}px`;
+  canvas.style.height = `${H}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const status = root.querySelector("[data-status]");
   const youEl = root.querySelector("[data-you]");
   const aiEl = root.querySelector("[data-ai]");
