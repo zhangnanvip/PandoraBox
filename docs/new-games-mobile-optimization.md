@@ -38,3 +38,9 @@
 **根因**：高密度割草里 168 敌 × 逐实体每帧 `createRadialGradient`/`shadowBlur`，外加经验宝石逐帧线性渐变、effects/拾取/弹幕无上限——空闲不捡宝石时数百实体每帧重绘，GC+GPU 双爆 → 数十秒发烫。
 **改进**：glowCircle 缓存原点渐变复用；普通敌去 shadowBlur 仅 Boss 留；宝石纯色；敌 168→120、死亡粒子×0.55；effects/拾取/弹幕 220/160/180 封顶。引擎 dt 早已 0.033 封顶（非元凶）。
 **反思**：① 渐变/shadow 必须缓存或禁用，按实体数线性放大最致命；② 一切实体数组都要硬上限；③ 改 JS 也要 bump SW 缓存版本否则线上不生效。**backlog**：拾取/箱体 sprite cache、碰撞网格分区、glowCircle 提取为公共街机工具。
+
+## 幸存者二轮 + 大厅弹窗
+- 开局弹窗：sheet 内滚动 + 继续/重开 sticky 底部，长内容不再溢出需滑。
+- 主推：survivor 热度 99 升头条。
+- HUD 去 threatLabel 怪名轮播（也省每帧 nearestEnemy）。
+- 性能续：敌 66/弹 90/拾 120/粒子0.42；重存档 30→44fps 稳，启动~60。backlog：碰撞网格分区可冲 60。
