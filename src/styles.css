@@ -11,6 +11,12 @@ body {
   margin: 0;
 }
 
+html.has-modal,
+body.has-modal {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   background:
     url("../public/skins/guofeng-ink/textures/ink-wash.svg") center bottom / min(980px, 150vw) auto no-repeat fixed,
@@ -731,6 +737,64 @@ select {
   opacity: 0.64;
 }
 
+.lobby-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.search-box {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 250, 240, 0.82);
+  color: var(--muted);
+}
+
+.search-box input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+}
+
+.search-box input::placeholder {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.search-clear {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 250, 240, 0.82);
+  color: var(--jade);
+  cursor: pointer;
+}
+
+.game-results {
+  display: grid;
+  gap: 14px;
+}
+
+.search-empty {
+  margin: 0;
+}
+
 .category-tabs {
   display: flex;
   gap: 7px;
@@ -1361,12 +1425,16 @@ select {
   place-items: center;
   padding: 16px;
   background: rgba(37, 27, 14, 0.42);
+  overflow: hidden;
+  overscroll-behavior: contain;
 }
 
 .modal-panel {
+  display: flex;
+  flex-direction: column;
   width: min(100%, 520px);
   max-height: min(76svh, 640px);
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background:
@@ -1375,14 +1443,25 @@ select {
   backdrop-filter: blur(16px);
   box-shadow: 0 24px 60px rgba(30, 20, 8, 0.28);
   padding: 14px;
+  overscroll-behavior: contain;
 }
 
 .modal-head {
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 12px;
   align-items: center;
   margin-bottom: 12px;
+}
+
+.modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .modal-head h2 {
@@ -5237,6 +5316,27 @@ input[type="range"] {
   background: rgba(255, 252, 241, 0.78);
 }
 
+.lobby-search {
+  margin-top: 12px;
+}
+
+.search-box,
+.search-clear {
+  border-color: rgba(20, 36, 32, 0.1);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 10px 24px rgba(20, 36, 32, 0.07);
+  backdrop-filter: blur(12px);
+}
+
+.search-box:focus-within {
+  border-color: rgba(15, 118, 105, 0.36);
+  box-shadow: 0 12px 28px rgba(15, 118, 105, 0.12);
+}
+
+.search-clear {
+  color: #0f7669;
+}
+
 .category-tabs {
   gap: 8px;
   margin: 12px -12px 0;
@@ -6461,17 +6561,15 @@ input[type="range"] {
 .modal-panel.modal--sheet {
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* 内部 start-sheet 自己滚, 按钮固定底部 */
+  overflow: hidden;
 }
 .modal--sheet .modal-head { flex: 0 0 auto; }
 .modal--sheet .start-sheet {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
+  min-height: auto;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   gap: var(--space-3, 12px);
-  -webkit-overflow-scrolling: touch;
 }
 /* 开局动作区: 继续/重开/开始 固定在面板底部, 中部内容滚动 */
 .start-sheet .resume-card,

@@ -3,7 +3,7 @@ import { loadGamePlugin as loadRegisteredGamePlugin } from "./platform/game-plug
 import { DEFAULT_PLUGIN_SOURCE_STATE, collectEnabledPluginRegistrations, loadPluginSourceState, summarizePluginSources } from "./platform/plugin-sources.js";
 import { configureSound, playResultSound, playSound as playFeedbackSound } from "./platform/sound.js";
 import { interfaceThemes, themeOrder } from "./theme/skins.js";
-import { escapeAttr, stableStringify } from "./utils/common.js";
+import { escapeAttr, escapeHtml, stableStringify } from "./utils/common.js";
 import { trapFocus } from "./utils/focus-trap.js";
 import { loadState, saveState } from "./utils/storage.js";
 import { icon } from "./views/icons.js";
@@ -46,6 +46,7 @@ const state = {
   pendingPluginSource: "",
   view: "lobby",
   activeCategory: "all",
+  searchQuery: "",
   progress: savedProgress && typeof savedProgress === "object" ? savedProgress : {},
   sessions: savedSessions && typeof savedSessions === "object" ? savedSessions : {},
   favorites: Array.isArray(savedFavorites) ? savedFavorites.filter(Boolean) : [],
@@ -62,6 +63,9 @@ let gameLoadToken = 0;
 let renderedGameId = "";
 let installPrompt = null;
 let releaseFocusTrap = null;
+let modalScrollY = 0;
+let modalScrollLocked = false;
+let modalBodyStyle = null;
 
 function externalGameRegistrations() {
   const seen = new Set(games.map((game) => game.id));
@@ -107,6 +111,71 @@ function sortByMarketHeat(games) {
     if (scoreDelta) return scoreDelta;
     return a.title.localeCompare(b.title, "zh-Hans-CN");
   });
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[\s·,，.。:：;；|/\\()[\]{}'"“”‘’_-]+/g, "");
+}
+
+function gameSearchText(game) {
+  const category = findCategory(game.category);
+  const secondaryCategories = (game.secondaryCategories || []).map((id) => findCategory(id)).filter(Boolean);
+  return [
+    game.id,
+    game.title,
+    game.subtitle,
+    game.tag,
+    game.complexity,
+    category?.title,
+    category?.shortTitle,
+    ...secondaryCategories.flatMap((item) => [item.title, item.shortTitle]),
+    ...(game.modeSupport || []).map((value) => modeLabel[value] || value),
+    ...(game.difficultySupport || []).map((value) => difficultyLabel[value] || value),
+    game.marketHeat?.label,
+    game.marketHeat?.signal,
+    ...(game.rules || [])
+  ].filter(Boolean).join(" ");
+}
+
+function fuzzySearchScore(query, text) {
+  const q = normalizeSearchText(query);
+  const t = normalizeSearchText(text);
+  if (!q || !t) return 0;
+  const exactIndex = t.indexOf(q);
+  if (exactIndex >= 0) return 1000 - exactIndex + q.length * 8;
+
+  let score = 0;
+  let qi = 0;
+  let lastMatch = -1;
+  for (let ti = 0; ti < t.length && qi < q.length; ti += 1) {
+    if (t[ti] !== q[qi]) continue;
+    score += lastMatch === ti - 1 ? 9 : 4;
+    if (ti === 0 || t[ti - 1] === "-") score += 2;
+    lastMatch = ti;
+    qi += 1;
+  }
+  return qi === q.length ? score + q.length * 3 : 0;
+}
+
+function searchGames(query) {
+  const normalized = normalizeSearchText(query);
+  if (!normalized) return [];
+  return availableGames()
+    .map((game) => ({
+      game,
+      score: fuzzySearchScore(normalized, gameSearchText(game))
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => {
+      const scoreDelta = b.score - a.score;
+      if (scoreDelta) return scoreDelta;
+      const heatDelta = marketHeatScore(b.game) - marketHeatScore(a.game);
+      if (heatDelta) return heatDelta;
+      return a.game.title.localeCompare(b.game.title, "zh-Hans-CN");
+    })
+    .map((item) => item.game);
 }
 
 function availableGameSections(categoryId = "all") {
@@ -251,6 +320,7 @@ function setState(patch) {
 function openModal(name, patch = {}) {
   Object.assign(state, patch);
   state.modal = name;
+  lockPageScrollForModal();
   if (state.currentGame) renderModal();
   else render();
 }
@@ -689,6 +759,44 @@ function bindFavoriteActions(root = app) {
   });
 }
 
+function refreshLobbySearchResults() {
+  const results = app.querySelector("[data-game-results]");
+  if (!results) return;
+  results.innerHTML = renderGameSections();
+  bindGameStartActions(results);
+  bindFavoriteActions(results);
+}
+
+function bindLobbySearch() {
+  const input = app.querySelector("[data-game-search]");
+  const clearButton = app.querySelector("[data-clear-search]");
+  if (!input) return;
+  const syncClearButton = () => {
+    if (clearButton) clearButton.hidden = !normalizeSearchText(state.searchQuery);
+  };
+  input.addEventListener("input", (event) => {
+    state.searchQuery = event.target.value;
+    syncClearButton();
+    refreshLobbySearchResults();
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !state.searchQuery) return;
+    event.preventDefault();
+    state.searchQuery = "";
+    input.value = "";
+    syncClearButton();
+    refreshLobbySearchResults();
+  });
+  clearButton?.addEventListener("click", () => {
+    state.searchQuery = "";
+    input.value = "";
+    input.focus();
+    syncClearButton();
+    refreshLobbySearchResults();
+  });
+  syncClearButton();
+}
+
 function openHistoryPage() {
   setState({ view: "history", modal: "" });
 }
@@ -964,6 +1072,26 @@ function renderCategoryTabs() {
       <span>${category.title}</span>
     </button>
   `).join("");
+}
+
+function renderLobbySearch() {
+  const query = state.searchQuery || "";
+  const hasQuery = normalizeSearchText(query).length > 0;
+  return `
+    <section class="lobby-search" aria-label="搜索游戏">
+      <label class="search-box">
+        ${icon("search")}
+        <input
+          type="search"
+          value="${escapeAttr(query)}"
+          placeholder="搜索游戏、类型、玩法"
+          autocomplete="off"
+          data-game-search
+        />
+      </label>
+      <button class="search-clear" type="button" data-clear-search ${hasQuery ? "" : "hidden"} aria-label="清空搜索">${icon("close")}</button>
+    </section>
+  `;
 }
 
 function renderRecentShortcut({ game, progress, sessionItem }) {
@@ -1344,6 +1472,25 @@ function renderGameCard(game) {
 }
 
 function renderGameSections() {
+  const query = state.searchQuery || "";
+  if (normalizeSearchText(query)) {
+    const matches = searchGames(query);
+    const escapedQuery = escapeHtml(query.trim());
+    return `
+      <section class="game-section search-results-section" aria-label="搜索结果">
+        <div class="game-section-head">
+          <h2>搜索结果</h2>
+          <span>${matches.length} 款</span>
+        </div>
+        ${matches.length ? `
+          <div class="game-grid">
+            ${matches.map(renderGameCard).join("")}
+          </div>
+        ` : `<p class="empty-note search-empty">没有找到“${escapedQuery}”，试试游戏名、分类或玩法关键词。</p>`}
+      </section>
+    `;
+  }
+
   const sections = availableGameSections(state.activeCategory);
   const heroGame = pickHeroGame();
   const heroMarkup = renderHeroCard(heroGame);
@@ -1371,7 +1518,6 @@ function renderLobby() {
           </div>
         </div>
         <div class="header-actions">
-          <button class="icon-button top-icon" data-open-achievements aria-label="成就">${icon("trophy")}</button>
           <button class="icon-button top-icon" data-open-modal="feedback" aria-label="意见反馈">${icon("feedback")}</button>
           <button class="icon-button top-icon" data-open-modal="settings" aria-label="设置">${icon("settings")}</button>
         </div>
@@ -1388,6 +1534,8 @@ function renderLobby() {
         </div>
       </section>
 
+      ${renderLobbySearch()}
+
       ${renderLobbyDashboard()}
 
       <section class="category-tabs" aria-label="游戏分类">
@@ -1395,13 +1543,15 @@ function renderLobby() {
       </section>
 
       <section class="game-library" aria-label="游戏大厅">
-        ${renderGameSections()}
+        <div class="game-results" data-game-results>
+          ${renderGameSections()}
+        </div>
       </section>
     </main>
   `;
 
   app.querySelectorAll("[data-category]").forEach((button) => {
-    button.addEventListener("click", () => setState({ activeCategory: button.dataset.category }));
+    button.addEventListener("click", () => setState({ activeCategory: button.dataset.category, searchQuery: "" }));
   });
   app.querySelectorAll("[data-open-history]").forEach((button) => {
     button.addEventListener("click", openHistoryPage);
@@ -1409,7 +1559,7 @@ function renderLobby() {
   app.querySelectorAll("[data-open-favorites]").forEach((button) => {
     button.addEventListener("click", openFavoritesPage);
   });
-  app.querySelector("[data-open-achievements]")?.addEventListener("click", openAchievementsPage);
+  bindLobbySearch();
   bindGameStartActions();
   bindRecentActivityActions();
   bindFavoriteActions();
@@ -1809,13 +1959,52 @@ function showToast(message, { kind = "info", duration = 3200 } = {}) {
   }, duration);
 }
 
+function lockPageScrollForModal() {
+  if (modalScrollLocked) return;
+  modalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  modalBodyStyle = {
+    position: document.body.style.position,
+    top: document.body.style.top,
+    left: document.body.style.left,
+    right: document.body.style.right,
+    width: document.body.style.width
+  };
+  document.documentElement.classList.add("has-modal");
+  document.body.classList.add("has-modal");
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${modalScrollY}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+  modalScrollLocked = true;
+}
+
+function unlockPageScrollForModal() {
+  if (!modalScrollLocked) return;
+  document.documentElement.classList.remove("has-modal");
+  document.body.classList.remove("has-modal");
+  document.body.style.position = modalBodyStyle?.position || "";
+  document.body.style.top = modalBodyStyle?.top || "";
+  document.body.style.left = modalBodyStyle?.left || "";
+  document.body.style.right = modalBodyStyle?.right || "";
+  document.body.style.width = modalBodyStyle?.width || "";
+  window.scrollTo(0, modalScrollY);
+  modalScrollY = 0;
+  modalScrollLocked = false;
+  modalBodyStyle = null;
+}
+
 function renderModal() {
   if (releaseFocusTrap) {
     releaseFocusTrap();
     releaseFocusTrap = null;
   }
   app.querySelector(".modal-backdrop")?.remove();
-  if (!state.modal) return;
+  if (!state.modal) {
+    unlockPageScrollForModal();
+    return;
+  }
+  lockPageScrollForModal();
 
   const game = findAvailableGame(state.currentGame || state.pendingGame);
   const content = modalContent();
@@ -1827,7 +2016,9 @@ function renderModal() {
           <h2>${content.title}</h2>
           <button class="icon-button small" data-close-modal aria-label="关闭">${icon("close")}</button>
         </div>
-        ${content.body}
+        <div class="modal-body">
+          ${content.body}
+        </div>
       </section>
     </div>
   `);
