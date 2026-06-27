@@ -247,7 +247,7 @@ export function mountDotsBoxes(root, context) {
       }
       const on = state.edges[i];
       const stroke = on ? "#cbd5f5" : "rgba(148,163,184,.18)";
-      edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${on ? 5 : 14}" stroke-linecap="round" data-edge="${i}" style="cursor:${on || state.winner ? "default" : "pointer"};${on ? "" : "opacity:.5"}"></line>`;
+      edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${on ? 5 : 20}" stroke-linecap="round" data-edge="${i}" style="cursor:${on || state.winner ? "default" : "pointer"};${on ? "" : "opacity:.5"}"></line>`;
     }
     let boxSvg = "";
     for (let b = 0; b < boxes * boxes; b += 1) {
