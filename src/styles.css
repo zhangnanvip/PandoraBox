@@ -4542,7 +4542,7 @@ input[type="range"] {
 }
 
 .play-frame:not(.arcade-play-frame) .block-blast-board {
-  width: min(94vw, 560px, calc(100dvh - 520px));
+  width: min(94vw, 560px, calc(100dvh - 510px)) !important;
 }
 
 .block-cell {
